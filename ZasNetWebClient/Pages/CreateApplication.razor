@@ -1,0 +1,255 @@
+@page "/create-application"
+@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@using ZasNetWebClient.Components
+@inject AuthService AuthService
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+
+<PageTitle>Create Application - ZasNet</PageTitle>
+
+    <div class="page-header">
+        <h1>Create New Application</h1>
+        <p>Fill out the form below to create a new application</p>
+    </div>
+
+    <div class="create-form-container">
+        <EditForm Model="@applicationModel" OnValidSubmit="@HandleSubmit">
+            <DataAnnotationsValidator />
+            
+            <div class="form-section">
+                <h3>Client Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="client">Client Name *</label>
+                        <InputText id="client" @bind-Value="applicationModel.Client" class="form-control" placeholder="Enter client name" />
+                        <ValidationMessage For="@(() => applicationModel.Client)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date *</label>
+                        <InputDate id="date" @bind-Value="applicationModel.Date" class="form-control" />
+                        <ValidationMessage For="@(() => applicationModel.Date)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Address Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City *</label>
+                        <InputText id="city" @bind-Value="applicationModel.AddressCity" class="form-control" placeholder="Enter city" />
+                        <ValidationMessage For="@(() => applicationModel.AddressCity)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="street">Street *</label>
+                        <InputText id="street" @bind-Value="applicationModel.AddressStreet" class="form-control" placeholder="Enter street" />
+                        <ValidationMessage For="@(() => applicationModel.AddressStreet)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="number">Number *</label>
+                        <InputText id="number" @bind-Value="applicationModel.AddressNumber" class="form-control" placeholder="Enter number" />
+                        <ValidationMessage For="@(() => applicationModel.AddressNumber)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Order Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="price">Order Price Amount *</label>
+                        <InputNumber id="price" @bind-Value="applicationModel.OrderPriceAmount" class="form-control" placeholder="Enter amount" />
+                        <ValidationMessage For="@(() => applicationModel.OrderPriceAmount)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="payment">Payment Type *</label>
+                        <InputSelect id="payment" @bind-Value="applicationModel.PaymentType" class="form-control">
+                            <option value="@PaymentType.Cash">Cash</option>
+                            <option value="@PaymentType.Card">Card</option>
+                            <option value="@PaymentType.BankTransfer">Bank Transfer</option>
+                            <option value="@PaymentType.Check">Check</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => applicationModel.PaymentType)" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <InputTextArea id="description" @bind-Value="applicationModel.Description" class="form-control" placeholder="Enter description (optional)" rows="3" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Assignments</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="employees">Assigned Employees</label>
+                        <select id="employees" @bind="applicationModel.OrderEmployeeIds" class="form-control" multiple>
+                            @foreach (var employee in availableEmployees)
+                            {
+                                <option value="@employee.Id">@employee.FirstName @employee.LastName - @employee.Position</option>
+                            }
+                        </select>
+                        <small class="form-text">Hold Ctrl to select multiple employees</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="cars">Assigned Cars</label>
+                        <select id="cars" @bind="applicationModel.OrderCarIds" class="form-control" multiple>
+                            @foreach (var car in availableCars)
+                            {
+                                <option value="@car.Id">@car.Make @car.Model - @car.LicensePlate</option>
+                            }
+                        </select>
+                        <small class="form-text">Hold Ctrl to select multiple cars</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="services-header">
+                    <h3>Services</h3>
+                    <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
+                        <span>+</span> Add Service
+                    </button>
+                </div>
+                
+                @if (applicationModel.OrderServicesDto.Any())
+                {
+                    <div class="services-grid">
+                        @foreach (var service in applicationModel.OrderServicesDto)
+                        {
+                            <div class="service-item">
+                                <div class="service-info">
+                                    <span class="service-name">@GetServiceName(service.ServiceId)</span>
+                                    <span class="service-price">@service.Price.ToString("C")</span>
+                                    <span class="service-volume">@service.TotalVolume @GetServiceUnit(service.ServiceId)</span>
+                                </div>
+                                <button type="button" class="btn-remove" @onclick="() => RemoveService(service)">
+                                    &times;
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-services">
+                        <p>No services added yet. Click "Add Service" to get started.</p>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">
+                    @errorMessage
+                </div>
+            }
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" @onclick="Cancel">Cancel</button>
+                <button type="submit" class="btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner"></span>
+                       // Creating...
+                    }
+                    else
+                    {
+                        //Create Application
+                    }
+                </button>
+            </div>
+        </EditForm>
+    </div>
+
+    <ServiceDialog IsVisible="@showServiceDialog" 
+                   OnClose="@(() => showServiceDialog = false)" 
+                   OnServiceAdded="@AddService" />
+
+@code {
+    private CreateApplicationDto applicationModel = new();
+    private List<EmployeeDto> availableEmployees = new();
+    private List<CarDto> availableCars = new();
+    private List<ServiceDto> availableServices = new();
+    private bool showServiceDialog = false;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReferenceData();
+    }
+
+    private async Task LoadReferenceData()
+    {
+        try
+        {
+            availableEmployees = await ApiService.GetEmployeesAsync();
+            availableCars = await ApiService.GetCarsAsync();
+            availableServices = await ApiService.GetServicesAsync();
+        }
+        catch
+        {
+            errorMessage = "Failed to load reference data.";
+        }
+    }
+
+    private void ShowServiceDialog()
+    {
+        showServiceDialog = true;
+    }
+
+    private void AddService(OrderServicesDto service)
+    {
+        applicationModel.OrderServicesDto.Add(service);
+    }
+
+    private void RemoveService(OrderServicesDto service)
+    {
+        applicationModel.OrderServicesDto.Remove(service);
+    }
+
+    private string GetServiceName(int serviceId)
+    {
+        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.Name ?? "Unknown Service";
+    }
+
+    private string GetServiceUnit(int serviceId)
+    {
+        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.Unit ?? "";
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var success = await ApiService.CreateApplicationAsync(applicationModel);
+            
+            if (success)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Failed to create application. Please try again.";
+            }
+        }
+        catch
+        {
+            errorMessage = "An error occurred while creating the application. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

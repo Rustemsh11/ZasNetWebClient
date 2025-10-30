@@ -1,0 +1,68 @@
+﻿@using ZasNetWebClient.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inherits LayoutComponentBase
+
+<div class="app-container">
+    @if (AuthService.IsAuthenticated)
+    {
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h2>ZasNet</h2>
+            </div>
+
+            <div class="navbar-menu">
+                <a href="/" class="nav-link @GetActiveClass("/")">All Applications</a>
+
+                @if (AuthService.IsManager)
+                {
+                    <a href="/my-applications" class="nav-link @GetActiveClass("/my-applications")">My Applications</a>
+                }
+
+                <a href="/profile" class="nav-link @GetActiveClass("/profile")">Personal Account</a>
+            </div>
+
+            <div class="navbar-user">
+                @* <span class="user-info">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</span> *@
+                <span class="user-info">@AuthService.CurrentUser?.Login</span>
+                <button class="btn-logout" @onclick="Logout">Logout</button>
+            </div>
+        </nav>
+    }
+
+    <main class="main-content">
+        @Body
+    </main>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthenticationStateChanged += StateHasChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri);
+        if (!AuthService.IsAuthenticated && !string.Equals(path, "login", StringComparison.OrdinalIgnoreCase))
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+
+    private string GetActiveClass(string path)
+    {
+        return Navigation.Uri.EndsWith(path) ? "active" : "";
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthenticationStateChanged -= StateHasChanged;
+    }
+}

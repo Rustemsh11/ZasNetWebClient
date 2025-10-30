@@ -1,0 +1,122 @@
+@page "/profile"
+@using ZasNetWebClient.Services
+@using ZasNetWebClient.Components
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Personal Account - ZasNet</PageTitle>
+
+    <div class="page-header">
+        <h1>Personal Account</h1>
+        <p>Manage your account information and settings</p>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <span>@GetInitials()</span>
+                </div>
+                <div class="profile-info">
+                    @* <h2>@AuthService.CurrentUser?.Login @AuthService.CurrentUser?.LastName</h2> *@
+                    <h2>@AuthService.CurrentUser?.Login</h2>
+                    <p class="profile-role">@AuthService.CurrentUser?.RoleName</p>
+                </div>
+            </div>
+
+            <div class="profile-details">
+                @* <div class="detail-section">
+                    <h3>Account Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Username:</span>
+                            <span>@AuthService.CurrentUser?.Username</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Email:</span>
+                            <span>@AuthService.CurrentUser?.Email</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Role:</span>
+                            <span class="role-badge">@AuthService.CurrentUser?.Role</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">User ID:</span>
+                            <span>@AuthService.CurrentUser?.Id</span>
+                        </div>
+                    </div>
+                </div> *@
+
+                <div class="detail-section">
+                    <h3>Account Actions</h3>
+                    <div class="action-buttons">
+                        <button class="btn-secondary">Change Password</button>
+                        <button class="btn-secondary">Edit Profile</button>
+                        <button class="btn-danger" @onclick="Logout">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <h3>Account Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">@GetApplicationCount()</span>
+                    <span class="stat-label">Total Applications</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">@GetMyApplicationCount()</span>
+                    <span class="stat-label">My Applications</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">@GetDaysSinceJoined()</span>
+                    <span class="stat-label">Days Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+@code {
+    private int totalApplications = 0;
+    private int myApplications = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load some basic stats
+        totalApplications = 4; // Mock data
+        myApplications = AuthService.IsManager ? 4 : 0; // Mock data
+    }
+
+    private string GetInitials()
+    {
+        var user = AuthService.CurrentUser;
+        if (user == null) return "??";
+
+        // var first = user.FirstName.Length > 0 ? user.FirstName[0].ToString() : "";
+        // var last = user.LastName.Length > 0 ? user.LastName[0].ToString() : "";
+        // return (first + last).ToUpper();
+        return "";
+    }
+
+    private int GetApplicationCount()
+    {
+        return totalApplications;
+    }
+
+    private int GetMyApplicationCount()
+    {
+        return myApplications;
+    }
+
+    private int GetDaysSinceJoined()
+    {
+        // Mock calculation - in real app, this would come from user registration date
+        return 30;
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+}

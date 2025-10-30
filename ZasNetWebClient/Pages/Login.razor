@@ -1,0 +1,81 @@
+@layout EmptyLayout
+@page "/login"
+@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login - ZasNet</PageTitle>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1>ZasNet</h1>
+            <p>Добро пожаловать!</p>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="login">Логин </label>
+                <InputText id="login" @bind-Value="loginModel.Login" class="form-control" placeholder="Введите логин" />
+                <ValidationMessage For="@(() => loginModel.Login)" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <InputText id="password" type="password" @bind-Value="loginModel.Password" class="form-control" placeholder="Введите пароль" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">
+                    @errorMessage
+                </div>
+            }
+
+            <button type="submit" class="btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner"></span>
+                }
+                @(isLoading ? "Вход..." : "Войти")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginModel = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(loginModel.Login, loginModel.Password);
+            
+            if (success)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Invalid login or password. Please try again.";
+            }
+        }
+        catch
+        {
+            errorMessage = "An error occurred during login. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

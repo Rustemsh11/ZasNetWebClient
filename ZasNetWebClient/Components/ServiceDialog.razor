@@ -1,0 +1,131 @@
+@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@inject ApiService ApiService
+
+<div class="service-dialog @(IsVisible ? "visible" : "")">
+    <div class="dialog-overlay" @onclick="Close"></div>
+    <div class="dialog-content">
+        <div class="dialog-header">
+            <h3>Add Service</h3>
+            <button class="btn-close" @onclick="Close">&times;</button>
+        </div>
+        
+        <div class="dialog-body">
+            <EditForm Model="@serviceModel" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+                
+                <div class="form-group">
+                    <label for="service">Service</label>
+                    <select id="service" @bind="serviceModel.ServiceId" class="form-control" @bind:event="OnServiceChanged">
+                        <option value="">Select a service</option>
+                        @foreach (var service in availableServices)
+                        {
+                            <option value="@service.Id">@service.Name - @service.BasePrice.ToString("C")/@service.Unit</option>
+                        }
+                    </select>
+                    <ValidationMessage For="@(() => serviceModel.ServiceId)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="price">Price</label>
+                    <InputNumber id="price" @bind-Value="serviceModel.Price" class="form-control" placeholder="Enter price" />
+                    <ValidationMessage For="@(() => serviceModel.Price)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="volume">Total Volume</label>
+                    <InputNumber id="volume" @bind-Value="serviceModel.TotalVolume" class="form-control" placeholder="Enter volume" />
+                    <ValidationMessage For="@(() => serviceModel.TotalVolume)" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">
+                        @errorMessage
+                    </div>
+                }
+
+                <div class="dialog-actions">
+                    <button type="button" class="btn-secondary" @onclick="Close">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Service</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<OrderServicesDto> OnServiceAdded { get; set; }
+
+    private OrderServicesDto serviceModel = new ();
+    private List<ServiceDto> availableServices = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadServices();
+            ResetForm();
+        }
+    }
+
+    private async Task LoadServices()
+    {
+        try
+        {
+            availableServices = await ApiService.GetServicesAsync();
+        }
+        catch
+        {
+            availableServices = new List<ServiceDto>();
+        }
+    }
+
+    private void OnServiceChanged()
+    {
+        var selectedService = availableServices.FirstOrDefault(s => s.Id == serviceModel.ServiceId);
+        if (selectedService != null)
+        {
+           // serviceModel = serviceModel with { Price = selectedService.BasePrice };
+        }
+    }
+
+    private void ResetForm()
+    {
+        serviceModel = new OrderServicesDto();
+        errorMessage = string.Empty;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (serviceModel.ServiceId == 0)
+        {
+            errorMessage = "Please select a service.";
+            return;
+        }
+
+        if (serviceModel.Price <= 0)
+        {
+            errorMessage = "Price must be greater than 0.";
+            return;
+        }
+
+        if (serviceModel.TotalVolume <= 0)
+        {
+            errorMessage = "Total volume must be greater than 0.";
+            return;
+        }
+
+        await OnServiceAdded.InvokeAsync(serviceModel);
+        await Close();
+    }
+
+    private async Task Close()
+    {
+        ResetForm();
+        await OnClose.InvokeAsync();
+    }
+}
