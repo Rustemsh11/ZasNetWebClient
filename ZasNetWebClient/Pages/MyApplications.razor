@@ -8,84 +8,75 @@
 
 <PageTitle>My Applications - ZasNet</PageTitle>
 
-@if (!AuthService.IsManager)
+
+<div class="page-header">
+    <div class="header-content">
+        <div>
+            <h1>My Applications</h1>
+            <p>Applications assigned to you as a manager</p>
+        </div>
+        <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/create-application", false))">
+            <span>+</span> Create Application
+        </button>
+    </div>
+</div>
+
+@if (isLoading)
 {
-    <div class="access-denied">
-        <h2>Access Denied</h2>
-        <p>You don't have permission to view this page.</p>
-        <button class="btn-primary" @onclick="@(()=> Navigation.NavigateTo("/", false))">Go Back</button>
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading your applications...</p>
+    </div>
+}
+else if (myApplications.Any())
+{
+    <div class="applications-grid">
+        @foreach (var application in myApplications)
+        {
+            <div class="application-card">
+                <div class="application-header">
+                    <h3>@application.Title</h3>
+                    <span class="status-badge status-@application.Status.ToLower().Replace(" ", "-")">@application.Status</span>
+                </div>
+                    
+                <p class="application-description">@application.Description</p>
+                    
+                <div class="application-details">
+                    <div class="detail-item">
+                        <span class="label">Priority:</span>
+                        <span class="priority priority-@application.Priority.ToLower()">@application.Priority</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Category:</span>
+                        <span>@application.Category</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Created:</span>
+                        <span>@application.CreatedDate.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    @if (application.UpdatedDate.HasValue)
+                    {
+                        <div class="detail-item">
+                            <span class="label">Last Updated:</span>
+                            <span>@application.UpdatedDate.Value.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     </div>
 }
 else
 {
-    <div class="page-header">
-        <div class="header-content">
-            <div>
-                <h1>My Applications</h1>
-                <p>Applications assigned to you as a manager</p>
-            </div>
-            <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/create-application", false))">
-                <span>+</span> Create Application
-            </button>
-        </div>
+    <div class="empty-state">
+        <h3>No applications assigned</h3>
+        <p>You don't have any applications assigned to you yet.</p>
     </div>
-
-    @if (isLoading)
-    {
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading your applications...</p>
-        </div>
-    }
-    else if (myApplications.Any())
-    {
-        <div class="applications-grid">
-            @foreach (var application in myApplications)
-            {
-                <div class="application-card">
-                    <div class="application-header">
-                        <h3>@application.Title</h3>
-                        <span class="status-badge status-@application.Status.ToLower().Replace(" ", "-")">@application.Status</span>
-                    </div>
-                    
-                    <p class="application-description">@application.Description</p>
-                    
-                    <div class="application-details">
-                        <div class="detail-item">
-                            <span class="label">Priority:</span>
-                            <span class="priority priority-@application.Priority.ToLower()">@application.Priority</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Category:</span>
-                            <span>@application.Category</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Created:</span>
-                            <span>@application.CreatedDate.ToString("MMM dd, yyyy")</span>
-                        </div>
-                        @if (application.UpdatedDate.HasValue)
-                        {
-                            <div class="detail-item">
-                                <span class="label">Last Updated:</span>
-                                <span>@application.UpdatedDate.Value.ToString("MMM dd, yyyy")</span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">
-            <h3>No applications assigned</h3>
-            <p>You don't have any applications assigned to you yet.</p>
-        </div>
-    }
 }
 
+
 @code {
-    private List<Application> myApplications = new();
+    private List<Order> myApplications = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -98,11 +89,11 @@ else
         isLoading = true;
         try
         {
-            myApplications = await ApiService.GetMyApplicationsAsync();
+            //myApplications = await ApiService.GetMyApplicationsAsync();
         }
         catch
         {
-            myApplications = new List<Application>();
+            myApplications = new List<Order>();
         }
         finally
         {

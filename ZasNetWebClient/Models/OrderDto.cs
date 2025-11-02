@@ -16,7 +16,7 @@ public class OrderServicesDto
 }
 
 
-public class CreateApplicationDto
+public class OrderDto
 {
     public string Client { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.Now;

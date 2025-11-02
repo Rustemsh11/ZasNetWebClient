@@ -8,87 +8,87 @@
 
 <PageTitle>All Applications - ZasNet</PageTitle>
 
-    <div class="page-header">
-        <div class="header-content">
-            <div>
-                <h1>All Applications</h1>
-                <p>View and manage all applications in the system</p>
-            </div>
-            <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/create-application", false))">
-                <span>+</span> Create Application
-            </button>
+<div class="page-header">
+    <div class="header-content">
+        <div>
+            <h1>All Applications</h1>
+            <p>View and manage all applications in the system</p>
         </div>
+        <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/create-application", false))">
+            <span>+</span> Create Application
+        </button>
     </div>
+</div>
 
-    @if (isLoading)
-    {
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading applications...</p>
-        </div>
-    }
-    else if (applications.Any())
-    {
-        <div class="applications-grid">
-            @foreach (var application in applications)
-            {
-                <div class="application-card">
-                    <div class="application-header">
-                        <h3>@application.Title</h3>
-                        <span class="status-badge status-@application.Status.ToLower().Replace(" ", "-")">@application.Status</span>
+@if (isLoading)
+{
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading applications...</p>
+    </div>
+}
+else if (orders.Any())
+{
+    <div class="applications-grid">
+        @foreach (var order in orders)
+        {
+            <div class="application-card">
+                <div class="application-header">
+                    <h3>@order.Title</h3>
+                    <span class="status-badge status-@order.Status.ToLower().Replace(" ", "-")">@order.Status</span>
+                </div>
+
+                <p class="application-description">@order.Description</p>
+                    
+                <div class="application-details">
+                    <div class="detail-item">
+                        <span class="label">Priority:</span>
+                        <span class="priority priority-@order.Priority.ToLower()">@order.Priority</span>
                     </div>
-                    
-                    <p class="application-description">@application.Description</p>
-                    
-                    <div class="application-details">
-                        <div class="detail-item">
-                            <span class="label">Priority:</span>
-                            <span class="priority priority-@application.Priority.ToLower()">@application.Priority</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Category:</span>
-                            <span>@application.Category</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Manager:</span>
-                            <span>@application.ManagerName</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Created:</span>
-                            <span>@application.CreatedDate.ToString("MMM dd, yyyy")</span>
-                        </div>
+                    <div class="detail-item">
+                        <span class="label">Category:</span>
+                        <span>@order.Category</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Manager:</span>
+                        <span>@order.ManagerName</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Created:</span>
+                        <span>@order.CreatedDate.ToString("MMM dd, yyyy")</span>
                     </div>
                 </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">
-            <h3>No applications found</h3>
-            <p>There are currently no applications in the system.</p>
-        </div>
-    }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">
+        <h3>No applications found</h3>
+        <p>There are currently no applications in the system.</p>
+    </div>
+}
 
 @code {
-    private List<Application> applications = new();
+    private List<Order> orders = new();
     private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadApplications();
+        await LoadOrders();
     }
 
-    private async Task LoadApplications()
+    private async Task LoadOrders()
     {
         isLoading = true;
         try
         {
-            applications = await ApiService.GetAllApplicationsAsync();
+            orders = await ApiService.GetAllOrders();
         }
         catch
         {
-            applications = new List<Application>();
+            orders = new List<Order>();
         }
         finally
         {

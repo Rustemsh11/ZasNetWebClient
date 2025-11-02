@@ -1,6 +1,6 @@
 namespace ZasNetWebClient.Models;
 
-public class Application
+public class Order
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;

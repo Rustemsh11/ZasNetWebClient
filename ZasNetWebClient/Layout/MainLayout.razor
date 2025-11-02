@@ -1,11 +1,11 @@
 ﻿@using ZasNetWebClient.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider _authenticationStateProvider
 @inherits LayoutComponentBase
 
-<div class="app-container">
-    @if (AuthService.IsAuthenticated)
-    {
+<AuthorizeView>
+    <div class="app-container">
         <nav class="navbar">
             <div class="navbar-brand">
                 <h2>ZasNet</h2>
@@ -14,46 +14,47 @@
             <div class="navbar-menu">
                 <a href="/" class="nav-link @GetActiveClass("/")">All Applications</a>
 
-                @if (AuthService.IsManager)
-                {
-                    <a href="/my-applications" class="nav-link @GetActiveClass("/my-applications")">My Applications</a>
-                }
+                <a href="/my-applications" class="nav-link @GetActiveClass("/my-applications")">My Applications</a>
 
                 <a href="/profile" class="nav-link @GetActiveClass("/profile")">Personal Account</a>
             </div>
 
             <div class="navbar-user">
                 @* <span class="user-info">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</span> *@
-                <span class="user-info">@AuthService.CurrentUser?.Login</span>
+                <span class="user-info">@CurrentUser</span>
                 <button class="btn-logout" @onclick="Logout">Logout</button>
             </div>
         </nav>
-    }
 
-    <main class="main-content">
-        @Body
-    </main>
-</div>
+        <main class="main-content">
+            @Body
+        </main>
+    </div>
+</AuthorizeView>
 
 @code {
-    protected override void OnInitialized()
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthenticationState { get; set; }
+    public string CurrentUser{ get; set; }
+    protected override async Task OnParametersSetAsync()
     {
-        AuthService.OnAuthenticationStateChanged += StateHasChanged;
-    }
-
-    protected override void OnParametersSet()
-    {
-        var path = Navigation.ToBaseRelativePath(Navigation.Uri);
-        if (!AuthService.IsAuthenticated && !string.Equals(path, "login", StringComparison.OrdinalIgnoreCase))
+        var state = await AuthenticationState;
+        if (state != null)
         {
-            Navigation.NavigateTo("/login", true);
+            if (!state.User.Identity.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                CurrentUser = state.User.Identity.Name;
+            }
         }
     }
 
-    private void Logout()
+    private async Task Logout()
     {
-        AuthService.Logout();
-        Navigation.NavigateTo("/login");
+        await((IdentityAuthenticationStateProvider)_authenticationStateProvider).MarkLogouted();
     }
 
     private string GetActiveClass(string path)
@@ -61,8 +62,6 @@
         return Navigation.Uri.EndsWith(path) ? "active" : "";
     }
 
-    public void Dispose()
-    {
-        AuthService.OnAuthenticationStateChanged -= StateHasChanged;
-    }
+    
+
 }

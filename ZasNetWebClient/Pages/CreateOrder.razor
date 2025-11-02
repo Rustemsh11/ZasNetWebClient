@@ -1,8 +1,7 @@
-@page "/create-application"
+@page "/create-order"
 @using ZasNetWebClient.Models
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Components
-@inject AuthService AuthService
 @inject ApiService ApiService
 @inject NavigationManager Navigation
 
@@ -168,7 +167,7 @@
                    OnServiceAdded="@AddService" />
 
 @code {
-    private CreateApplicationDto applicationModel = new();
+    private OrderDto applicationModel = new();
     private List<EmployeeDto> availableEmployees = new();
     private List<CarDto> availableCars = new();
     private List<ServiceDto> availableServices = new();
@@ -185,9 +184,9 @@
     {
         try
         {
-            availableEmployees = await ApiService.GetEmployeesAsync();
-            availableCars = await ApiService.GetCarsAsync();
-            availableServices = await ApiService.GetServicesAsync();
+            // availableEmployees = await ApiService.GetEmployeesAsync();
+            // availableCars = await ApiService.GetCarsAsync();
+            // availableServices = await ApiService.GetServicesAsync();
         }
         catch
         {
@@ -227,8 +226,8 @@
 
         try
         {
-            var success = await ApiService.CreateApplicationAsync(applicationModel);
-            
+            var success = true; //await ApiService.CreateApplicationAsync(applicationModel);
+
             if (success)
             {
                 Navigation.NavigateTo("/");

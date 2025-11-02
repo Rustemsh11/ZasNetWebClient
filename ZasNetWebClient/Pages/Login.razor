@@ -58,7 +58,7 @@
 
         try
         {
-            var success = await AuthService.LoginAsync(loginModel.Login, loginModel.Password);
+            var success = await AuthService.Login(loginModel.Login, loginModel.Password);
             
             if (success)
             {
