@@ -73,43 +73,66 @@
             </div>
 
             <div class="form-section">
-                <h3>Информация работников</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="employees">Ответственный сотрудник</label>
-                        <select id="employees" @onchange="OnEmployeesChanged" class="form-control" multiple>
-                            @foreach (var employee in availableEmployees)
+                        <div class="services-header">
+                            <label>Ответственный сотрудник</label>
+                            <button type="button" class="btn-primary" @onclick="ShowEmployeeDialog">
+                                <span>+</span> Выбрать
+                            </button>
+                        </div>
+                        <div class="selection-container">
+                            @if (orderModel.OrderEmployeeIds.Any())
                             {
-                                var isSelected = orderModel.OrderEmployeeIds.Contains(employee.Id);
-                                @if (isSelected)
-                                {
-                                    <option value="@employee.Id" selected>@employee.Name</option>
-                                }
-                                else
-                                {
-                                    <option value="@employee.Id">@employee.Name</option>
-                                }
+                                <div class="selected-items">
+                                    @foreach (var employeeId in orderModel.OrderEmployeeIds)
+                                    {
+                                        var employee = availableEmployees.FirstOrDefault(e => e.Id == employeeId);
+                                        if (employee != null)
+                                        {
+                                            <span class="selected-item">
+                                                @employee.Name
+                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployee(employeeId)">&times;</button>
+                                            </span>
+                                        }
+                                    }
+                                </div>
                             }
-                        </select>
-                        <small class="form-text">Нажмите Ctrl чтобы выбрать несколько сотрудников</small>
+                            else
+                            {
+                                <div class="empty-selection">Работники не выбраны</div>
+                            }
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="cars">Выездные машины</label>
-                        <select id="cars" @onchange="OnCarsChanged" class="form-control" multiple>
-                            @foreach (var car in availableCars)
+                        <div class="services-header">
+                            <label>Выездные машины</label>
+                            <button type="button" class="btn-primary" @onclick="ShowCarDialog">
+                                <span>+</span> Выбрать
+                            </button>
+                        </div>
+                        <div class="selection-container">
+                            @if (orderModel.OrderCarIds.Any())
                             {
-                                var isSelected = orderModel.OrderCarIds.Contains(car.Id);
-                                @if (isSelected)
-                                {
-                                    <option value="@car.Id" selected>@car.Name</option>
-                                }
-                                else
-                                {
-                                    <option value="@car.Id">@car.Name</option>
-                                }
+                                <div class="selected-items">
+                                    @foreach (var carId in orderModel.OrderCarIds)
+                                    {
+                                        var car = availableCars.FirstOrDefault(c => c.Id == carId);
+                                        if (car != null)
+                                        {
+                                            <span class="selected-item">
+                                                @car.Name
+                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveCar(carId)">&times;</button>
+                                            </span>
+                                        }
+                                    }
+                                </div>
                             }
-                        </select>
-                    <small class="form-text">Нажмите Ctrl чтобы выбрать несколько машин</small>
+                            else
+                            {
+                                <div class="empty-selection">Машины не выбраны</div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
@@ -117,8 +140,8 @@
             <div class="form-section">
                 <div class="services-header">
                     <h3>Услуги</h3>
-                    <button type="button" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; text-align: left;" @onclick="ShowServiceDialog">
-                        <span style="font-size: 0.75rem; line-height: 1;">+</span> Добавить
+                    <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
+                        <span>+</span> Добавить
                     </button>
                 </div>
                 
@@ -173,12 +196,26 @@
                    OnClose="@(() => showServiceDialog = false)" 
                    OnServiceAdded="@AddService" />
 
+    <EmployeeDialog IsVisible="@showEmployeeDialog"
+                    OnClose="@(() => showEmployeeDialog = false)"
+                    AvailableEmployees="@availableEmployees"
+                    InitialEmployeeIds="@orderModel.OrderEmployeeIds"
+                    OnSelectionChanged="HandleEmployeeSelectionChanged" />
+
+    <CarDialog IsVisible="@showCarDialog"
+               OnClose="@(() => showCarDialog = false)"
+               AvailableCars="@availableCars"
+               InitialCarIds="@orderModel.OrderCarIds"
+               OnSelectionChanged="HandleCarSelectionChanged" />
+
 @code {
     private OrderDto orderModel = new();
     private List<EmployeeDto> availableEmployees = new();
     private List<CarDto> availableCars = new();
     private List<ServiceDto> availableServices = new();
     private bool showServiceDialog = false;
+    private bool showEmployeeDialog = false;
+    private bool showCarDialog = false;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
 
@@ -216,6 +253,16 @@
         showServiceDialog = true;
     }
 
+    private void ShowEmployeeDialog()
+    {
+        showEmployeeDialog = true;
+    }
+
+    private void ShowCarDialog()
+    {
+        showCarDialog = true;
+    }
+
     private void AddService(OrderServicesDto service)
     {
         orderModel.OrderServicesDto.Add(service);
@@ -224,6 +271,26 @@
     private void RemoveService(OrderServicesDto service)
     {
         orderModel.OrderServicesDto.Remove(service);
+    }
+
+    private void HandleEmployeeSelectionChanged(List<int> employeeIds)
+    {
+        orderModel.OrderEmployeeIds = employeeIds;
+    }
+
+    private void HandleCarSelectionChanged(List<int> carIds)
+    {
+        orderModel.OrderCarIds = carIds;
+    }
+
+    private void RemoveEmployee(int employeeId)
+    {
+        orderModel.OrderEmployeeIds.Remove(employeeId);
+    }
+
+    private void RemoveCar(int carId)
+    {
+        orderModel.OrderCarIds.Remove(carId);
     }
 
     private string GetServiceName(int serviceId)
@@ -269,15 +336,4 @@
         Navigation.NavigateTo("/");
     }
 
-    private void OnEmployeesChanged(ChangeEventArgs e)
-    {
-        // Note: ChangeEventArgs.Value doesn't work reliably with multiple select in Blazor WebAssembly
-        // The selections are maintained via the selected attribute on options
-    }
-
-    private void OnCarsChanged(ChangeEventArgs e)
-    {
-        // Note: ChangeEventArgs.Value doesn't work reliably with multiple select in Blazor WebAssembly
-        // The selections are maintained via the selected attribute on options
-    }
 }

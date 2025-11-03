@@ -55,7 +55,7 @@ public class CarDto
 public class CreateOrderParameters
 {
     //public List<ServiceDto> ServiceDtos { get; set; }
-    public List<EmployeeDto> EmployeeDtos { get; set; }
-    public List<CarDto> CarDtos { get; set; }
-    public List<PaymentType> PaymentTypes { get; set; }
+    public List<EmployeeDto> EmployeeDtos { get; set; } = new();
+    public List<CarDto> CarDtos { get; set; } = new();
+    public List<PaymentType> PaymentTypes { get; set; } = new();
 }
