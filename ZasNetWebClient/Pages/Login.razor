@@ -35,13 +35,15 @@
                 </div>
             }
 
-            <button type="submit" class="btn-primary" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <span class="spinner"></span>
-                }
-                @(isLoading ? "Вход..." : "Войти")
-            </button>
+            <div style="text-align: center;">
+                <button type="submit" class="btn-primary" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner"></span>
+                    }
+                    @(isLoading ? "Вход..." : "Войти")
+                </button>
+            </div>
         </EditForm>
     </div>
 </div>

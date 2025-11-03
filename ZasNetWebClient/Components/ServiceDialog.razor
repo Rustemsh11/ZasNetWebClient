@@ -18,24 +18,29 @@
                     <label for="service">Услуга</label>
                     <select id="service" @bind="serviceModel.ServiceId" class="form-control" @bind:after="OnServiceChanged">
                         <option value="">Выбрать услугу</option>
-                        @foreach (var service in availableServices)
+                        @foreach (var service in AvailableServices)
                         {
-                            <option value="@service.Id">@service.Name - @service.BasePrice.ToString("C")/@service.Unit</option>
+                            <option value="@service.Id">@service.Name</option>
                         }
                     </select>
                     <ValidationMessage For="@(() => serviceModel.ServiceId)" />
                 </div>
 
                 <div class="form-group">
-                    <label for="price">Цены</label>
-                    <InputNumber id="price" @bind-Value="serviceModel.Price" class="form-control" placeholder="введите цену" />
+                    <label for="price">Цена</label>
+                    <InputNumber id="price" @bind-Value="Price" class="form-control" placeholder="введите цену" />
                     <ValidationMessage For="@(() => serviceModel.Price)" />
                 </div>
 
                 <div class="form-group">
                     <label for="volume">Общий объем</label>
-                    <InputNumber id="volume" @bind-Value="serviceModel.TotalVolume" class="form-control" placeholder="введите объем" />
+                    <InputNumber id="volume" @bind-Value="Volume" class="form-control" placeholder="введите объем" />
                     <ValidationMessage For="@(() => serviceModel.TotalVolume)" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="volume">Ед. измерения</label>
+                    <InputText id="measure" @bind-Value="Measure" class="form-control" placeholder="введите ед. измерения" />
                 </div>
 
                 @if (!string.IsNullOrEmpty(errorMessage))
@@ -58,38 +63,33 @@
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<OrderServicesDto> OnServiceAdded { get; set; }
+    [Parameter] public List<ServiceDto> AvailableServices { get; set; } = new();
 
     private OrderServicesDto serviceModel = new ();
-    private List<ServiceDto> availableServices = new();
     private string errorMessage = string.Empty;
+    public decimal Price = 0;
+    public double Volume = 0;
+    public string Measure = "";
 
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
-            await LoadServices();
+            // await LoadServices();
             ResetForm();
         }
-    }
 
-    private async Task LoadServices()
-    {
-        try
-        {
-            availableServices = new List<ServiceDto>();
-        }
-        catch
-        {
-            availableServices = new List<ServiceDto>();
-        }
+        return Task.CompletedTask;
     }
 
     private void OnServiceChanged()
     {
-        var selectedService = availableServices.FirstOrDefault(s => s.Id == serviceModel.ServiceId);
+        var selectedService = AvailableServices.FirstOrDefault(s => s.Id == serviceModel.ServiceId);
         if (selectedService != null)
         {
-           // serviceModel = serviceModel with { Price = selectedService.BasePrice };
+            Price = selectedService.MinPrice;
+            Measure = selectedService.Measure;
+            Volume = selectedService.MinVolume;
         }
     }
 
@@ -101,6 +101,12 @@
 
     private async Task HandleSubmit()
     {
+        serviceModel = new OrderServicesDto()
+            {
+                Price = Price * (decimal)Volume,
+                TotalVolume = Volume,
+                ServiceId = serviceModel.ServiceId,
+            };
         if (serviceModel.ServiceId == 0)
         {
             errorMessage = "Выберите услугу";

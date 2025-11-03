@@ -35,9 +35,9 @@ public class ServiceDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public decimal BasePrice { get; set; }
-    public string Unit { get; set; } = string.Empty;
+    public decimal MinPrice { get; set; }
+    public double MinVolume { get; set; }
+    public string Measure { get; set; } = string.Empty;
 }
 
 public class EmployeeDto
@@ -54,7 +54,7 @@ public class CarDto
 
 public class CreateOrderParameters
 {
-    //public List<ServiceDto> ServiceDtos { get; set; }
+    public List<ServiceDto> ServiceDtos { get; set; }
     public List<EmployeeDto> EmployeeDtos { get; set; } = new();
     public List<CarDto> CarDtos { get; set; } = new();
     public List<PaymentType> PaymentTypes { get; set; } = new();

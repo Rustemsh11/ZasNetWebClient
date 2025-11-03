@@ -16,7 +16,8 @@ public class IdentityAuthenticationStateProvider : AuthenticationStateProvider
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var token = await this.localStorageService.GetItemAsync<string>("token");
-        if (string.IsNullOrEmpty(token))
+        var expiredDateTIme = await this.localStorageService.GetItemAsync<DateTime>("expiredDate");
+        if (string.IsNullOrEmpty(token) || expiredDateTIme > DateTime.Now)
         {
             return Empty();
         }

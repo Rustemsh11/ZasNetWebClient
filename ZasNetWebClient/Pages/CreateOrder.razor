@@ -147,18 +147,46 @@
                 
                 @if (orderModel.OrderServicesDto.Any())
                 {
-                    <div class="services-grid-compact">
-                    @foreach (var service in orderModel.OrderServicesDto)
-                    {
-                        <div class="service-item-compact">
-                            <span class="service-name-compact">@GetServiceName(service.ServiceId)</span>
-                            <span class="service-price-compact">@service.Price.ToString("C")</span>
-                            <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
-                                &times;
-                            </button>
-                        </div>
-                    }
-                    </div>
+                    <table class="services-table">
+                        <thead>
+                            <tr>
+                                <th>Наименование</th>
+                                <th>Цена</th>
+                                <th>Объем</th>
+                                <th>Полная стоимость</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var service in orderModel.OrderServicesDto)
+                            {
+                                <tr>
+                                    <td>@GetServiceName(service.ServiceId)</td>
+                                    <td>
+                                        <InputNumber class="form-control table-input" 
+                                                    @bind-Value="@service.Price" 
+                                                    @bind-Value:after="() => UpdateServiceTotal(service)" />
+                                    </td>
+                                    <td>
+                                        <InputNumber class="form-control table-input" 
+                                                    @bind-Value="@service.TotalVolume" 
+                                                    @bind-Value:after="() => UpdateServiceTotal(service)" />
+                                    </td>
+                                    <td>
+                                        <input type="text" 
+                                               class="form-control table-input" 
+                                               value="@(CalculateTotalCost(service).ToString("C"))" 
+                                               readonly />
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
+                                            &times;
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 }
                 else
                 {
@@ -192,7 +220,8 @@
         </EditForm>
     </div>
 
-    <ServiceDialog IsVisible="@showServiceDialog" 
+    <ServiceDialog IsVisible="@showServiceDialog"
+                   AvailableServices="@availableServices"
                    OnClose="@(() => showServiceDialog = false)" 
                    OnServiceAdded="@AddService" />
 
@@ -233,11 +262,13 @@
             {
                 availableEmployees = createOrderParameters.EmployeeDtos ?? new List<EmployeeDto>();
                 availableCars = createOrderParameters.CarDtos ?? new List<CarDto>();
+                availableServices = createOrderParameters.ServiceDtos ?? new List<ServiceDto>();
             }
             else
             {
                 availableEmployees = new List<EmployeeDto>();
                 availableCars = new List<CarDto>();
+                availableServices = new List<ServiceDto>();
             }
         }
         catch
@@ -265,7 +296,20 @@
 
     private void AddService(OrderServicesDto service)
     {
+        // Convert total price to unit price for editing
+        // Note: ServiceDialog stores total price (unit price * volume) in Price field
+        // We convert it to unit price for table editing
+        if (service.TotalVolume > 0 && service.Price > 0)
+        {
+            service.Price = service.Price / (decimal)service.TotalVolume;
+        }
         orderModel.OrderServicesDto.Add(service);
+    }
+
+    private void UpdateServiceTotal(OrderServicesDto service)
+    {
+        // Force UI update by triggering StateHasChanged
+        StateHasChanged();
     }
 
     private void RemoveService(OrderServicesDto service)
@@ -300,7 +344,22 @@
 
     private string GetServiceUnit(int serviceId)
     {
-        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.Unit ?? "";
+        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.Measure ?? "";
+    }
+
+    private decimal GetServiceMinPrice(int serviceId)
+    {
+        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.MinPrice ?? 0;
+    }
+    
+    private double GetServiceMinVolume(int serviceId)
+    {
+        return availableServices.FirstOrDefault(s => s.Id == serviceId)?.MinVolume ?? 0;
+    }
+
+    private decimal CalculateTotalCost(OrderServicesDto service)
+    {
+        return service.Price * (decimal)service.TotalVolume;
     }
 
     private async Task HandleSubmit()

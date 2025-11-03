@@ -33,6 +33,7 @@ public class AuthService
             if (response.IsSuccessStatusCode)
             {
                 string? token = null;
+                DateTime expiredDateTIme = DateTime.MaxValue;
 
                 // Try JSON response first
                 try
@@ -41,6 +42,7 @@ public class AuthService
                     if (!string.IsNullOrEmpty(loginResponse.Token))
                     {
                         token = loginResponse.Token;
+                        expiredDateTIme = loginResponse.ExpiredDateTime;
                     }
                 }
                 catch
@@ -57,6 +59,7 @@ public class AuthService
                 if (!string.IsNullOrEmpty(token))
                 {
                     await localStorageService.SetItemAsStringAsync("token", token);
+                    await localStorageService.SetItemAsync<DateTime>("expiredDate", expiredDateTIme);
                     this.identityAuthenticationStateProvider.MarkUserAsAuthenticated(token);
 
                     return true;
