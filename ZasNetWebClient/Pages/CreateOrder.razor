@@ -37,6 +37,16 @@
                         </InputSelect>
                         <ValidationMessage For="@(() => orderModel.PaymentType)" />
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="clientType">Тип клиента</label>
+                        <InputSelect id="clientType" @bind-Value="orderModel.ClientType" class="form-control">
+                            <option value="@ClientType.FizNal">Физ. лицо нал.</option>
+                        <option value="@ClientType.LegalWithVat">Юр. лицо с НДС</option>
+                        <option value="@ClientType.LegalWithoutVat">Юр. лицо без НДС</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => orderModel.ClientType)" />
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -351,7 +361,7 @@
     {
         return availableServices.FirstOrDefault(s => s.Id == serviceId)?.MinPrice ?? 0;
     }
-    
+
     private double GetServiceMinVolume(int serviceId)
     {
         return availableServices.FirstOrDefault(s => s.Id == serviceId)?.MinVolume ?? 0;
@@ -369,7 +379,7 @@
 
         try
         {
-            var success = true; //await ApiService.CreateApplicationAsync(applicationModel);
+            var success = await ApiService.CreateOrder(orderModel);
 
             if (success)
             {
@@ -380,7 +390,7 @@
                 errorMessage = "Failed to create application. Please try again.";
             }
         }
-        catch
+        catch(Exception ex)
         {
             errorMessage = "An error occurred while creating the application. Please try again.";
         }

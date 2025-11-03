@@ -8,6 +8,13 @@ public enum PaymentType
     Card = 3,
 }
 
+public enum ClientType
+{
+    FizNal = 0,
+    LegalWithVat = 1,
+    LegalWithoutVat = 2,
+}
+
 public class OrderServicesDto
 {
     public int ServiceId { get; set; }
@@ -25,6 +32,7 @@ public class OrderDto
     public string AddressNumber { get; set; } = string.Empty;
     public decimal OrderPriceAmount { get; set; }
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
+    public ClientType ClientType { get; set; } = ClientType.FizNal;
     public string? Description { get; set; }
     public List<int> OrderEmployeeIds { get; set; } = new();
     public List<int> OrderCarIds { get; set; } = new();
