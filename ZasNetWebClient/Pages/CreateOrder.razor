@@ -25,7 +25,7 @@
                     </div>
                     <div class="form-group">
                         <label for="date">Дата</label>
-                        <InputDate id="date" @bind-Value="orderModel.Date" class="form-control" />
+                        <input type="datetime-local" id="date" @bind="orderModel.Date" class="form-control" />
                         <ValidationMessage For="@(() => orderModel.Date)" />
                     </div>
                     <div class="form-group">

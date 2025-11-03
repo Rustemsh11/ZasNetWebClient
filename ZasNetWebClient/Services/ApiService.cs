@@ -8,13 +8,11 @@ namespace ZasNetWebClient.Services;
 public class ApiService
 {
     private readonly HttpClient _httpClient;
-    private readonly AuthService _authService;
     private readonly ILocalStorageService _localStorageService;
 
-    public ApiService(HttpClient httpClient, AuthService authService, ILocalStorageService localStorageService)
+    public ApiService(HttpClient httpClient, ILocalStorageService localStorageService)
     {
         _httpClient = httpClient;
-        _authService = authService;
         _localStorageService = localStorageService;
     }
     
