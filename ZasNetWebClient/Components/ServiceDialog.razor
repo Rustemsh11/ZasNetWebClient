@@ -6,7 +6,7 @@
     <div class="dialog-overlay" @onclick="Close"></div>
     <div class="dialog-content">
         <div class="dialog-header">
-            <h3>Add Service</h3>
+            <h3>Добавление услуги</h3>
             <button class="btn-close" @onclick="Close">&times;</button>
         </div>
         
@@ -15,9 +15,9 @@
                 <DataAnnotationsValidator />
                 
                 <div class="form-group">
-                    <label for="service">Service</label>
-                    <select id="service" @bind="serviceModel.ServiceId" class="form-control" @bind:event="OnServiceChanged">
-                        <option value="">Select a service</option>
+                    <label for="service">Услуга</label>
+                    <select id="service" @bind="serviceModel.ServiceId" class="form-control" @bind:after="OnServiceChanged">
+                        <option value="">Выбрать услугу</option>
                         @foreach (var service in availableServices)
                         {
                             <option value="@service.Id">@service.Name - @service.BasePrice.ToString("C")/@service.Unit</option>
@@ -27,14 +27,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="price">Price</label>
-                    <InputNumber id="price" @bind-Value="serviceModel.Price" class="form-control" placeholder="Enter price" />
+                    <label for="price">Цены</label>
+                    <InputNumber id="price" @bind-Value="serviceModel.Price" class="form-control" placeholder="введите цену" />
                     <ValidationMessage For="@(() => serviceModel.Price)" />
                 </div>
 
                 <div class="form-group">
-                    <label for="volume">Total Volume</label>
-                    <InputNumber id="volume" @bind-Value="serviceModel.TotalVolume" class="form-control" placeholder="Enter volume" />
+                    <label for="volume">Общий объем</label>
+                    <InputNumber id="volume" @bind-Value="serviceModel.TotalVolume" class="form-control" placeholder="введите объем" />
                     <ValidationMessage For="@(() => serviceModel.TotalVolume)" />
                 </div>
 
@@ -46,8 +46,8 @@
                 }
 
                 <div class="dialog-actions">
-                    <button type="button" class="btn-secondary" @onclick="Close">Cancel</button>
-                    <button type="submit" class="btn-primary">Add Service</button>
+                    <button type="button" class="btn-secondary" @onclick="Close">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить</button>
                 </div>
             </EditForm>
         </div>
@@ -76,7 +76,7 @@
     {
         try
         {
-            //availableServices = await ApiService.GetServicesAsync();
+            availableServices = new List<ServiceDto>();
         }
         catch
         {
@@ -103,19 +103,19 @@
     {
         if (serviceModel.ServiceId == 0)
         {
-            errorMessage = "Please select a service.";
+            errorMessage = "Выберите услугу";
             return;
         }
 
         if (serviceModel.Price <= 0)
         {
-            errorMessage = "Price must be greater than 0.";
+            errorMessage = "Цена должна быть выше 0";
             return;
         }
 
         if (serviceModel.TotalVolume <= 0)
         {
-            errorMessage = "Total volume must be greater than 0.";
+            errorMessage = "Общая стоимость должна быть выше 0";
             return;
         }
 

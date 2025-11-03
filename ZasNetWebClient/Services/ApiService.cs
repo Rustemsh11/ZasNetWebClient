@@ -37,4 +37,25 @@ public class ApiService
             return new List<Order>();
         }
     }
+    
+    public async Task<CreateOrderParameters> GetCreateOrderParameters()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var createOrderParameters = await _httpClient.GetFromJsonAsync<CreateOrderParameters>("api/v1/order/GetCreateOrderParametSers");
+
+            return createOrderParameters ?? new CreateOrderParameters();
+        }
+        catch(Exception ex)
+        {
+            return new CreateOrderParameters();
+        }
+    }
 }

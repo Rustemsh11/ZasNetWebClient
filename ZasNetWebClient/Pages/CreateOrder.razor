@@ -5,135 +5,142 @@
 @inject ApiService ApiService
 @inject NavigationManager Navigation
 
-<PageTitle>Create Application - ZasNet</PageTitle>
+<PageTitle>Создание заявки - ZasNet</PageTitle>
 
-    <div class="page-header">
-        <h1>Create New Application</h1>
-        <p>Fill out the form below to create a new application</p>
+    <div class="page-header-compact">
+        <h1>Создание новой заявки</h1>
     </div>
 
-    <div class="create-form-container">
-        <EditForm Model="@applicationModel" OnValidSubmit="@HandleSubmit">
+    <div class="create-form-container-compact">
+        <EditForm Model="@orderModel" OnValidSubmit="@HandleSubmit">
             <DataAnnotationsValidator />
             
             <div class="form-section">
-                <h3>Client Information</h3>
+                <h3>Информация клиента</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="client">Client Name *</label>
-                        <InputText id="client" @bind-Value="applicationModel.Client" class="form-control" placeholder="Enter client name" />
-                        <ValidationMessage For="@(() => applicationModel.Client)" />
+                        <label for="client">Название клиента</label>
+                        <InputText id="client" @bind-Value="orderModel.Client" class="form-control" placeholder="введите клиента" />
+                        <ValidationMessage For="@(() => orderModel.Client)" />
                     </div>
                     <div class="form-group">
-                        <label for="date">Date *</label>
-                        <InputDate id="date" @bind-Value="applicationModel.Date" class="form-control" />
-                        <ValidationMessage For="@(() => applicationModel.Date)" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>Address Information</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="city">City *</label>
-                        <InputText id="city" @bind-Value="applicationModel.AddressCity" class="form-control" placeholder="Enter city" />
-                        <ValidationMessage For="@(() => applicationModel.AddressCity)" />
+                        <label for="date">Дата</label>
+                        <InputDate id="date" @bind-Value="orderModel.Date" class="form-control" />
+                        <ValidationMessage For="@(() => orderModel.Date)" />
                     </div>
                     <div class="form-group">
-                        <label for="street">Street *</label>
-                        <InputText id="street" @bind-Value="applicationModel.AddressStreet" class="form-control" placeholder="Enter street" />
-                        <ValidationMessage For="@(() => applicationModel.AddressStreet)" />
-                    </div>
-                    <div class="form-group">
-                        <label for="number">Number *</label>
-                        <InputText id="number" @bind-Value="applicationModel.AddressNumber" class="form-control" placeholder="Enter number" />
-                        <ValidationMessage For="@(() => applicationModel.AddressNumber)" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>Order Information</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="price">Order Price Amount *</label>
-                        <InputNumber id="price" @bind-Value="applicationModel.OrderPriceAmount" class="form-control" placeholder="Enter amount" />
-                        <ValidationMessage For="@(() => applicationModel.OrderPriceAmount)" />
-                    </div>
-                    <div class="form-group">
-                        <label for="payment">Payment Type *</label>
-                        <InputSelect id="payment" @bind-Value="applicationModel.PaymentType" class="form-control">
-                            <option value="@PaymentType.Cash">Cash</option>
-                            <option value="@PaymentType.Card">Card</option>
-                            <option value="@PaymentType.BankTransfer">Bank Transfer</option>
-                            <option value="@PaymentType.Check">Check</option>
+                        <label for="payment">Вид оплаты</label>
+                        <InputSelect id="payment" @bind-Value="orderModel.PaymentType" class="form-control">
+                            <option value="@PaymentType.Cash">Наличные</option>
+                            <option value="@PaymentType.Card">Карта</option>
+                            <option value="@PaymentType.Electronic">СБП</option>
                         </InputSelect>
-                        <ValidationMessage For="@(() => applicationModel.PaymentType)" />
+                        <ValidationMessage For="@(() => orderModel.PaymentType)" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">Город</label>
+                        <InputText id="city" @bind-Value="orderModel.AddressCity" class="form-control" placeholder="введите город"/>
+                        <ValidationMessage For="@(() => orderModel.AddressCity)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="street">Улица</label>
+                        <InputText id="street" @bind-Value="orderModel.AddressStreet" class="form-control" placeholder="введите улицу" />
+                        <ValidationMessage For="@(() => orderModel.AddressStreet)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="number">Номер дома</label>
+                        <InputText id="number" @bind-Value="orderModel.AddressNumber" class="form-control" placeholder="введите номер дома" />
+                        <ValidationMessage For="@(() => orderModel.AddressNumber)" />
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="description">Description</label>
-                    <InputTextArea id="description" @bind-Value="applicationModel.Description" class="form-control" placeholder="Enter description (optional)" rows="3" />
+                    <label for="description">Доп. информация</label>
+                    <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" placeholder="введите доп. информацию" rows="1" />
                 </div>
             </div>
 
             <div class="form-section">
-                <h3>Assignments</h3>
+                <h3>Информация заявки</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="employees">Assigned Employees</label>
-                        <select id="employees" @bind="applicationModel.OrderEmployeeIds" class="form-control" multiple>
+                        <label for="price">Общая стоимость заявки</label>
+                        <InputNumber id="price" @bind-Value="orderModel.OrderPriceAmount" class="form-control" />
+                    <ValidationMessage For="@(() => orderModel.OrderPriceAmount)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Информация работников</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="employees">Ответственный сотрудник</label>
+                        <select id="employees" @onchange="OnEmployeesChanged" class="form-control" multiple>
                             @foreach (var employee in availableEmployees)
                             {
-                                <option value="@employee.Id">@employee.FirstName @employee.LastName - @employee.Position</option>
+                                var isSelected = orderModel.OrderEmployeeIds.Contains(employee.Id);
+                                @if (isSelected)
+                                {
+                                    <option value="@employee.Id" selected>@employee.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@employee.Id">@employee.Name</option>
+                                }
                             }
                         </select>
-                        <small class="form-text">Hold Ctrl to select multiple employees</small>
+                        <small class="form-text">Нажмите Ctrl чтобы выбрать несколько сотрудников</small>
                     </div>
                     <div class="form-group">
-                        <label for="cars">Assigned Cars</label>
-                        <select id="cars" @bind="applicationModel.OrderCarIds" class="form-control" multiple>
+                        <label for="cars">Выездные машины</label>
+                        <select id="cars" @onchange="OnCarsChanged" class="form-control" multiple>
                             @foreach (var car in availableCars)
                             {
-                                <option value="@car.Id">@car.Make @car.Model - @car.LicensePlate</option>
+                                var isSelected = orderModel.OrderCarIds.Contains(car.Id);
+                                @if (isSelected)
+                                {
+                                    <option value="@car.Id" selected>@car.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@car.Id">@car.Name</option>
+                                }
                             }
                         </select>
-                        <small class="form-text">Hold Ctrl to select multiple cars</small>
+                    <small class="form-text">Нажмите Ctrl чтобы выбрать несколько машин</small>
                     </div>
                 </div>
             </div>
 
             <div class="form-section">
                 <div class="services-header">
-                    <h3>Services</h3>
-                    <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
-                        <span>+</span> Add Service
+                    <h3>Услуги</h3>
+                    <button type="button" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; text-align: left;" @onclick="ShowServiceDialog">
+                        <span style="font-size: 0.75rem; line-height: 1;">+</span> Добавить
                     </button>
                 </div>
                 
-                @if (applicationModel.OrderServicesDto.Any())
+                @if (orderModel.OrderServicesDto.Any())
                 {
-                    <div class="services-grid">
-                        @foreach (var service in applicationModel.OrderServicesDto)
-                        {
-                            <div class="service-item">
-                                <div class="service-info">
-                                    <span class="service-name">@GetServiceName(service.ServiceId)</span>
-                                    <span class="service-price">@service.Price.ToString("C")</span>
-                                    <span class="service-volume">@service.TotalVolume @GetServiceUnit(service.ServiceId)</span>
-                                </div>
-                                <button type="button" class="btn-remove" @onclick="() => RemoveService(service)">
-                                    &times;
-                                </button>
-                            </div>
-                        }
+                    <div class="services-grid-compact">
+                    @foreach (var service in orderModel.OrderServicesDto)
+                    {
+                        <div class="service-item-compact">
+                            <span class="service-name-compact">@GetServiceName(service.ServiceId)</span>
+                            <span class="service-price-compact">@service.Price.ToString("C")</span>
+                            <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
+                                &times;
+                            </button>
+                        </div>
+                    }
                     </div>
                 }
                 else
                 {
-                    <div class="empty-services">
-                        <p>No services added yet. Click "Add Service" to get started.</p>
+                    <div class="empty-services-compact">
+                        <p>На данный момент нет выбранных услуг</p>
                     </div>
                 }
             </div>
@@ -146,16 +153,16 @@
             }
 
             <div class="form-actions">
-                <button type="button" class="btn-secondary" @onclick="Cancel">Cancel</button>
+                <button type="button" class="btn-secondary" @onclick="Cancel">Отмена</button>
                 <button type="submit" class="btn-primary" disabled="@isSubmitting">
                     @if (isSubmitting)
                     {
                         <span class="spinner"></span>
-                       // Creating...
+                        <text>Создание...</text>
                     }
                     else
                     {
-                        //Create Application
+                        <text>Создать заявку</text>
                     }
                 </button>
             </div>
@@ -167,7 +174,7 @@
                    OnServiceAdded="@AddService" />
 
 @code {
-    private OrderDto applicationModel = new();
+    private OrderDto orderModel = new();
     private List<EmployeeDto> availableEmployees = new();
     private List<CarDto> availableCars = new();
     private List<ServiceDto> availableServices = new();
@@ -184,13 +191,23 @@
     {
         try
         {
-            // availableEmployees = await ApiService.GetEmployeesAsync();
-            // availableCars = await ApiService.GetCarsAsync();
-            // availableServices = await ApiService.GetServicesAsync();
+            var createOrderParameters = await ApiService.GetCreateOrderParameters();
+            if (createOrderParameters != null)
+            {
+                availableEmployees = createOrderParameters.EmployeeDtos ?? new List<EmployeeDto>();
+                availableCars = createOrderParameters.CarDtos ?? new List<CarDto>();
+            }
+            else
+            {
+                availableEmployees = new List<EmployeeDto>();
+                availableCars = new List<CarDto>();
+            }
         }
         catch
         {
             errorMessage = "Failed to load reference data.";
+            availableEmployees = new List<EmployeeDto>();
+            availableCars = new List<CarDto>();
         }
     }
 
@@ -201,12 +218,12 @@
 
     private void AddService(OrderServicesDto service)
     {
-        applicationModel.OrderServicesDto.Add(service);
+        orderModel.OrderServicesDto.Add(service);
     }
 
     private void RemoveService(OrderServicesDto service)
     {
-        applicationModel.OrderServicesDto.Remove(service);
+        orderModel.OrderServicesDto.Remove(service);
     }
 
     private string GetServiceName(int serviceId)
@@ -250,5 +267,17 @@
     private void Cancel()
     {
         Navigation.NavigateTo("/");
+    }
+
+    private void OnEmployeesChanged(ChangeEventArgs e)
+    {
+        // Note: ChangeEventArgs.Value doesn't work reliably with multiple select in Blazor WebAssembly
+        // The selections are maintained via the selected attribute on options
+    }
+
+    private void OnCarsChanged(ChangeEventArgs e)
+    {
+        // Note: ChangeEventArgs.Value doesn't work reliably with multiple select in Blazor WebAssembly
+        // The selections are maintained via the selected attribute on options
     }
 }

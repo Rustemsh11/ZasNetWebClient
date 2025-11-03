@@ -2,10 +2,10 @@ namespace ZasNetWebClient.Models;
 
 public enum PaymentType
 {
-    Cash,
-    Card,
-    BankTransfer,
-    Check
+    None = 0,
+    Cash = 1,
+    Electronic = 2,
+    Card = 3,
 }
 
 public class OrderServicesDto
@@ -43,15 +43,19 @@ public class ServiceDto
 public class EmployeeDto
 {
     public int Id { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Position { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }
 
 public class CarDto
 {
     public int Id { get; set; }
-    public string Make { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public string LicensePlate { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}
+
+public class CreateOrderParameters
+{
+    //public List<ServiceDto> ServiceDtos { get; set; }
+    public List<EmployeeDto> EmployeeDtos { get; set; }
+    public List<CarDto> CarDtos { get; set; }
+    public List<PaymentType> PaymentTypes { get; set; }
 }
