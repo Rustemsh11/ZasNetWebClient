@@ -6,16 +6,16 @@
 @inject ApiService ApiService
 @inject NavigationManager Navigation
 
-<PageTitle>All Applications - ZasNet</PageTitle>
+<PageTitle>Активные заявки - ZasNet</PageTitle>
 
 <div class="page-header">
     <div class="header-content">
         <div>
-            <h1>All Applications</h1>
+            <h1>Активные заявки</h1>
             <p>View and manage all applications in the system</p>
         </div>
         <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/create-order", false))">
-            <span>+</span> Create Application
+            <span>+</span> Создать заявку
         </button>
     </div>
 </div>
@@ -24,46 +24,12 @@
 {
     <div class="loading">
         <div class="spinner"></div>
-        <p>Loading applications...</p>
-    </div>
-}
-else if (orders.Any())
-{
-    <div class="applications-grid">
-        @foreach (var order in orders)
-        {
-            <div class="application-card">
-                <div class="application-header">
-                    <h3>@order.Client</h3>
-                    <span class="status-badge">@order.Status</span>
-                </div>
-
-                <p class="application-description">@order.Address</p>
-                    
-                <div class="application-details">
-                    <div class="detail-item">
-                        <span class="label">Date:</span>
-                        <span>@order.Date.ToString("MMM dd, yyyy")</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="label">Employee:</span>
-                        <span>@order.Employee</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="label">Services:</span>
-                        <span>@order.ServiceNames</span>
-                    </div>
-                </div>
-            </div>
-        }
+        <p>Загрузка заявок...</p>
     </div>
 }
 else
 {
-    <div class="empty-state">
-        <h3>No applications found</h3>
-        <p>There are currently no applications in the system.</p>
-    </div>
+    <CalendarView Orders="orders" />
 }
 
 @code {

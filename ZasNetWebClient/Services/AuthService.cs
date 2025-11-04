@@ -43,7 +43,7 @@ public class AuthService
                     if (!string.IsNullOrEmpty(loginResponse.Token))
                     {
                         token = loginResponse.Token;
-                        expiredDateTIme = loginResponse.ExpiredDateTime;
+                        expiredDateTIme = loginResponse.ExpiredTime;
                         userId = Convert.ToInt32(loginResponse.UserId);
                     }
                 }

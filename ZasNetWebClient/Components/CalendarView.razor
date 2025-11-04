@@ -1,0 +1,149 @@
+@using ZasNetWebClient.Models
+
+<div class="calendar-container">
+    <div class="calendar-header">
+        <div class="calendar-nav">
+            <button class="btn-nav" @onclick="PreviousMonth" title="Previous month">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <h2 class="calendar-title">@CurrentMonth.ToString("MMMM yyyy")</h2>
+            <button class="btn-nav" @onclick="NextMonth" title="Next month">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+            <button class="btn-today" @onclick="GoToToday">Today</button>
+        </div>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="calendar-weekdays">
+            @foreach (var day in weekDays)
+            {
+                <div class="calendar-weekday">@day</div>
+            }
+        </div>
+        <div class="calendar-days">
+            @foreach (var day in calendarDays)
+            {
+                <div class="calendar-day @(day.IsCurrentMonth ? "" : "other-month") @(day.IsToday ? "today" : "")">
+                    <div class="day-number">@day.DayNumber</div>
+                    <div class="day-events">
+                        @foreach (var order in day.Orders)
+                        {
+                            <div class="calendar-event" 
+                                 style="background-color: @GetStatusColor(order.Status)"
+                                 title="@order.Client - @order.Address">
+                                <span class="event-time">@order.Date.ToString("HH:mm")</span>
+                                <span class="event-title">@order.Client</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<Order> Orders { get; set; } = new();
+
+    private DateTime CurrentMonth = DateTime.Now;
+    private readonly string[] weekDays = { "ÏÍ", "Âò", "Ñð", "×ò", "Ïò", "Ñá", "Âñ" };
+
+    private List<CalendarDay> calendarDays = new();
+
+    protected override void OnParametersSet()
+    {
+        BuildCalendar();
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        BuildCalendar();
+    }
+
+    private void BuildCalendar()
+    {
+        calendarDays.Clear();
+
+        var firstDayOfMonth = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+        
+        // Calculate start date for Monday as first day of week
+        // Convert: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
+        var dayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        var daysToSubtract = (dayOfWeek == 0) ? 6 : dayOfWeek - 1;
+        var startDate = firstDayOfMonth.AddDays(-daysToSubtract);
+        var endDate = startDate.AddDays(41); // 6 weeks * 7 days
+
+        var currentDate = startDate;
+        var today = DateTime.Today;
+
+        while (currentDate <= endDate)
+        {
+            var dayOrders = Orders.Where(o => o.Date.Date == currentDate.Date).ToList();
+            var isCurrentMonth = currentDate.Month == CurrentMonth.Month;
+            var isToday = currentDate.Date == today;
+
+            calendarDays.Add(new CalendarDay
+            {
+                Date = currentDate,
+                DayNumber = currentDate.Day,
+                Orders = dayOrders,
+                IsCurrentMonth = isCurrentMonth,
+                IsToday = isToday
+            });
+
+            currentDate = currentDate.AddDays(1);
+        }
+    }
+
+    private void PreviousMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(-1);
+        BuildCalendar();
+        StateHasChanged();
+    }
+
+    private void NextMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(1);
+        BuildCalendar();
+        StateHasChanged();
+    }
+
+    private void GoToToday()
+    {
+        CurrentMonth = DateTime.Now;
+        BuildCalendar();
+        StateHasChanged();
+    }
+
+    private string GetStatusColor(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Created => "#e3f2fd",
+            OrderStatus.Processing => "#fff3e0",
+            OrderStatus.Finished => "#e8f5e9",
+            OrderStatus.CreatedInvoice => "#f3e5f5",
+            OrderStatus.AwaitingPayment => "#fff9c4",
+            OrderStatus.Closed => "#eceff1",
+            _ => "#f5f5f5"
+        };
+    }
+
+    private class CalendarDay
+    {
+        public DateTime Date { get; set; }
+        public int DayNumber { get; set; }
+        public List<Order> Orders { get; set; } = new();
+        public bool IsCurrentMonth { get; set; }
+        public bool IsToday { get; set; }
+    }
+}
