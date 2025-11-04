@@ -30,7 +30,7 @@ public class ApiService
             var orders = await _httpClient.GetFromJsonAsync<List<Order>>("api/v1/order/getorders");
             return orders ?? new List<Order>();
         }
-        catch
+        catch(Exception ex)
         {
             return new List<Order>();
         }
@@ -62,6 +62,7 @@ public class ApiService
         try
         {
             var token = await _localStorageService.GetItemAsync<string>("token");
+            orderDto.UserId = await _localStorageService.GetItemAsync<int>("userId");
             
             if (!string.IsNullOrEmpty(token))
             {

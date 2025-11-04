@@ -34,28 +34,24 @@ else if (orders.Any())
         {
             <div class="application-card">
                 <div class="application-header">
-                    <h3>@order.Title</h3>
-                    <span class="status-badge status-@order.Status.ToLower().Replace(" ", "-")">@order.Status</span>
+                    <h3>@order.Client</h3>
+                    <span class="status-badge">@order.Status</span>
                 </div>
 
-                <p class="application-description">@order.Description</p>
+                <p class="application-description">@order.Address</p>
                     
                 <div class="application-details">
                     <div class="detail-item">
-                        <span class="label">Priority:</span>
-                        <span class="priority priority-@order.Priority.ToLower()">@order.Priority</span>
+                        <span class="label">Date:</span>
+                        <span>@order.Date.ToString("MMM dd, yyyy")</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Category:</span>
-                        <span>@order.Category</span>
+                        <span class="label">Employee:</span>
+                        <span>@order.Employee</span>
                     </div>
                     <div class="detail-item">
-                        <span class="label">Manager:</span>
-                        <span>@order.ManagerName</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="label">Created:</span>
-                        <span>@order.CreatedDate.ToString("MMM dd, yyyy")</span>
+                        <span class="label">Services:</span>
+                        <span>@order.ServiceNames</span>
                     </div>
                 </div>
             </div>

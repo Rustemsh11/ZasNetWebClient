@@ -15,6 +15,16 @@ public enum ClientType
     LegalWithoutVat = 2,
 }
 
+public enum OrderStatus
+{
+    Created = 0,
+    Processing = 1,
+    Finished = 2,
+    CreatedInvoice = 3,
+    AwaitingPayment = 3,
+    Closed = 4,
+}
+
 public class OrderServicesDto
 {
     public int ServiceId { get; set; }
@@ -34,6 +44,7 @@ public class OrderDto
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
     public ClientType ClientType { get; set; } = ClientType.FizNal;
     public string? Description { get; set; }
+    public int UserId { get; set; }
     public List<int> OrderEmployeeIds { get; set; } = new();
     public List<int> OrderCarIds { get; set; } = new();
     public List<OrderServicesDto> OrderServicesDto { get; set; } = new();

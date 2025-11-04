@@ -3,13 +3,10 @@ namespace ZasNetWebClient.Models;
 public class Order
 {
     public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public DateTime CreatedDate { get; set; }
-    public DateTime? UpdatedDate { get; set; }
-    public int? ManagerId { get; set; }
-    public string? ManagerName { get; set; }
-    public string Priority { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
+    public string Client { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string Address { get; set; }
+    public string Employee { get; set; }
+    public OrderStatus Status { get; set; }
+    public List<string> ServiceNames { get; set; }
 }
