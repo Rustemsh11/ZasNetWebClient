@@ -52,7 +52,7 @@
     public List<Order> Orders { get; set; } = new();
 
     private DateTime CurrentMonth = DateTime.Now;
-    private readonly string[] weekDays = { "贤", "买", "佯", "昨", "向", "厌", "埋" };
+    private readonly string[] weekDays = { "袩袧", "袙褌", "小褉", "效褌", "袩褌", "小斜", "袙褋" };
 
     private List<CalendarDay> calendarDays = new();
 
@@ -60,11 +60,6 @@
     {
         BuildCalendar();
         StateHasChanged();
-    }
-
-    protected override void OnInitialized()
-    {
-        BuildCalendar();
     }
 
     private void BuildCalendar()

@@ -12,17 +12,17 @@
             </div>
 
             <div class="navbar-menu">
-                <a href="/" class="nav-link @GetActiveClass("/")">All Applications</a>
+                <a href="/" class="nav-link @GetActiveClass("/")">Все заявки</a>
 
-                <a href="/my-applications" class="nav-link @GetActiveClass("/my-applications")">My Applications</a>
+                <a href="/my-applications" class="nav-link @GetActiveClass("/my-applications")">Мои заявки</a>
 
-                <a href="/profile" class="nav-link @GetActiveClass("/profile")">Personal Account</a>
+                <a href="/profile" class="nav-link @GetActiveClass("/profile")">Личные данные</a>
             </div>
 
             <div class="navbar-user">
                 @* <span class="user-info">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</span> *@
                 <span class="user-info">@CurrentUser</span>
-                <button class="btn-logout" @onclick="Logout">Logout</button>
+                <button class="btn-logout" @onclick="Logout">Выйти</button>
             </div>
         </nav>
 
