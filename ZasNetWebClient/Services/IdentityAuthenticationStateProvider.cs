@@ -17,7 +17,7 @@ public class IdentityAuthenticationStateProvider : AuthenticationStateProvider
     {
         var token = await this.localStorageService.GetItemAsync<string>("token");
         var expiredDateTIme = await this.localStorageService.GetItemAsync<DateTime>("expiredDate");
-        if (string.IsNullOrEmpty(token) || expiredDateTIme > DateTime.Now)
+        if (string.IsNullOrEmpty(token) || expiredDateTIme < DateTime.Now)
         {
             return Empty();
         }
