@@ -62,10 +62,10 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback<OrderServicesDto> OnServiceAdded { get; set; }
+    [Parameter] public EventCallback<OrderServiceDto> OnServiceAdded { get; set; }
     [Parameter] public List<ServiceDto> AvailableServices { get; set; } = new();
 
-    private OrderServicesDto serviceModel = new ();
+    private OrderServiceDto serviceModel = new ();
     private string errorMessage = string.Empty;
     public decimal Price = 0;
     public double Volume = 0;
@@ -95,13 +95,13 @@
 
     private void ResetForm()
     {
-        serviceModel = new OrderServicesDto();
+        serviceModel = new OrderServiceDto();
         errorMessage = string.Empty;
     }
 
     private async Task HandleSubmit()
     {
-        serviceModel = new OrderServicesDto()
+        serviceModel = new OrderServiceDto()
             {
                 Price = Price * (decimal)Volume,
                 TotalVolume = Volume,

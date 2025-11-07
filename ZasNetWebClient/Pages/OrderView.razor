@@ -1,18 +1,19 @@
-@page "/create-order"
+@page "/order/{OrderId:int?}"
 @using ZasNetWebClient.Models
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Components
 @inject ApiService ApiService
 @inject NavigationManager Navigation
+@implements IAsyncDisposable
 
-<PageTitle>Создание заявки - ZasNet</PageTitle>
+<PageTitle>@(IsEditMode ? $"Заявка #{OrderId}" : "Создание заявки - ZasNet")</PageTitle>
 
     <div class="page-header-compact">
-        <h1>Создание новой заявки</h1>
+        <h1>@(IsEditMode ? $"Заявка #{OrderId}" : "Создание новой заявки")</h1>
     </div>
 
     <div class="create-form-container-compact">
-        <EditForm Model="@orderModel" OnValidSubmit="@HandleSubmit">
+        <EditForm Model="@orderModel" OnValidSubmit="@HandleSave">
             <DataAnnotationsValidator />
             
             <div class="form-section">
@@ -92,17 +93,16 @@
                             </button>
                         </div>
                         <div class="selection-container">
-                            @if (orderModel.OrderEmployeeIds.Any())
+                            @if (orderModel.OrderEmployeeDtos.Any())
                             {
                                 <div class="selected-items">
-                                    @foreach (var employeeId in orderModel.OrderEmployeeIds)
+                                    @foreach (var orderEmployee in orderModel.OrderEmployeeDtos)
                                     {
-                                        var employee = availableEmployees.FirstOrDefault(e => e.Id == employeeId);
-                                        if (employee != null)
+                                        if(orderEmployee != null)
                                         {
                                             <span class="selected-item">
-                                                @employee.Name
-                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployee(employeeId)">&times;</button>
+                                                @orderEmployee.Name
+                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployee(orderEmployee)">&times;</button>
                                             </span>
                                         }
                                     }
@@ -122,17 +122,16 @@
                             </button>
                         </div>
                         <div class="selection-container">
-                            @if (orderModel.OrderCarIds.Any())
+                            @if (orderModel.OrderCarDtos.Any())
                             {
                                 <div class="selected-items">
-                                    @foreach (var carId in orderModel.OrderCarIds)
+                                    @foreach (var car in orderModel.OrderCarDtos)
                                     {
-                                        var car = availableCars.FirstOrDefault(c => c.Id == carId);
                                         if (car != null)
                                         {
                                             <span class="selected-item">
                                                 @car.Name
-                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveCar(carId)">&times;</button>
+                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveCar(car)">&times;</button>
                                             </span>
                                         }
                                     }
@@ -155,7 +154,7 @@
                     </button>
                 </div>
                 
-                @if (orderModel.OrderServicesDto.Any())
+                @if (orderModel.OrderServicesDtos.Any())
                 {
                     <table class="services-table">
                         <thead>
@@ -168,7 +167,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var service in orderModel.OrderServicesDto)
+                            @foreach (var service in orderModel.OrderServicesDtos)
                             {
                                 <tr>
                                     <td>@GetServiceName(service.ServiceId)</td>
@@ -219,11 +218,11 @@
                     @if (isSubmitting)
                     {
                         <span class="spinner"></span>
-                        <text>Создание...</text>
+                        <text>Сохранение...</text>
                     }
                     else
                     {
-                        <text>Создать заявку</text>
+                        <text>Сохранить</text>
                     }
                 </button>
             </div>
@@ -238,16 +237,18 @@
     <EmployeeDialog IsVisible="@showEmployeeDialog"
                     OnClose="@(() => showEmployeeDialog = false)"
                     AvailableEmployees="@availableEmployees"
-                    InitialEmployeeIds="@orderModel.OrderEmployeeIds"
+                    InitialEmployeeIds="@orderModel.OrderEmployeeDtos.Select(c=>c.Id).ToList()"
                     OnSelectionChanged="HandleEmployeeSelectionChanged" />
 
     <CarDialog IsVisible="@showCarDialog"
                OnClose="@(() => showCarDialog = false)"
                AvailableCars="@availableCars"
-               InitialCarIds="@orderModel.OrderCarIds"
+               InitialCarIds="@orderModel.OrderCarDtos.Select(c=>c.Id).ToList()"
                OnSelectionChanged="HandleCarSelectionChanged" />
 
 @code {
+    [Parameter] public int? OrderId { get; set; }
+    private bool IsEditMode => (OrderId ?? 0) != 0;
     private OrderDto orderModel = new();
     private List<EmployeeDto> availableEmployees = new();
     private List<CarDto> availableCars = new();
@@ -257,10 +258,29 @@
     private bool showCarDialog = false;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
+    private bool isLocked = false;
 
     protected override async Task OnInitializedAsync()
     {
+        if (IsEditMode)
+        {
+            await TryLockAsync();
+            orderModel = await ApiService.GetOrder(this.OrderId!.Value);
+        }
+
         await LoadReferenceData();
+    }
+
+    private async Task TryLockAsync()
+    {
+        try
+        {
+            isLocked = await ApiService.LockOrder(OrderId ?? 0);
+        }
+        catch
+        {
+            isLocked = false;
+        }
     }
 
     private async Task LoadReferenceData()
@@ -304,47 +324,43 @@
         showCarDialog = true;
     }
 
-    private void AddService(OrderServicesDto service)
+    private void AddService(OrderServiceDto service)
     {
-        // Convert total price to unit price for editing
-        // Note: ServiceDialog stores total price (unit price * volume) in Price field
-        // We convert it to unit price for table editing
         if (service.TotalVolume > 0 && service.Price > 0)
         {
             service.Price = service.Price / (decimal)service.TotalVolume;
         }
-        orderModel.OrderServicesDto.Add(service);
+        orderModel.OrderServicesDtos.Add(service);
     }
 
-    private void UpdateServiceTotal(OrderServicesDto service)
+    private void UpdateServiceTotal(OrderServiceDto service)
     {
-        // Force UI update by triggering StateHasChanged
         StateHasChanged();
     }
 
-    private void RemoveService(OrderServicesDto service)
+    private void RemoveService(OrderServiceDto service)
     {
-        orderModel.OrderServicesDto.Remove(service);
+        orderModel.OrderServicesDtos.Remove(service);
     }
 
     private void HandleEmployeeSelectionChanged(List<int> employeeIds)
     {
-        orderModel.OrderEmployeeIds = employeeIds;
+        orderModel.OrderEmployeeDtos = availableEmployees.Where(c=> employeeIds.Contains(c.Id)).ToList();
     }
 
     private void HandleCarSelectionChanged(List<int> carIds)
     {
-        orderModel.OrderCarIds = carIds;
+        orderModel.OrderCarDtos = availableCars.Where(c=> carIds.Contains(c.Id)).ToList();
     }
 
-    private void RemoveEmployee(int employeeId)
+    private void RemoveEmployee(EmployeeDto employeeId)
     {
-        orderModel.OrderEmployeeIds.Remove(employeeId);
+        orderModel.OrderEmployeeDtos.Remove(employeeId);
     }
 
-    private void RemoveCar(int carId)
+    private void RemoveCar(CarDto carId)
     {
-        orderModel.OrderCarIds.Remove(carId);
+        orderModel.OrderCarDtos.Remove(carId);
     }
 
     private string GetServiceName(int serviceId)
@@ -367,19 +383,27 @@
         return availableServices.FirstOrDefault(s => s.Id == serviceId)?.MinVolume ?? 0;
     }
 
-    private decimal CalculateTotalCost(OrderServicesDto service)
+    private decimal CalculateTotalCost(OrderServiceDto service)
     {
         return service.Price * (decimal)service.TotalVolume;
     }
 
-    private async Task HandleSubmit()
+    private async Task HandleSave()
     {
         isSubmitting = true;
         errorMessage = string.Empty;
 
         try
         {
-            var success = await ApiService.CreateOrder(orderModel);
+            bool success;
+            if ((OrderId ?? 0) == 0)
+            {
+                success = await ApiService.CreateOrder(orderModel);
+            }
+            else
+            {
+                success = await ApiService.SaveOrder(OrderId!.Value, orderModel);
+            }
 
             if (success)
             {
@@ -387,12 +411,12 @@
             }
             else
             {
-                errorMessage = "Failed to create application. Please try again.";
+                errorMessage = "При сохранении произошла ошибка.";
             }
         }
         catch(Exception ex)
         {
-            errorMessage = "An error occurred while creating the application. Please try again.";
+            errorMessage = $"При сохранении произошла ошибка: {ex.Message}";
         }
         finally
         {
@@ -405,4 +429,21 @@
         Navigation.NavigateTo("/");
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (isLocked)
+            {
+                await ApiService.UnlockOrder(OrderId ?? 0);
+                isLocked = false;
+            }
+        }
+        catch
+        {
+            // ignore unlock failures
+        }
+    }
 }
+
+

@@ -25,7 +25,7 @@ public enum OrderStatus
     Closed = 5,
 }
 
-public class OrderServicesDto
+public class OrderServiceDto
 {
     public int ServiceId { get; set; }
     public decimal Price { get; set; }
@@ -43,11 +43,12 @@ public class OrderDto
     public decimal OrderPriceAmount { get; set; }
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
     public ClientType ClientType { get; set; } = ClientType.FizNal;
+    public OrderStatus OrderStatus { get; set; }
     public string? Description { get; set; }
     public int UserId { get; set; }
-    public List<int> OrderEmployeeIds { get; set; } = new();
-    public List<int> OrderCarIds { get; set; } = new();
-    public List<OrderServicesDto> OrderServicesDto { get; set; } = new();
+    public List<EmployeeDto> OrderEmployeeDtos { get; set; } = new();
+    public List<CarDto> OrderCarDtos { get; set; } = new();
+    public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();
 }
 
 public class ServiceDto

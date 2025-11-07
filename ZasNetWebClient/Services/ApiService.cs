@@ -35,6 +35,26 @@ public class ApiService
             return new List<Order>();
         }
     }
+    
+    public async Task<OrderDto> GetOrder(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var order = await _httpClient.GetFromJsonAsync<OrderDto>($"api/v1/Order/GetOrder?orderId={id}");
+            return order ?? new OrderDto();
+        }
+        catch(Exception ex)
+        {
+            return new OrderDto();
+        }
+    }
 
     public async Task<CreateOrderParameters> GetCreateOrderParameters()
     {
@@ -76,6 +96,67 @@ public class ApiService
         catch(Exception ex)
         {
             return false;
+        }
+    }
+    
+    public async Task<bool> SaveOrder(int orderId, OrderDto orderDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            orderDto.UserId = await _localStorageService.GetItemAsync<int>("userId");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync($"api/v1/order/saveOrder?orderId={orderId}", orderDto);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> LockOrder(int orderId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsync($"api/v1/order/lock?orderId={orderId}", new StringContent(string.Empty));
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task UnlockOrder(int orderId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            await _httpClient.PostAsync($"api/v1/order/Unlock?orderId={orderId}", new StringContent(string.Empty));
+        }
+        catch
+        {
+            // ignore unlock errors
         }
     }
 }

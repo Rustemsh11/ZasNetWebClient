@@ -1,4 +1,5 @@
 @using ZasNetWebClient.Models
+@inject NavigationManager Navigation
 
 <div class="calendar-container">
     <div class="calendar-header">
@@ -35,7 +36,8 @@
                         {
                             <div class="calendar-event" 
                                  style="background-color: @GetStatusColor(order.Status)"
-                                 title="@order.Client - @order.Address">
+                                 title="@order.Client - @order.Address"
+                                 @ondblclick="@(() => OpenOrder(order.Id))">
                                 <span class="event-time">@order.Date.ToString("HH:mm")</span>
                                 <span class="event-title">@order.Client</span>
                             </div>
@@ -117,6 +119,14 @@
         CurrentMonth = DateTime.Now;
         BuildCalendar();
         StateHasChanged();
+    }
+
+    private void OpenOrder(int orderId)
+    {
+        if (orderId > 0)
+        {
+            Navigation.NavigateTo($"/order/{orderId}");
+        }
     }
 
     private string GetStatusColor(OrderStatus status)
