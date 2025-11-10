@@ -35,6 +35,7 @@ public class OrderServiceDto
 
 public class OrderDto
 {
+    public int Id { get; set; }
     public string Client { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.Now;
     public string AddressCity { get; set; } = string.Empty;
@@ -45,10 +46,20 @@ public class OrderDto
     public ClientType ClientType { get; set; } = ClientType.FizNal;
     public OrderStatus OrderStatus { get; set; }
     public string? Description { get; set; }
-    public int UserId { get; set; }
+    public EmployeeDto CreatedUser { get; set; } = new();
     public List<EmployeeDto> OrderEmployeeDtos { get; set; } = new();
     public List<CarDto> OrderCarDtos { get; set; } = new();
     public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();
+}
+
+public class CreateOrderCommand
+{
+    public OrderDto OrderDto { get; set; } = new();
+}
+
+public class SaveOrderCommand
+{
+    public OrderDto OrderDto { get; set; } = new();
 }
 
 public class ServiceDto

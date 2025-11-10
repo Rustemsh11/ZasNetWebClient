@@ -34,7 +34,7 @@ public class AuthService
             {
                 string? token = null;
                 DateTime expiredDateTIme = DateTime.MaxValue;
-                int userId = 0;
+                EmployeeDto user = null;
 
                 // Try JSON response first
                 try
@@ -44,7 +44,7 @@ public class AuthService
                     {
                         token = loginResponse.Token;
                         expiredDateTIme = loginResponse.ExpiredTime;
-                        userId = Convert.ToInt32(loginResponse.UserId);
+                        user = loginResponse.User;
                     }
                 }
                 catch
@@ -62,7 +62,7 @@ public class AuthService
                 {
                     await localStorageService.SetItemAsStringAsync("token", token);
                     await localStorageService.SetItemAsync<DateTime>("expiredDate", expiredDateTIme);
-                    await localStorageService.SetItemAsync<int>("userId", userId);
+                    await localStorageService.SetItemAsync<EmployeeDto>("user", user);
                     this.identityAuthenticationStateProvider.MarkUserAsAuthenticated(token);
 
                     return true;

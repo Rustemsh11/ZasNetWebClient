@@ -82,14 +82,14 @@ public class ApiService
         try
         {
             var token = await _localStorageService.GetItemAsync<string>("token");
-            orderDto.UserId = await _localStorageService.GetItemAsync<int>("userId");
-            
+
+            var createOrderDto = new CreateOrderCommand() { OrderDto = orderDto };
             if (!string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
             
-            var response = await _httpClient.PostAsJsonAsync("api/v1/order/CreateOrder", orderDto);
+            var response = await _httpClient.PostAsJsonAsync("api/v1/order/CreateOrder", createOrderDto);
             
             return response.IsSuccessStatusCode;
         }
@@ -99,19 +99,18 @@ public class ApiService
         }
     }
     
-    public async Task<bool> SaveOrder(int orderId, OrderDto orderDto)
+    public async Task<bool> SaveOrder(OrderDto orderDto)
     {
         try
         {
             var token = await _localStorageService.GetItemAsync<string>("token");
-            orderDto.UserId = await _localStorageService.GetItemAsync<int>("userId");
-
+            var saveOrderDto = new SaveOrderCommand() { OrderDto = orderDto };
             if (!string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _httpClient.PostAsJsonAsync($"api/v1/order/saveOrder?orderId={orderId}", orderDto);
+            var response = await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
 
             return response.IsSuccessStatusCode;
         }
