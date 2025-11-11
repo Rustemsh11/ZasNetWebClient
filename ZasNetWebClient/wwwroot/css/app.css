@@ -187,8 +187,7 @@ body {
 }
 
 /* Common style for all readonly fields */
-.form-control[readonly],
-.form-control:read-only {
+.readonly-field {
     background-color: #f3f4f6;
     color: #6b7280;
     cursor: not-allowed;
@@ -199,8 +198,7 @@ body {
     box-shadow: none;
 }
 
-.form-control[readonly]:focus,
-.form-control:read-only:focus {
+.readonly-field:focus{
     border-color: #d1d5db;
     box-shadow: none;
 }
@@ -981,6 +979,12 @@ button {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.services-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .services-table thead {
     background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
     color: white;
@@ -1032,4 +1036,23 @@ button {
     background-color: #f3f4f6;
     cursor: not-allowed;
     color: #6b7280;
+}
+
+/* Ensure table doesn't squish on small screens; enable horizontal scroll in wrapper */
+.services-table {
+    min-width: 900px;
+}
+
+@media (max-width: 768px) {
+    .services-table th,
+    .services-table td {
+        padding: 0.5rem;
+        font-size: 0.8125rem;
+    }
+
+    .services-table .table-input {
+        min-width: 100px;
+        padding: 0.4rem;
+        font-size: 0.8125rem;
+    }
 }

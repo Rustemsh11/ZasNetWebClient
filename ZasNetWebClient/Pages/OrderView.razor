@@ -94,69 +94,6 @@
             </div>
 
             <div class="form-section">
-                <div class="form-row">
-                    <div class="form-group">
-                        <div class="services-header">
-                            <label>Ответственный сотрудник</label>
-                            <button type="button" class="btn-primary" @onclick="ShowEmployeeDialog">
-                                <span>+</span> Выбрать
-                            </button>
-                        </div>
-                        <div class="selection-container">
-                            @if (orderModel.OrderEmployeeDtos.Any())
-                            {
-                                <div class="selected-items">
-                                    @foreach (var orderEmployee in orderModel.OrderEmployeeDtos)
-                                    {
-                                        if(orderEmployee != null)
-                                        {
-                                            <span class="selected-item">
-                                                @orderEmployee.Name
-                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployee(orderEmployee)">&times;</button>
-                                            </span>
-                                        }
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="empty-selection">Работники не выбраны</div>
-                            }
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="services-header">
-                            <label>Выездные машины</label>
-                            <button type="button" class="btn-primary" @onclick="ShowCarDialog">
-                                <span>+</span> Выбрать
-                            </button>
-                        </div>
-                        <div class="selection-container">
-                            @if (orderModel.OrderCarDtos.Any())
-                            {
-                                <div class="selected-items">
-                                    @foreach (var car in orderModel.OrderCarDtos)
-                                    {
-                                        if (car != null)
-                                        {
-                                            <span class="selected-item">
-                                                @car.Name
-                                                <button type="button" class="btn-remove-item" @onclick="() => RemoveCar(car)">&times;</button>
-                                            </span>
-                                        }
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="empty-selection">Машины не выбраны</div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
                 <div class="services-header">
                     <h3>Услуги</h3>
                     <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
@@ -166,46 +103,108 @@
                 
                 @if (orderModel.OrderServicesDtos.Any())
                 {
-                    <table class="services-table">
-                        <thead>
-                            <tr>
-                                <th>Наименование</th>
-                                <th>Цена</th>
-                                <th>Объем</th>
-                                <th>Полная стоимость</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var service in orderModel.OrderServicesDtos)
-                            {
+                    <div class="services-table-container">
+                        <table class="services-table">
+                            <thead>
                                 <tr>
-                                    <td>@GetServiceName(service.ServiceId)</td>
-                                    <td>
-                                        <InputNumber class="form-control table-input" 
-                                                    @bind-Value="@service.Price" 
-                                                    @bind-Value:after="() => UpdateServiceTotal(service)" />
-                                    </td>
-                                    <td>
-                                        <InputNumber class="form-control table-input" 
-                                                    @bind-Value="@service.TotalVolume" 
-                                                    @bind-Value:after="() => UpdateServiceTotal(service)" />
-                                    </td>
-                                    <td>
-                                        <input type="text" 
-                                               class="form-control readonly-field table-input" 
-                                               value="@(CalculateTotalCost(service).ToString("C"))" 
-                                               readonly />
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
-                                            &times;
-                                        </button>
-                                    </td>
+                                    <th>Наименование</th>
+                                    <th>Цена</th>
+                                    <th>Объем</th>
+                                    <th>Полная стоимость</th>
+                                    <th>Сотрудники</th>
+                                    <th></th>
+                                    <th>Машины</th>
+                                    <th></th>
+                                    <th></th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var service in orderModel.OrderServicesDtos)
+                                {
+                                    <tr>
+                                        <td>@GetServiceName(service.ServiceId)</td>
+                                        <td>
+                                            <InputNumber class="form-control table-input" 
+                                                        @bind-Value="@service.Price" 
+                                                        @bind-Value:after="() => UpdateServiceTotal(service)" />
+                                        </td>
+                                        <td>
+                                            <InputNumber class="form-control table-input" 
+                                                        @bind-Value="@service.TotalVolume" 
+                                                        @bind-Value:after="() => UpdateServiceTotal(service)" />
+                                        </td>
+                                        <td>
+                                            <input type="text" 
+                                                   class="form-control readonly-field table-input" 
+                                                   value="@(CalculateTotalCost(service).ToString("C"))" 
+                                                   readonly />
+                                        </td>
+                                        <td>
+                                            <div class="selection-container">
+                                                @if (service.OrderServiceEmployeeDtos.Any())
+                                                {
+                                                    <div class="selected-items">
+                                                        @foreach (var orderServiceEmployee in service.OrderServiceEmployeeDtos)
+                                                        {
+                                                            if (orderServiceEmployee?.Employee != null)
+                                                            {
+                                                                <span class="selected-item">
+                                                                    @orderServiceEmployee.Employee.Name
+                                                                    <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployeeFromService(service, orderServiceEmployee)">&times;</button>
+                                                                </span>
+                                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="empty-selection">Не выбраны</div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn-primary" @onclick="() => ShowEmployeeDialog(service)">
+                                                <span>+</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <div class="selection-container">
+                                                @if (service.OrderServiceCarDtos.Any())
+                                                {
+                                                    <div class="selected-items">
+                                                        @foreach (var orderServiceCar in service.OrderServiceCarDtos)
+                                                        {
+                                                            if (orderServiceCar?.Car != null)
+                                                            {
+                                                                <span class="selected-item">
+                                                                    @orderServiceCar.Car.Name
+                                                                    <button type="button" class="btn-remove-item" @onclick="() => RemoveCarFromService(service, orderServiceCar)">&times;</button>
+                                                                </span>
+                                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="empty-selection">Не выбраны</div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn-primary" style="margin-left: 6px;" @onclick="() => ShowCarDialog(service)">
+                                                <span>+</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
+                                                &times;
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
                 else
                 {
@@ -247,13 +246,13 @@
     <EmployeeDialog IsVisible="@showEmployeeDialog"
                     OnClose="@(() => showEmployeeDialog = false)"
                     AvailableEmployees="@availableEmployees"
-                    InitialEmployeeIds="@orderModel.OrderEmployeeDtos.Select(c=>c.Id).ToList()"
+                    InitialEmployeeIds="@((selectedServiceForEmployeeDialog?.OrderServiceEmployeeDtos?.Select(c => c.Employee.Id).ToList()) ?? new List<int>())"
                     OnSelectionChanged="HandleEmployeeSelectionChanged" />
 
     <CarDialog IsVisible="@showCarDialog"
                OnClose="@(() => showCarDialog = false)"
                AvailableCars="@availableCars"
-               InitialCarIds="@orderModel.OrderCarDtos.Select(c=>c.Id).ToList()"
+               InitialCarIds="@((selectedServiceForCarDialog?.OrderServiceCarDtos?.Select(c => c.Car.Id).ToList()) ?? new List<int>())"
                OnSelectionChanged="HandleCarSelectionChanged" />
 
 @code {
@@ -269,6 +268,8 @@
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
     private bool isLocked = false;
+    private OrderServiceDto? selectedServiceForEmployeeDialog;
+    private OrderServiceDto? selectedServiceForCarDialog;
 
     protected override async Task OnInitializedAsync()
     {
@@ -329,13 +330,15 @@
         showServiceDialog = true;
     }
 
-    private void ShowEmployeeDialog()
+    private void ShowEmployeeDialog(OrderServiceDto service)
     {
+        selectedServiceForEmployeeDialog = service;
         showEmployeeDialog = true;
     }
 
-    private void ShowCarDialog()
+    private void ShowCarDialog(OrderServiceDto service)
     {
+        selectedServiceForCarDialog = service;
         showCarDialog = true;
     }
 
@@ -363,22 +366,46 @@
 
     private void HandleEmployeeSelectionChanged(List<int> employeeIds)
     {
-        orderModel.OrderEmployeeDtos = availableEmployees.Where(c=> employeeIds.Contains(c.Id)).ToList();
+        if (selectedServiceForEmployeeDialog == null)
+        {
+            return;
+        }
+
+        var selected = availableEmployees.Where(c => employeeIds.Contains(c.Id))
+            .Select(e => new OrderServiceEmployeeDto
+            {
+                OrderServiceId = 0,
+                Employee = e
+            }).ToList();
+
+        selectedServiceForEmployeeDialog.OrderServiceEmployeeDtos = selected;
     }
 
     private void HandleCarSelectionChanged(List<int> carIds)
     {
-        orderModel.OrderCarDtos = availableCars.Where(c=> carIds.Contains(c.Id)).ToList();
+        if (selectedServiceForCarDialog == null)
+        {
+            return;
+        }
+
+        var selected = availableCars.Where(c => carIds.Contains(c.Id))
+            .Select(c => new OrderServiceCarDto
+            {
+                OrderServiceId = 0,
+                Car = c
+            }).ToList();
+
+        selectedServiceForCarDialog.OrderServiceCarDtos = selected;
     }
 
-    private void RemoveEmployee(EmployeeDto employeeId)
+    private void RemoveEmployeeFromService(OrderServiceDto service, OrderServiceEmployeeDto association)
     {
-        orderModel.OrderEmployeeDtos.Remove(employeeId);
+        service.OrderServiceEmployeeDtos.Remove(association);
     }
 
-    private void RemoveCar(CarDto carId)
+    private void RemoveCarFromService(OrderServiceDto service, OrderServiceCarDto association)
     {
-        orderModel.OrderCarDtos.Remove(carId);
+        service.OrderServiceCarDtos.Remove(association);
     }
 
     private string GetServiceName(int serviceId)

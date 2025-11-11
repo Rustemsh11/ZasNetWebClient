@@ -30,6 +30,8 @@ public class OrderServiceDto
     public int ServiceId { get; set; }
     public decimal Price { get; set; }
     public double TotalVolume { get; set; }
+    public List<OrderServiceEmployeeDto> OrderServiceEmployeeDtos { get; set; } = new();
+    public List<OrderServiceCarDto> OrderServiceCarDtos { get; set; } = new();
 }
 
 
@@ -47,9 +49,19 @@ public class OrderDto
     public OrderStatus OrderStatus { get; set; }
     public string? Description { get; set; }
     public EmployeeDto CreatedUser { get; set; } = new();
-    public List<EmployeeDto> OrderEmployeeDtos { get; set; } = new();
-    public List<CarDto> OrderCarDtos { get; set; } = new();
     public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();
+}
+
+public class OrderServiceEmployeeDto
+{
+    public int OrderServiceId { get; set; }
+    public EmployeeDto Employee { get; set; } = new();
+}
+
+public class OrderServiceCarDto
+{
+    public int OrderServiceId { get; set; }
+    public CarDto Car { get; set; } = new();
 }
 
 public class CreateOrderCommand
