@@ -27,6 +27,7 @@ public enum OrderStatus
 
 public class OrderServiceDto
 {
+    public int Id { get; set; }
     public int ServiceId { get; set; }
     public decimal Price { get; set; }
     public double TotalVolume { get; set; }

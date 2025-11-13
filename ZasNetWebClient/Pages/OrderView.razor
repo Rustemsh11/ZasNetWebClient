@@ -371,12 +371,16 @@
             return;
         }
 
-        var selected = availableEmployees.Where(c => employeeIds.Contains(c.Id))
+        var orderServiceId = selectedServiceForEmployeeDialog.Id;
+
+        var selected = availableEmployees
+            .Where(c => employeeIds.Contains(c.Id))
             .Select(e => new OrderServiceEmployeeDto
-            {
-                OrderServiceId = 0,
-                Employee = e
-            }).ToList();
+                {
+                    OrderServiceId = orderServiceId,
+                    Employee = e
+                })
+            .ToList();
 
         selectedServiceForEmployeeDialog.OrderServiceEmployeeDtos = selected;
     }
@@ -388,12 +392,16 @@
             return;
         }
 
-        var selected = availableCars.Where(c => carIds.Contains(c.Id))
+        var orderServiceId = selectedServiceForCarDialog.Id;
+
+        var selected = availableCars
+            .Where(c => carIds.Contains(c.Id))
             .Select(c => new OrderServiceCarDto
-            {
-                OrderServiceId = 0,
-                Car = c
-            }).ToList();
+                {
+                    OrderServiceId = orderServiceId,
+                    Car = c
+                })
+            .ToList();
 
         selectedServiceForCarDialog.OrderServiceCarDtos = selected;
     }
@@ -438,8 +446,25 @@
         orderModel.OrderPriceAmount = orderModel.OrderServicesDtos.Sum(s => CalculateTotalCost(s));
     }
 
+    private void NormalizeOrderServiceIds()
+    {
+        foreach (var service in orderModel.OrderServicesDtos)
+        {
+            var orderServiceId = service.Id;
+            foreach (var emp in service.OrderServiceEmployeeDtos)
+            {
+                emp.OrderServiceId = orderServiceId;
+            }
+            foreach (var car in service.OrderServiceCarDtos)
+            {
+                car.OrderServiceId = orderServiceId;
+            }
+        }
+    }
+
     private async Task HandleSave()
     {
+        NormalizeOrderServiceIds();
         isSubmitting = true;
         errorMessage = string.Empty;
 
