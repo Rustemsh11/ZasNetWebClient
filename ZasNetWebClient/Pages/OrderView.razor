@@ -246,7 +246,6 @@
     <EmployeeDialog IsVisible="@showEmployeeDialog"
                     OnClose="@(() => showEmployeeDialog = false)"
                     AvailableEmployees="@availableEmployees"
-                    InitialEmployeeIds="@((selectedServiceForEmployeeDialog?.OrderServiceEmployeeDtos?.Select(c => c.Employee.Id).ToList()) ?? new List<int>())"
                     OnSelectionChanged="HandleEmployeeSelectionChanged" />
 
     <CarDialog IsVisible="@showCarDialog"
@@ -382,7 +381,8 @@
                 })
             .ToList();
 
-        selectedServiceForEmployeeDialog.OrderServiceEmployeeDtos = selected;
+        // Append new selections without deduplication to allow multiple assignments
+        selectedServiceForEmployeeDialog.OrderServiceEmployeeDtos.AddRange(selected);
     }
 
     private void HandleCarSelectionChanged(List<int> carIds)
