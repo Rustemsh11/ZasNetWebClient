@@ -18,11 +18,12 @@ public enum ClientType
 public enum OrderStatus
 {
     Created = 0,
-    Processing = 1,
-    Finished = 2,
-    CreatedInvoice = 3,
-    AwaitingPayment = 4,
-    Closed = 5,
+    ApprovedWithEmployers = 1,
+    Processing = 2,
+    Finished = 3,
+    CreatedInvoice = 4,
+    AwaitingPayment = 5,
+    Closed = 6,
 }
 
 public class OrderServiceDto
@@ -47,22 +48,53 @@ public class OrderDto
     public decimal OrderPriceAmount { get; set; }
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
     public ClientType ClientType { get; set; } = ClientType.FizNal;
-    public OrderStatus OrderStatus { get; set; }
+    public OrderStatus Status { get; set; }
     public string? Description { get; set; }
     public EmployeeDto CreatedUser { get; set; } = new();
     public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();
+    public List<DocumentDto> Documents { get; set; } = new();
 }
 
 public class OrderServiceEmployeeDto
 {
     public int OrderServiceId { get; set; }
     public EmployeeDto Employee { get; set; } = new();
+    public bool IsApproved {get; set;}
 }
 
 public class OrderServiceCarDto
 {
     public int OrderServiceId { get; set; }
     public CarDto Car { get; set; } = new();
+    public bool IsApproved {get; set;}
+}
+
+public class DocumentDto
+{
+    public int Id { get; set; }
+	public string Name { get; set; }
+	public string Extension { get; set; }
+	public string? ContentType { get; set; }
+	public long? SizeBytes { get; set; }
+	public DateTime UploadedDate { get; set; }
+	public DocumentType DocumentType { get; set; }
+
+	// Relative URLs to be used by the web client
+	public string ViewUrl { get; set; }
+	public string DownloadUrl { get; set; }
+
+    public bool IsImage => (ContentType ?? string.Empty).StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+}
+
+public enum DocumentType
+{
+    None = 0,
+
+    Invoice = 1,
+
+    ActOfCompletedWorks = 2,
+
+    WorkReport = 3,
 }
 
 public class CreateOrderCommand

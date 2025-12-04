@@ -38,7 +38,7 @@
                                  style="background-color: @GetStatusColor(order.Status)"
                                  title="@order.Client - @order.Address"
                                  @ondblclick="@(() => OpenOrder(order.Id))">
-                                <span class="event-time">@order.Date.ToString("HH:mm")</span>
+                                <span class="event-time">@order.DateStart.ToString("HH:mm")</span>
                                 <span class="event-title">@order.Client</span>
                             </div>
                         }
@@ -83,7 +83,7 @@
 
         while (currentDate <= endDate)
         {
-            var dayOrders = Orders.Where(o => o.Date.Date == currentDate.Date).ToList();
+            var dayOrders = Orders.Where(o => o.DateStart.Date == currentDate.Date).ToList();
             var isCurrentMonth = currentDate.Month == CurrentMonth.Month;
             var isToday = currentDate.Date == today;
 
@@ -134,6 +134,7 @@
         return status switch
         {
             OrderStatus.Created => "#e3f2fd",
+            OrderStatus.ApprovedWithEmployers => "#c6f500",
             OrderStatus.Processing => "#fff3e0",
             OrderStatus.Finished => "#e8f5e9",
             OrderStatus.CreatedInvoice => "#f3e5f5",

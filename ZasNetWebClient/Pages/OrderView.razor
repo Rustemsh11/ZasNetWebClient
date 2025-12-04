@@ -4,6 +4,7 @@
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Components
 @inject ApiService ApiService
+@inject HttpClient httpClient
 @inject ILocalStorageService localStorageService
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
@@ -84,7 +85,7 @@
                     </div>
                     <div class="form-group">
                         <label for="orderStatus">Статус заявки</label>
-                    <input type="text" id="orderStatus" class="form-control readonly-field" value="@orderModel.OrderStatus.ToString()" readonly />
+                    <input type="text" id="orderStatus" class="form-control readonly-field" value="@orderModel.Status.ToString()" readonly />
                     </div>
                     <div class="form-group">
                         <label for="user">Диспетчер</label>
@@ -98,6 +99,12 @@
                     <h3>Услуги</h3>
                     <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
                         <span>+</span> Добавить
+                    </button>
+                <button type="button" class="btn-primary" @onclick="ApproveAllEmployees">
+                        Подтвердить сотрудников
+                    </button>
+                <button type="button" class="btn-primary" @onclick="ApproveAllCars">
+                        Подтвердить машины
                     </button>
                 </div>
                 
@@ -149,7 +156,7 @@
                                                             if (orderServiceEmployee?.Employee != null)
                                                             {
                                                                 <span class="selected-item">
-                                                                    @orderServiceEmployee.Employee.Name
+                                                                @orderServiceEmployee.Employee.Name @(orderServiceEmployee.IsApproved ? "✅" : "❓")
                                                                     <button type="button" class="btn-remove-item" @onclick="() => RemoveEmployeeFromService(service, orderServiceEmployee)">&times;</button>
                                                                 </span>
                                                             }
@@ -177,7 +184,7 @@
                                                             if (orderServiceCar?.Car != null)
                                                             {
                                                                 <span class="selected-item">
-                                                                    @orderServiceCar.Car.Name
+                                                                    @orderServiceCar.Car.Name @(orderServiceCar.IsApproved ? "✅" : "❓")
                                                                     <button type="button" class="btn-remove-item" @onclick="() => RemoveCarFromService(service, orderServiceCar)">&times;</button>
                                                                 </span>
                                                             }
@@ -210,6 +217,56 @@
                 {
                     <div class="empty-services-compact">
                         <p>На данный момент нет выбранных услуг</p>
+                    </div>
+                }
+            </div>
+
+            <div class="form-section">
+                <h3>Документы</h3>
+            @if (orderModel.Documents != null && orderModel.Documents.Any())
+            {
+                <div class="services-table-container">
+                    <table class="services-table">
+                        <thead>
+                            <tr>
+                                <th>Имя</th>
+                                <th>Тип</th>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var doc in orderModel.Documents)
+                            {
+                                <tr>
+                                    <td>@doc.Name</td>
+                                    <td>@doc.DocumentType</td>
+                                    <td>@doc.UploadedDate.ToString("g")</td>
+                                    <td>@doc.DocumentType</td>
+                                    <td>
+                                        @if (doc.IsImage && !string.IsNullOrEmpty(doc.ViewUrl))
+                                        {
+                                            <button type="button" class="btn-primary" @onclick="() => OpenImageDialog(doc)">Просмотр</button>
+                                            var address = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
+                                            <a class="btn-secondary" href="@address" download>Скачать</a>
+                                        }
+                                        else
+                                        {
+                                            var address = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
+                                            <a class="btn-primary" href="@address" download>Скачать</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+                else
+                {
+                    <div class="empty-services-compact">
+                        <p>Документы отсутствуют</p>
                     </div>
                 }
             </div>
@@ -254,6 +311,11 @@
                InitialCarIds="@((selectedServiceForCarDialog?.OrderServiceCarDtos?.Select(c => c.Car.Id).ToList()) ?? new List<int>())"
                OnSelectionChanged="HandleCarSelectionChanged" />
 
+<ImageDialog IsVisible="@showImageDialog"
+             OnClose="@CloseImageDialog"
+             ImageViewUrl="@imageDialogUrl"
+             DownloadUrl="@fileDownloadUrl" />
+
 @code {
     [Parameter] public int? OrderId { get; set; }
     private bool IsEditMode => (OrderId ?? 0) != 0;
@@ -264,6 +326,10 @@
     private bool showServiceDialog = false;
     private bool showEmployeeDialog = false;
     private bool showCarDialog = false;
+    private bool showImageDialog = false;
+    private string? imageDialogUrl;
+    private string? fileDownloadUrl;
+    private double imageZoom = 1.0;
     private bool isSubmitting = false;
     private string errorMessage = string.Empty;
     private bool isLocked = false;
@@ -341,6 +407,39 @@
         showCarDialog = true;
     }
 
+    private void OpenImageDialog(DocumentDto doc)
+    {
+        if (doc.IsImage && !string.IsNullOrWhiteSpace(doc.ViewUrl))
+        {
+            imageZoom = 1.0;
+            imageDialogUrl = doc.ViewUrl;
+            fileDownloadUrl = doc.DownloadUrl;
+            showImageDialog = true;
+        }
+    }
+
+    private void CloseImageDialog()
+    {
+        showImageDialog = false;
+        imageDialogUrl = null;
+        fileDownloadUrl = null;
+    }
+
+    private void ZoomIn()
+    {
+        imageZoom = Math.Min(imageZoom + 0.05, 10.0);
+    }
+
+    private void ZoomOut()
+    {
+        imageZoom = Math.Max(imageZoom - 0.05, 0.25);
+    }
+
+    private void ResetZoom()
+    {
+        imageZoom = 1.0;
+    }
+
     private void AddService(OrderServiceDto service)
     {
         if (service.TotalVolume > 0 && service.Price > 0)
@@ -414,6 +513,30 @@
     private void RemoveCarFromService(OrderServiceDto service, OrderServiceCarDto association)
     {
         service.OrderServiceCarDtos.Remove(association);
+    }
+
+    private void ApproveAllEmployees()
+    {
+        foreach (var service in orderModel.OrderServicesDtos)
+        {
+            foreach (var association in service.OrderServiceEmployeeDtos)
+            {
+                association.IsApproved = true;
+            }
+        }
+
+        orderModel.Status = OrderStatus.ApprovedWithEmployers;
+    }
+
+    private void ApproveAllCars()
+    {
+        foreach (var service in orderModel.OrderServicesDtos)
+        {
+            foreach (var association in service.OrderServiceCarDtos)
+            {
+                association.IsApproved = true;
+            }
+        }
     }
 
     private string GetServiceName(int serviceId)
