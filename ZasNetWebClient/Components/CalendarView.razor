@@ -82,6 +82,9 @@
     [Parameter]
     public List<Order> Orders { get; set; } = new();
 
+    [Parameter]
+    public List<CarDto> AllCars { get; set; } = new();
+
     private DateTime CurrentDate = DateTime.Today;
     private bool showDatePicker = false;
     private DateTime selectedDate = DateTime.Today;
@@ -126,56 +129,85 @@
         // Get orders for the current date
         var dayOrders = Orders.Where(o => o.DateStart.Date == CurrentDate.Date).ToList();
 
-        // Create expanded orders list - duplicate orders for each car
-        var expandedOrders = new List<OrderWithCar>();
+        // Group orders by car ID
+        var ordersByCarId = new Dictionary<int, List<Order>>();
+        var ordersWithoutCar = new List<Order>();
         
         foreach (var order in dayOrders)
         {
-            if (order.CarNames != null && order.CarNames.Count > 0)
+            if (order.CarIds != null && order.CarIds.Count > 0)
             {
-                // Create a copy of the order for each car
-                for (int i = 0; i < order.CarNames.Count; i++)
+                // Add order to each car it's assigned to
+                foreach (var carId in order.CarIds)
                 {
-                    expandedOrders.Add(new OrderWithCar
+                    if (!ordersByCarId.ContainsKey(carId))
                     {
-                        Order = order,
-                        CarName = order.CarNames[i],
-                        CarId = (order.CarIds != null && i < order.CarIds.Count) ? order.CarIds[i] : null
-                    });
+                        ordersByCarId[carId] = new List<Order>();
+                    }
+                    ordersByCarId[carId].Add(order);
                 }
             }
             else
             {
                 // Order without cars
-                expandedOrders.Add(new OrderWithCar
+                ordersWithoutCar.Add(order);
+            }
+        }
+
+        // Sort orders within each car group
+        foreach (var carId in ordersByCarId.Keys.ToList())
+        {
+            ordersByCarId[carId] = ordersByCarId[carId].OrderBy(o => o.DateStart).ToList();
+        }
+        ordersWithoutCar = ordersWithoutCar.OrderBy(o => o.DateStart).ToList();
+
+        // Create groups for all cars from AllCars
+        if (AllCars != null && AllCars.Count > 0)
+        {
+            foreach (var car in AllCars.OrderBy(c => c.Name))
+            {
+                var carOrders = ordersByCarId.ContainsKey(car.Id) 
+                    ? ordersByCarId[car.Id] 
+                    : new List<Order>();
+                
+                carGroups.Add(new CarOrderGroup
                 {
-                    Order = order,
-                    CarName = "Без машины",
-                    CarId = null
+                    CarName = car.Name,
+                    Orders = carOrders
                 });
             }
         }
 
-        // Group expanded orders by car
-        var ordersByCar = expandedOrders
-            .GroupBy(eo => eo.CarName)
-            .OrderBy(g => g.Key);
+        // Add cars from orders that are not in AllCars (by ID)
+        foreach (var carId in ordersByCarId.Keys)
+        {
+            if (AllCars == null || !AllCars.Any(c => c.Id == carId))
+            {
+                // Car ID exists in orders but not in AllCars - use ID as name
+                carGroups.Add(new CarOrderGroup
+                {
+                    CarName = $"Машина #{carId}",
+                    Orders = ordersByCarId[carId]
+                });
+            }
+        }
 
-        foreach (var carGroup in ordersByCar)
+        // Add orders without cars
+        if (ordersWithoutCar.Count > 0)
         {
             carGroups.Add(new CarOrderGroup
             {
-                CarName = carGroup.Key,
-                Orders = carGroup.Select(eo => eo.Order).OrderBy(o => o.DateStart).ToList()
+                CarName = "Без машины",
+                Orders = ordersWithoutCar
             });
         }
 
-        // If no orders, still show at least one row
+        // If no cars at all, show a message
         if (carGroups.Count == 0)
         {
             carGroups.Add(new CarOrderGroup
             {
-                CarName = "Нет заявок",
+                CarName = "Нет машин",
                 Orders = new List<Order>()
             });
         }
@@ -339,12 +371,5 @@
     {
         public string CarName { get; set; } = string.Empty;
         public List<Order> Orders { get; set; } = new();
-    }
-
-    private class OrderWithCar
-    {
-        public Order Order { get; set; } = new();
-        public string CarName { get; set; } = string.Empty;
-        public int? CarId { get; set; }
     }
 }

@@ -158,4 +158,24 @@ public class ApiService
             // ignore unlock errors
         }
     }
+
+    public async Task<List<CarDto>> GetAllCars()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var cars = await _httpClient.GetFromJsonAsync<List<CarDto>>("api/v1/car/GetAllCars");
+            return cars ?? new List<CarDto>();
+        }
+        catch(Exception ex)
+        {
+            return new List<CarDto>();
+        }
+    }
 }

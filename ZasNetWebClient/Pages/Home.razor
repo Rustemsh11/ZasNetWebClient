@@ -28,28 +28,36 @@
 }
 else
 {
-    <CalendarView Orders="orders" />
+    <CalendarView Orders="orders" AllCars="allCars" />
 }
 
 @code {
     private List<Order> orders = new();
+    private List<CarDto> allCars = new();
     private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrders();
+        await LoadData();
     }
 
-    private async Task LoadOrders()
+    private async Task LoadData()
     {
         isLoading = true;
         try
         {
-            orders = await ApiService.GetAllOrders();
+            var ordersTask = ApiService.GetAllOrders();
+            var carsTask = ApiService.GetAllCars();
+            
+            await Task.WhenAll(ordersTask, carsTask);
+            
+            orders = await ordersTask;
+            allCars = await carsTask;
         }
         catch
         {
             orders = new List<Order>();
+            allCars = new List<CarDto>();
         }
         finally
         {

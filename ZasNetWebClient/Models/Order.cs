@@ -8,6 +8,5 @@ public class Order
     public DateTime? DateEnd { get; set; }
     public string Address { get; set; }
     public OrderStatus Status { get; set; }
-    public List<string> CarNames { get; set; } = new();
     public List<int> CarIds { get; set; } = new();
 }
