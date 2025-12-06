@@ -1,28 +1,38 @@
+using System.ComponentModel;
+
 namespace ZasNetWebClient.Models;
 
 public enum PaymentType
 {
+    [Description("Не известный тип")]
     None = 0,
+    [Description("Наличная")]
     Cash = 1,
+    [Description("СБП")]
     Electronic = 2,
+    [Description("Карта")]
     Card = 3,
-}
-
-public enum ClientType
-{
-    FizNal = 0,
-    LegalWithVat = 1,
-    LegalWithoutVat = 2,
+    [Description("Наличная с НДС")]
+    CashWithVat = 4,
+    [Description("Наличная без НДС")]
+    CashWithoutVat = 5,
 }
 
 public enum OrderStatus
 {
+    [Description("Создан")]
     Created = 0,
+    [Description("Подтвержден сотрудниками")]
     ApprovedWithEmployers = 1,
+    [Description("В работе")]
     Processing = 2,
+    [Description("Завершен")]
     Finished = 3,
-    CreatedInvoice = 4,
+    [Description("Ожидание счета")]
+    CreatingInvoice = 4,
+    [Description("Ожидание оплаты")]
     AwaitingPayment = 5,
+    [Description("Закрыт")]
     Closed = 6,
 }
 
@@ -41,13 +51,13 @@ public class OrderDto
 {
     public int Id { get; set; }
     public string Client { get; set; } = string.Empty;
-    public DateTime Date { get; set; } = DateTime.Now;
+    public DateTime DateStart { get; set; } = DateTime.Now;
+    public DateTime DateEnd { get; set; } = DateTime.Now;
     public string AddressCity { get; set; } = string.Empty;
     public string AddressStreet { get; set; } = string.Empty;
     public string AddressNumber { get; set; } = string.Empty;
     public decimal OrderPriceAmount { get; set; }
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
-    public ClientType ClientType { get; set; } = ClientType.FizNal;
     public OrderStatus Status { get; set; }
     public string? Description { get; set; }
     public EmployeeDto CreatedUser { get; set; } = new();

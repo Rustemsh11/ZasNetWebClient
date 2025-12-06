@@ -29,7 +29,7 @@
         <div class="calendar-days">
             @foreach (var day in calendarDays)
             {
-                <div class="calendar-day @(day.IsCurrentMonth ? "" : "other-month") @(day.IsToday ? "today" : "")">
+                <div class="calendar-day @(day.IsCurrentMonth ? "" : "other-month") @(day.IsToday ? "сегодня" : "")">
                     <div class="day-number">@day.DayNumber</div>
                     <div class="day-events">
                         @foreach (var order in day.Orders)
@@ -137,7 +137,7 @@
             OrderStatus.ApprovedWithEmployers => "#c6f500",
             OrderStatus.Processing => "#fff3e0",
             OrderStatus.Finished => "#e8f5e9",
-            OrderStatus.CreatedInvoice => "#f3e5f5",
+            OrderStatus.CreatingInvoice => "#f3e5f5",
             OrderStatus.AwaitingPayment => "#fff9c4",
             OrderStatus.Closed => "#eceff1",
             _ => "#f5f5f5"
