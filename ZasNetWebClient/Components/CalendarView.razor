@@ -1,45 +1,74 @@
 @using ZasNetWebClient.Models
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <div class="calendar-container">
     <div class="calendar-header">
         <div class="calendar-nav">
-            <button class="btn-nav" @onclick="PreviousMonth" title="Previous month">
+            <button class="btn-nav" @onclick="PreviousDay" title="Предыдущий день">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
             </button>
-            <h2 class="calendar-title">@CurrentMonth.ToString("MMMM yyyy")</h2>
-            <button class="btn-nav" @onclick="NextMonth" title="Next month">
+            <h2 class="calendar-title">@CurrentDate.ToString("dd MMMM yyyy")</h2>
+            <button class="btn-nav" @onclick="NextDay" title="Следующий день">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
             </button>
-            <button class="btn-today" @onclick="GoToToday">Cегодня</button>
+            <button class="btn-today" @onclick="GoToToday">Сегодня</button>
+            <button class="btn-date" @onclick="ShowDatePicker">Перейти к дате</button>
         </div>
     </div>
 
-    <div class="calendar-grid">
-        <div class="calendar-weekdays">
-            @foreach (var day in weekDays)
-            {
-                <div class="calendar-weekday">@day</div>
-            }
+    @if (showDatePicker)
+    {
+        <div class="date-picker-overlay" @onclick="HideDatePicker">
+            <div class="date-picker" @onclick:stopPropagation="true">
+                <h3>Выберите дату</h3>
+                <InputDate @bind-Value="selectedDate" class="date-input" />
+                <div class="date-picker-buttons">
+                    <button class="btn-primary" @onclick="GoToSelectedDate">Перейти</button>
+                    <button class="btn-secondary" @onclick="HideDatePicker">Отмена</button>
+                </div>
+            </div>
         </div>
-        <div class="calendar-days">
-            @foreach (var day in calendarDays)
+    }
+
+    <div class="calendar-timeline" @ref="timelineContainer">
+        <div class="calendar-timeline-header">
+            <div class="car-header">Машина</div>
+            <div class="hours-header" @ref="hoursHeader">
+                @for (int hour = 0; hour <= 24; hour++)
+                {
+                    <div class="hour-cell">@hour</div>
+                }
+            </div>
+        </div>
+        <div class="calendar-timeline-body">
+            @foreach (var carGroup in carGroups)
             {
-                <div class="calendar-day @(day.IsCurrentMonth ? "" : "other-month") @(day.IsToday ? "сегодня" : "")">
-                    <div class="day-number">@day.DayNumber</div>
-                    <div class="day-events">
-                        @foreach (var order in day.Orders)
+                <div class="car-row">
+                    <div class="car-name">@carGroup.CarName</div>
+                    <div class="hours-row">
+                        @for (int hour = 0; hour <= 24; hour++)
                         {
-                            <div class="calendar-event" 
-                                 style="background-color: @GetStatusColor(order.Status)"
-                                 title="@order.Client - @order.Address"
+                            <div class="hour-cell" data-hour="@hour"></div>
+                        }
+                        @foreach (var order in carGroup.Orders)
+                        {
+                            <div class="order-block" 
+                                 style="@GetOrderStyle(order)"
+                                 title="@GetOrderTooltip(order)"
                                  @ondblclick="@(() => OpenOrder(order.Id))">
-                                <span class="event-time">@order.DateStart.ToString("HH:mm")</span>
-                                <span class="event-title">@order.Client</span>
+                                <div class="order-content">
+                                    <div class="order-time">@GetOrderTimeRange(order)</div>
+                                    <div class="order-client">@order.Client</div>
+                                    @if (!string.IsNullOrEmpty(order.Address))
+                                    {
+                                        <div class="order-address">@order.Address</div>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
@@ -53,72 +82,167 @@
     [Parameter]
     public List<Order> Orders { get; set; } = new();
 
-    private DateTime CurrentMonth = DateTime.Now;
-    private readonly string[] weekDays = { "ПН", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
+    private DateTime CurrentDate = DateTime.Today;
+    private bool showDatePicker = false;
+    private DateTime selectedDate = DateTime.Today;
 
-    private List<CalendarDay> calendarDays = new();
+    private List<CarOrderGroup> carGroups = new();
+    private ElementReference timelineContainer;
+    private ElementReference hoursHeader;
+    private bool shouldScrollToHour8 = true;
 
     protected override void OnParametersSet()
     {
         BuildCalendar();
+        shouldScrollToHour8 = true;
         StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldScrollToHour8)
+        {
+            // Увеличиваем задержку и добавляем несколько попыток для надежности
+            await Task.Delay(100);
+            await ScrollToHour(6);
+            // Повторная попытка через небольшую задержку для надежности
+            await Task.Delay(100);
+            await ScrollToHour(6);
+            shouldScrollToHour8 = false;
+        }
+        
+        // При первом рендере также прокручиваем к 8 часу
+        if (firstRender)
+        {
+            await Task.Delay(200);
+            await ScrollToHour(6);
+        }
     }
 
     private void BuildCalendar()
     {
-        calendarDays.Clear();
+        carGroups.Clear();
 
-        var firstDayOfMonth = new DateTime(CurrentMonth.Year, CurrentMonth.Month, 1);
-        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+        // Get orders for the current date
+        var dayOrders = Orders.Where(o => o.DateStart.Date == CurrentDate.Date).ToList();
+
+        // Create expanded orders list - duplicate orders for each car
+        var expandedOrders = new List<OrderWithCar>();
         
-        // Calculate start date for Monday as first day of week
-        // Convert: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
-        var dayOfWeek = (int)firstDayOfMonth.DayOfWeek;
-        var daysToSubtract = (dayOfWeek == 0) ? 6 : dayOfWeek - 1;
-        var startDate = firstDayOfMonth.AddDays(-daysToSubtract);
-        var endDate = startDate.AddDays(41); // 6 weeks * 7 days
-
-        var currentDate = startDate;
-        var today = DateTime.Today;
-
-        while (currentDate <= endDate)
+        foreach (var order in dayOrders)
         {
-            var dayOrders = Orders.Where(o => o.DateStart.Date == currentDate.Date).ToList();
-            var isCurrentMonth = currentDate.Month == CurrentMonth.Month;
-            var isToday = currentDate.Date == today;
-
-            calendarDays.Add(new CalendarDay
+            if (order.CarNames != null && order.CarNames.Count > 0)
             {
-                Date = currentDate,
-                DayNumber = currentDate.Day,
-                Orders = dayOrders,
-                IsCurrentMonth = isCurrentMonth,
-                IsToday = isToday
-            });
+                // Create a copy of the order for each car
+                for (int i = 0; i < order.CarNames.Count; i++)
+                {
+                    expandedOrders.Add(new OrderWithCar
+                    {
+                        Order = order,
+                        CarName = order.CarNames[i],
+                        CarId = (order.CarIds != null && i < order.CarIds.Count) ? order.CarIds[i] : null
+                    });
+                }
+            }
+            else
+            {
+                // Order without cars
+                expandedOrders.Add(new OrderWithCar
+                {
+                    Order = order,
+                    CarName = "Без машины",
+                    CarId = null
+                });
+            }
+        }
 
-            currentDate = currentDate.AddDays(1);
+        // Group expanded orders by car
+        var ordersByCar = expandedOrders
+            .GroupBy(eo => eo.CarName)
+            .OrderBy(g => g.Key);
+
+        foreach (var carGroup in ordersByCar)
+        {
+            carGroups.Add(new CarOrderGroup
+            {
+                CarName = carGroup.Key,
+                Orders = carGroup.Select(eo => eo.Order).OrderBy(o => o.DateStart).ToList()
+            });
+        }
+
+        // If no orders, still show at least one row
+        if (carGroups.Count == 0)
+        {
+            carGroups.Add(new CarOrderGroup
+            {
+                CarName = "Нет заявок",
+                Orders = new List<Order>()
+            });
         }
     }
 
-    private void PreviousMonth()
+    private void PreviousDay()
     {
-        CurrentMonth = CurrentMonth.AddMonths(-1);
+        CurrentDate = CurrentDate.AddDays(-1);
         BuildCalendar();
+        shouldScrollToHour8 = true;
         StateHasChanged();
     }
 
-    private void NextMonth()
+    private void NextDay()
     {
-        CurrentMonth = CurrentMonth.AddMonths(1);
+        CurrentDate = CurrentDate.AddDays(1);
         BuildCalendar();
+        shouldScrollToHour8 = true;
         StateHasChanged();
     }
 
     private void GoToToday()
     {
-        CurrentMonth = DateTime.Now;
+        CurrentDate = DateTime.Today;
         BuildCalendar();
+        shouldScrollToHour8 = true;
         StateHasChanged();
+    }
+
+    private void ShowDatePicker()
+    {
+        selectedDate = CurrentDate;
+        showDatePicker = true;
+        StateHasChanged();
+    }
+
+    private void HideDatePicker()
+    {
+        showDatePicker = false;
+        StateHasChanged();
+    }
+
+    private void GoToSelectedDate()
+    {
+        CurrentDate = selectedDate.Date;
+        BuildCalendar();
+        HideDatePicker();
+        shouldScrollToHour8 = true;
+        StateHasChanged();
+    }
+
+    private async Task ScrollToHour(int hour)
+    {
+        try
+        {
+            // Прокручиваем к позиции указанного часа
+            // Каждый час занимает 1/25 от общей ширины (25 столбцов: 0-24)
+            // Позиция 8 часов = 8/25 = 32% от общей ширины
+            var scrollPercent = (hour / 25.0) * 100;
+            
+            // Прокручиваем контейнер timeline, так как у него overflow-x: auto
+            await JSRuntime.InvokeVoidAsync("scrollToHour", timelineContainer, scrollPercent);
+        }
+        catch
+        {
+            // Игнорируем ошибки прокрутки
+        }
     }
 
     private void OpenOrder(int orderId)
@@ -127,6 +251,49 @@
         {
             Navigation.NavigateTo($"/order/{orderId}");
         }
+    }
+
+    private string GetOrderStyle(Order order)
+    {
+        var startHour = order.DateStart.Hour;
+        var startMinute = order.DateStart.Minute;
+        var startPosition = startHour + (startMinute / 60.0);
+
+        var endHour = order.DateEnd?.Hour ?? order.DateStart.AddHours(1).Hour;
+        var endMinute = order.DateEnd?.Minute ?? order.DateStart.AddMinutes(60).Minute;
+        var endPosition = endHour + (endMinute / 60.0);
+
+        var duration = endPosition - startPosition;
+        if (duration <= 0) duration = 1; // Minimum 1 hour
+
+        // У нас 25 столбцов (0-24), поэтому делим на 25
+        var leftPercent = (startPosition / 25.0) * 100;
+        var widthPercent = (duration / 25.0) * 100;
+
+        var backgroundColor = GetStatusColor(order.Status);
+
+        return $"left: {leftPercent}%; width: {widthPercent}%; background-color: {backgroundColor};";
+    }
+
+    private string GetOrderTimeRange(Order order)
+    {
+        var start = order.DateStart.ToString("HH:mm");
+        if (order.DateEnd.HasValue)
+        {
+            var end = order.DateEnd.Value.ToString("HH:mm");
+            return $"{start} - {end}";
+        }
+        return start;
+    }
+
+    private string GetOrderTooltip(Order order)
+    {
+        var tooltip = $"{order.Client}\n";
+        if (!string.IsNullOrEmpty(order.Address))
+        {
+            tooltip += $"Адрес: {order.Address}\n";
+        }
+        return tooltip;
     }
 
     private string GetStatusColor(OrderStatus status)
@@ -144,12 +311,31 @@
         };
     }
 
-    private class CalendarDay
+    private string GetStatusName(OrderStatus status)
     {
-        public DateTime Date { get; set; }
-        public int DayNumber { get; set; }
+        return status switch
+        {
+            OrderStatus.Created => "Создана",
+            OrderStatus.ApprovedWithEmployers => "Одобрена сотрудниками",
+            OrderStatus.Processing => "В работе",
+            OrderStatus.Finished => "Завершена",
+            OrderStatus.CreatingInvoice => "Создание счета",
+            OrderStatus.AwaitingPayment => "Ожидание оплаты",
+            OrderStatus.Closed => "Закрыта",
+            _ => "Неизвестно"
+        };
+    }
+
+    private class CarOrderGroup
+    {
+        public string CarName { get; set; } = string.Empty;
         public List<Order> Orders { get; set; } = new();
-        public bool IsCurrentMonth { get; set; }
-        public bool IsToday { get; set; }
+    }
+
+    private class OrderWithCar
+    {
+        public Order Order { get; set; } = new();
+        public string CarName { get; set; } = string.Empty;
+        public int? CarId { get; set; }
     }
 }

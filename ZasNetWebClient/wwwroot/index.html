@@ -25,10 +25,20 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/calendar.js"></script>
 </body>
 <script>
     //window.addEventListener('beforeunload', function () {
     //    localStorage.clear();
     //});
+    
+    // Обеспечиваем прокрутку к нужной позиции после загрузки Blazor
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            if (window.scrollToHourOnLoad) {
+                window.scrollToHourOnLoad();
+            }
+        }, 500);
+    });
 </script>
 </html>
