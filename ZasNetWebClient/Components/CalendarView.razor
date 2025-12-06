@@ -58,7 +58,7 @@
                         @foreach (var order in carGroup.Orders)
                         {
                             <div class="order-block" 
-                                 style="@GetOrderStyle(order)"
+                                 style="@(GetOrderStyle(order))"
                                  title="@GetOrderTooltip(order)"
                                  @ondblclick="@(() => OpenOrder(order.Id))">
                                 <div class="order-content">
@@ -267,12 +267,21 @@
         if (duration <= 0) duration = 1; // Minimum 1 hour
 
         // У нас 25 столбцов (0-24), поэтому делим на 25
+        // Используем InvariantCulture для корректного форматирования чисел
         var leftPercent = (startPosition / 25.0) * 100;
         var widthPercent = (duration / 25.0) * 100;
 
         var backgroundColor = GetStatusColor(order.Status);
 
-        return $"left: {leftPercent}%; width: {widthPercent}%; background-color: {backgroundColor};";
+        // Формируем стиль с правильным форматированием
+        // Используем InvariantCulture для гарантии точки в качестве разделителя
+        return string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            "left: {0:F2}%; width: {1:F2}%; background-color: {2};",
+            leftPercent,
+            widthPercent,
+            backgroundColor
+        );
     }
 
     private string GetOrderTimeRange(Order order)

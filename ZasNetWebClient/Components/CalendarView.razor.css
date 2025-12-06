@@ -260,6 +260,7 @@
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     z-index: 1;
+    min-width: 40px; /* Минимальная ширина для видимости */
 }
 
 .order-block:hover {
