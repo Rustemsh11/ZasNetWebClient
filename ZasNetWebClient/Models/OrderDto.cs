@@ -4,35 +4,35 @@ namespace ZasNetWebClient.Models;
 
 public enum PaymentType
 {
-    [Description("Не известный тип")]
+    [Description("пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ")]
     None = 0,
-    [Description("Наличная")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     Cash = 1,
-    [Description("СБП")]
+    [Description("пїЅпїЅпїЅ")]
     Electronic = 2,
-    [Description("Карта")]
+    [Description("пїЅпїЅпїЅпїЅпїЅ")]
     Card = 3,
-    [Description("Наличная с НДС")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ")]
     CashWithVat = 4,
-    [Description("Наличная без НДС")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ")]
     CashWithoutVat = 5,
 }
 
 public enum OrderStatus
 {
-    [Description("Создан")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅ")]
     Created = 0,
-    [Description("Подтвержден сотрудниками")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     ApprovedWithEmployers = 1,
-    [Description("В работе")]
+    [Description("пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
     Processing = 2,
-    [Description("Завершен")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     Finished = 3,
-    [Description("Ожидание счета")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ")]
     CreatingInvoice = 4,
-    [Description("Ожидание оплаты")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
     AwaitingPayment = 5,
-    [Description("Закрыт")]
+    [Description("пїЅпїЅпїЅпїЅпїЅпїЅ")]
     Closed = 6,
 }
 

@@ -2,6 +2,8 @@ using ZasNetWebClient.Models;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
 using System.Net.Http.Headers;
+using System.Net.Http;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace ZasNetWebClient.Services;
 
@@ -176,6 +178,55 @@ public class ApiService
         catch(Exception ex)
         {
             return new List<CarDto>();
+        }
+    }
+
+    public async Task<bool> AddDocument(IEnumerable<IBrowserFile> files, int orderId, DocumentType documentType, string? description = null, int? uploadedUserId = null)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            using var content = new MultipartFormDataContent();
+
+            // Add files (collection)
+            var fileList = files?.ToList() ?? new List<IBrowserFile>();
+            foreach (var file in fileList)
+            {
+                if (file != null && file.Size > 0)
+                {
+                    var fileContent = new StreamContent(file.OpenReadStream(10 * 1024 * 1024)); // 10MB max
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+                    content.Add(fileContent, "Files", file.Name);
+                }
+            }
+
+            // Add other fields
+            content.Add(new StringContent(orderId.ToString()), "OrderId");
+            content.Add(new StringContent(((int)documentType).ToString()), "DocumentType");
+
+            if (!string.IsNullOrEmpty(description))
+            {
+                content.Add(new StringContent(description), "Description");
+            }
+
+            if (uploadedUserId.HasValue)
+            {
+                content.Add(new StringContent(uploadedUserId.Value.ToString()), "UploadedUserId");
+            }
+
+            var response = await _httpClient.PostAsync("api/v1/document/adddocument", content);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            return false;
         }
     }
 }

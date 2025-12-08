@@ -221,6 +221,29 @@
 
             <div class="form-section">
                 <h3>Документы</h3>
+            <div class="form-row" style="margin-bottom: 10px;">
+                <div class="form-group" style="flex: 0 0 auto; margin-right: 10px;">
+                    <label for="documentType">Тип документа</label>
+                    <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control">
+                        <option value="@DocumentType.None">Выберите тип</option>
+                        <option value="@DocumentType.Invoice">Счет</option>
+                        <option value="@DocumentType.ActOfCompletedWorks">Акт выполненных работ</option>
+                        <option value="@DocumentType.WorkReport">Отчет о работе</option>
+                    </InputSelect>
+                </div>
+                <div class="form-group" style="flex: 0 0 auto; align-self: flex-end;">
+                    <label for="file-input" class="btn-primary" style="cursor: pointer; display: inline-block; margin: 0;">
+                        <span>+</span> Добавить файлы
+                    </label>
+                    <InputFile @ref="fileInput" id="file-input" OnChange="HandleFileSelected" multiple style="display: none;" />
+                </div>
+            </div>
+            @if (isUploading)
+            {
+                <div style="margin-bottom: 10px;">
+                    <p>Загрузка файлов: @uploadedFilesCount из @totalFilesCount</p>
+                </div>
+            }
             @if (orderModel.Documents != null && orderModel.Documents.Any())
             {
                 <div class="services-table-container">
@@ -333,6 +356,12 @@
     private bool isLocked = false;
     private OrderServiceDto? selectedServiceForEmployeeDialog;
     private OrderServiceDto? selectedServiceForCarDialog;
+    private InputFile? fileInput;
+    private IBrowserFile? selectedFile;
+    private DocumentType selectedDocumentType = DocumentType.None;
+    private bool isUploading = false;
+    private int uploadedFilesCount = 0;
+    private int totalFilesCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -344,7 +373,11 @@
         }
         else
         {
-            orderModel.CreatedUser = await localStorageService.GetItemAsync<EmployeeDto>("user");
+            var user = await localStorageService.GetItemAsync<EmployeeDto>("user");
+            if (user != null)
+            {
+                orderModel.CreatedUser = user;
+            }
         }
 
         await LoadReferenceData();
@@ -391,6 +424,79 @@
     private void ShowServiceDialog()
     {
         showServiceDialog = true;
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles();
+        
+        if (files == null || !files.Any())
+            return;
+
+        try
+        {
+            // Если OrderId еще не установлен (создание новой заявки), нужно сначала сохранить заявку
+            if (!IsEditMode || orderModel.Id == 0)
+            {
+                errorMessage = "Сначала сохраните заявку, прежде чем добавлять документы.";
+                return;
+            }
+
+            // Проверяем, выбран ли тип документа
+            if (selectedDocumentType == DocumentType.None)
+            {
+                errorMessage = "Пожалуйста, выберите тип документа перед загрузкой.";
+                return;
+            }
+
+            var user = await localStorageService.GetItemAsync<EmployeeDto>("user");
+            var uploadedUserId = user?.Id;
+
+            isUploading = true;
+            totalFilesCount = files.Count;
+            uploadedFilesCount = 0;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            try
+            {
+                // Загружаем все файлы одним запросом
+                var success = await ApiService.AddDocument(
+                    files,
+                    orderModel.Id,
+                    selectedDocumentType,
+                    null, // description
+                    uploadedUserId
+                );
+
+                isUploading = false;
+
+                if (success)
+                {
+                    // Обновляем список документов после загрузки
+                    orderModel = await ApiService.GetOrder(orderModel.Id);
+                    errorMessage = string.Empty;
+                }
+                else
+                {
+                    errorMessage = "Не удалось загрузить файлы.";
+                }
+            }
+            catch (Exception ex)
+            {
+                isUploading = false;
+                errorMessage = $"Ошибка при загрузке файлов: {ex.Message}";
+            }
+
+            uploadedFilesCount = totalFilesCount;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            isUploading = false;
+            errorMessage = $"Ошибка при загрузке файлов: {ex.Message}";
+            StateHasChanged();
+        }
     }
 
     private void ShowEmployeeDialog(OrderServiceDto service)

@@ -156,6 +156,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    min-width: fit-content;
 }
 
 .car-header {
@@ -172,11 +173,13 @@
     position: sticky;
     left: 0;
     z-index: 11;
+    flex-shrink: 0;
 }
 
 .hours-header {
     display: flex;
-    flex: 1;
+    min-width: 1500px; /* 25 ячеек * 60px минимум */
+    flex-shrink: 0;
 }
 
 .hour-cell {
@@ -193,6 +196,7 @@
 .calendar-timeline-body {
     display: flex;
     flex-direction: column;
+    min-width: fit-content;
 }
 
 .car-row {
@@ -200,6 +204,7 @@
     border-bottom: 1px solid #e2e8f0;
     min-height: 80px;
     position: relative;
+    min-width: fit-content;
 }
 
 .car-row:hover {
@@ -220,6 +225,7 @@
     z-index: 5;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .car-row:hover .car-name {
@@ -228,14 +234,29 @@
 
 .hours-row {
     display: flex;
-    flex: 1;
+    min-width: 1500px; /* 25 ячеек * 60px минимум */
+    flex-shrink: 0;
     position: relative;
     min-height: 80px;
 }
 
+.hours-row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
 .hours-row .hour-cell {
+    flex: 1;
+    min-width: 60px;
     border-right: 1px solid #e2e8f0;
     position: relative;
+    flex-shrink: 0;
 }
 
 .hours-row .hour-cell::after {
