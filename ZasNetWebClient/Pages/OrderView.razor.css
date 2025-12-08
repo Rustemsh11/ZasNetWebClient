@@ -49,4 +49,29 @@ a.btn-secondary:focus {
   vertical-align: middle;
 }
 
+/* Services header: responsive layout */
+.services-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.services-header h3 {
+  margin: 0;
+  margin-right: auto;
+}
+
+.services-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .services-actions .btn-primary {
+    flex: 1 1 100%;
+  }
+}
+
 

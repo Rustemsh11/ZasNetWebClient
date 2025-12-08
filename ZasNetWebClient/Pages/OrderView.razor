@@ -95,15 +95,17 @@
             <div class="form-section">
                 <div class="services-header">
                     <h3>Услуги</h3>
-                    <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
-                        <span>+</span> Добавить
-                    </button>
-                <button type="button" class="btn-primary" @onclick="ApproveAllEmployees">
-                        Подтвердить сотрудников
-                    </button>
-                <button type="button" class="btn-primary" @onclick="ApproveAllCars">
-                        Подтвердить машины
-                    </button>
+                    <div class="services-actions">
+                        <button type="button" class="btn-primary" @onclick="ShowServiceDialog">
+                            <span>+</span> Добавить
+                        </button>
+                        <button type="button" class="btn-primary" @onclick="ApproveAllEmployees">
+                            Подтвердить сотрудников
+                        </button>
+                        <button type="button" class="btn-primary" @onclick="ApproveAllCars">
+                            Подтвердить машины
+                        </button>
+                    </div>
                 </div>
                 
                 @if (orderModel.OrderServicesDtos.Any())
