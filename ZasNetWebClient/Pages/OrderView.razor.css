@@ -1,0 +1,52 @@
+/* Compact button style for small, responsive controls on OrderView */
+.btn-compact {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  border-radius: 0.25rem;
+}
+
+/* Left spacing utility for inline compact buttons */
+.ml-compact {
+  margin-left: 6px;
+}
+
+/* Responsiveness: slightly tighter on tablets */
+@media (max-width: 768px) {
+  .btn-compact {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Remove underline from anchor buttons in this view */
+a.btn-primary,
+a.btn-secondary,
+a.btn-primary:visited,
+a.btn-secondary:visited,
+a.btn-primary:hover,
+a.btn-secondary:hover,
+a.btn-primary:focus,
+a.btn-secondary:focus {
+  text-decoration: none;
+}
+
+/* Extra compact on small phones */
+@media (max-width: 480px) {
+  .btn-compact {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  .ml-compact {
+    margin-left: 4px;
+  }
+}
+
+/* Center align texts and buttons in documents table */
+.docs-table th,
+.docs-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+

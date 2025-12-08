@@ -168,7 +168,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn-primary" @onclick="() => ShowEmployeeDialog(service)">
+                                            <button type="button" class="btn-primary btn-compact" @onclick="() => ShowEmployeeDialog(service)">
                                                 <span>+</span>
                                             </button>
                                         </td>
@@ -196,7 +196,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn-primary" style="margin-left: 6px;" @onclick="() => ShowCarDialog(service)">
+                                            <button type="button" class="btn-primary btn-compact ml-compact" @onclick="() => ShowCarDialog(service)">
                                                 <span>+</span>
                                             </button>
                                         </td>
@@ -247,39 +247,46 @@
             @if (orderModel.Documents != null && orderModel.Documents.Any())
             {
                 <div class="services-table-container">
-                    <table class="services-table">
+                    <table class="services-table docs-table">
                         <thead>
                             <tr>
                                 <th>Имя</th>
                                 <th>Тип</th>
                                 <th>Дата</th>
-                                <th>Статус</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
                         @foreach (var doc in orderModel.Documents)
-                            {
-                                <tr>
-                                    <td>@doc.Name</td>
-                                    <td>@doc.DocumentType</td>
-                                    <td>@doc.UploadedDate.ToString("g")</td>
-                                    <td>@doc.DocumentType</td>
-                                    <td>
-                                        @if (doc.IsImage && !string.IsNullOrEmpty(doc.ViewUrl))
-                                        {
-                                            <button type="button" class="btn-primary" @onclick="() => OpenImageDialog(doc)">Просмотр</button>
-                                            var address = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
-                                            <a class="btn-secondary" href="@address" download>Скачать</a>
-                                        }
-                                        else
-                                        {
-                                            var address = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
-                                            <a class="btn-primary" href="@address" download>Скачать</a>
-                                        }
-                                    </td>
-                                </tr>
-                            }
+                        {
+                            <tr>
+                                <td>@doc.Name</td>
+                                <td>@GetDocumentType(doc.DocumentType)</td>
+                                <td>@doc.UploadedDate.ToString("g")</td>
+                                <td>
+                                    @if (doc.IsImage && !string.IsNullOrEmpty(doc.ViewUrl))
+                                    {
+                                        <button type="button" class="btn-primary btn-compact" @onclick="() => OpenImageDialog(doc)">Просмотр</button>
+                                        var downloadAddress = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
+                                        <a class="btn-secondary btn-compact ml-compact" href="@downloadAddress" download>Скачать</a>
+                                    }
+                                    else if (!string.IsNullOrEmpty(doc.ViewUrl) && 
+                                                (string.Equals(doc.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                                                (!string.IsNullOrEmpty(doc.Extension) && doc.Extension.EndsWith("pdf", StringComparison.OrdinalIgnoreCase))))
+                                    {
+                                        var viewAddress = $"{httpClient.BaseAddress}{doc.ViewUrl}";
+                                        var downloadAddress = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
+                                        <a class="btn-primary btn-compact" href="@viewAddress" target="_blank" rel="noopener noreferrer">Просмотр</a>
+                                        <a class="btn-secondary btn-compact ml-compact" href="@downloadAddress" download>Скачать</a>
+                                    }
+                                    else
+                                    {
+                                        var downloadAddress = $"{httpClient.BaseAddress}{doc.DownloadUrl}";
+                                        <a class="btn-primary btn-compact" href="@downloadAddress" download>Скачать</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
                         </tbody>
                     </table>
                 </div>
@@ -682,6 +689,24 @@
         else if (orderStatus == OrderStatus.Closed)
         {
             return "Закрыт";
+        }
+
+        return "Не известно";
+    }
+    
+    private string GetDocumentType(DocumentType documentType)
+    {
+        if (documentType == DocumentType.ActOfCompletedWorks)
+        {
+            return "Акт выполненных работ";
+        }
+        else if (documentType == DocumentType.Invoice)
+        {
+            return "Счет";
+        }
+        else if (documentType == DocumentType.WorkReport)
+        {
+            return "Отчет о работе";
         }
 
         return "Не известно";
