@@ -78,16 +78,29 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="price">Общая стоимость заявки</label>
-                    <input type="text" id="price" class="form-control readonly-field" value="@(orderModel.OrderPriceAmount.ToString("C"))" readonly />
-                    <ValidationMessage For="@(() => orderModel.OrderPriceAmount)" />
+                        <input type="text" id="price" class="form-control readonly-field" value="@(orderModel.OrderPriceAmount.ToString("C"))" readonly />
+                        <ValidationMessage For="@(() => orderModel.OrderPriceAmount)" />
+                        <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <InputCheckbox id="urgentInvoice"
+                                           class="form-check-input"
+                                           @bind-Value="isNeedInvoiceArgently"
+                                           disabled="@(!IsOrderFinished)" />
+                            <label class="form-check-label" for="urgentInvoice" style="margin-right: 8px;">Срочный счет</label>
+                            <button type="button"
+                                class="btn-primary btn-compact"
+                                    @onclick="SendToAccountant"
+                                    disabled="@(!IsOrderFinished)">
+                                    <text>Отправить бухгалтеру</text>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="orderStatus">Статус заявки</label>
-                    <input type="text" id="orderStatus" class="form-control readonly-field" value="@GetOrderStatusDescription(orderModel.Status)" readonly />
+                        <input type="text" id="orderStatus" class="form-control readonly-field" value="@GetOrderStatusDescription(orderModel.Status)" readonly />
                     </div>
                     <div class="form-group">
                         <label for="user">Диспетчер</label>
-                    <input type="text" id="user" class="form-control readonly-field" value="@orderModel.CreatedUser.Name" readonly />
+                        <input type="text" id="user" class="form-control readonly-field" value="@orderModel.CreatedUser.Name" readonly />
                     </div>
                 </div>
             </div>
@@ -371,6 +384,7 @@
     private bool isUploading = false;
     private int uploadedFilesCount = 0;
     private int totalFilesCount = 0;
+    private bool isNeedInvoiceArgently = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -424,7 +438,7 @@
         }
         catch
         {
-            errorMessage = "Failed to load reference data.";
+            errorMessage = "Не удалось получить связанные данные";
             availableEmployees = new List<EmployeeDto>();
             availableCars = new List<CarDto>();
         }
@@ -438,7 +452,7 @@
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         var files = e.GetMultipleFiles();
-        
+
         if (files == null || !files.Any())
             return;
 
@@ -695,7 +709,9 @@
 
         return "Не известно";
     }
-    
+
+    private bool IsOrderFinished => orderModel.Status == OrderStatus.Finished;
+
     private string GetDocumentType(DocumentType documentType)
     {
         if (documentType == DocumentType.ActOfCompletedWorks)
@@ -790,6 +806,30 @@
     private void Cancel()
     {
         Navigation.NavigateTo("/");
+    }
+
+    private async Task SendToAccountant()
+    {
+        errorMessage = string.Empty;
+
+        try
+        {
+            var success = await ApiService.ChangeStatusToWaitingInvoice(new ChangeStatusToWaitingInvoiceDto(orderModel.Id, isNeedInvoiceArgently));
+
+            if (success)
+            {
+                // Локально обновляем статус, чтобы отразить изменения в UI
+                orderModel.Status = OrderStatus.CreatingInvoice;
+            }
+            else
+            {
+                errorMessage = "Не удалось отправить заявку бухгалтеру.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при отправке заявки бухгалтеру: {ex.Message}";
+        }
     }
 
     public async ValueTask DisposeAsync()

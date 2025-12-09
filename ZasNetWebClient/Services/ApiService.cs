@@ -122,6 +122,27 @@ public class ApiService
         }
     }
 
+    public async Task<bool> ChangeStatusToWaitingInvoice(ChangeStatusToWaitingInvoiceDto changeStatusToWaitingInvoiceDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/order/ChangeStatusToWaitingInvoice", changeStatusToWaitingInvoiceDto);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<bool> LockOrder(int orderId)
     {
         try
