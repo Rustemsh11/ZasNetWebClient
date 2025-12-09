@@ -4,6 +4,7 @@
 @using ZasNetWebClient.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@inject NotificationService NotificationService
 
 <PageTitle>Login - ZasNet</PageTitle>
 <div class="login-container">
@@ -28,12 +29,7 @@
                 <ValidationMessage For="@(() => loginModel.Password)" />
             </div>
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="error-message">
-                    @errorMessage
-                </div>
-            }
+    @* Локальный текст ошибки больше не выводим, используем глобальный alert *@
 
             <div style="text-align: center;">
                 <button type="submit" class="btn-primary" disabled="@isLoading">
@@ -57,6 +53,7 @@
     {
         isLoading = true;
         errorMessage = string.Empty;
+        NotificationService.Clear();
 
         try
         {
@@ -69,11 +66,13 @@
             else
             {
                 errorMessage = "Invalid login or password. Please try again.";
+                NotificationService.ShowError(errorMessage);
             }
         }
         catch
         {
             errorMessage = "An error occurred during login. Please try again.";
+            NotificationService.ShowError(errorMessage);
         }
         finally
         {

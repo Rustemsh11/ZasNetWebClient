@@ -1,0 +1,32 @@
+.top-info-alert {
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(40, 167, 69, 0.9); /* зеленый полупрозрачный */
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2000;
+    font-size: 0.9rem;
+}
+
+.top-info-alert-text {
+    margin-right: 4px;
+}
+
+.top-info-alert-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 2px;
+}
+
+

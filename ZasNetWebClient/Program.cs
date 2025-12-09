@@ -20,6 +20,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<IdentityAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<IdentityAuthenticationStateProvider>());
+builder.Services.AddScoped<NotificationService>();
 
 var culture = new CultureInfo("ru-RU");
 CultureInfo.DefaultThreadCurrentCulture = culture;

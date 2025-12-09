@@ -1,0 +1,45 @@
+@inject ZasNetWebClient.Services.NotificationService NotificationService
+
+@if (!string.IsNullOrEmpty(currentMessage))
+{
+    <div class="top-alert">
+        <span class="top-alert-text">@currentMessage</span>
+        <button type="button" class="top-alert-close" @onclick="Close">&times;</button>
+    </div>
+}
+
+@code {
+    private string? currentMessage;
+
+    protected override void OnInitialized()
+    {
+        NotificationService.OnError += HandleError;
+        NotificationService.OnClear += HandleClear;
+    }
+
+    private void HandleError(string message)
+    {
+        currentMessage = message;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleClear()
+    {
+        currentMessage = null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Close()
+    {
+        currentMessage = null;
+        NotificationService.Clear();
+    }
+
+    public void Dispose()
+    {
+        NotificationService.OnError -= HandleError;
+        NotificationService.OnClear -= HandleClear;
+    }
+}
+
+

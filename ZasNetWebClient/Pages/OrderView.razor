@@ -7,6 +7,7 @@
 @inject HttpClient httpClient
 @inject ILocalStorageService localStorageService
 @inject NavigationManager Navigation
+@inject NotificationService NotificationService
 @implements IAsyncDisposable
 
 <PageTitle>@(IsEditMode ? $"Заявка #{OrderId}" : "Создание заявки - ZasNet")</PageTitle>
@@ -314,12 +315,7 @@
                 }
             </div>
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="error-message">
-                    @errorMessage
-                </div>
-            }
+            @* Локальный вывод текста ошибки убран, используем глобальный alert *@
 
             <div class="form-actions">
                 <button type="button" class="btn-secondary" @onclick="Cancel">Отмена</button>
@@ -439,6 +435,7 @@
         catch
         {
             errorMessage = "Не удалось получить связанные данные";
+            NotificationService.ShowError(errorMessage);
             availableEmployees = new List<EmployeeDto>();
             availableCars = new List<CarDto>();
         }
@@ -462,6 +459,7 @@
             if (!IsEditMode || orderModel.Id == 0)
             {
                 errorMessage = "Сначала сохраните заявку, прежде чем добавлять документы.";
+                NotificationService.ShowError(errorMessage);
                 return;
             }
 
@@ -469,6 +467,7 @@
             if (selectedDocumentType == DocumentType.None)
             {
                 errorMessage = "Пожалуйста, выберите тип документа перед загрузкой.";
+                NotificationService.ShowError(errorMessage);
                 return;
             }
 
@@ -479,6 +478,7 @@
             totalFilesCount = files.Count;
             uploadedFilesCount = 0;
             errorMessage = string.Empty;
+            NotificationService.Clear();
             StateHasChanged();
 
             try
@@ -499,16 +499,19 @@
                     // Обновляем список документов после загрузки
                     orderModel = await ApiService.GetOrder(orderModel.Id);
                     errorMessage = string.Empty;
+                    NotificationService.Clear();
                 }
                 else
                 {
                     errorMessage = "Не удалось загрузить файлы.";
+                    NotificationService.ShowError(errorMessage);
                 }
             }
             catch (Exception ex)
             {
                 isUploading = false;
                 errorMessage = $"Ошибка при загрузке файлов: {ex.Message}";
+                NotificationService.ShowError(errorMessage);
             }
 
             uploadedFilesCount = totalFilesCount;
@@ -518,6 +521,7 @@
         {
             isUploading = false;
             errorMessage = $"Ошибка при загрузке файлов: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
             StateHasChanged();
         }
     }
@@ -771,6 +775,7 @@
         NormalizeOrderServiceIds();
         isSubmitting = true;
         errorMessage = string.Empty;
+        NotificationService.Clear();
 
         try
         {
@@ -791,11 +796,13 @@
             else
             {
                 errorMessage = "При сохранении произошла ошибка.";
+                NotificationService.ShowError(errorMessage);
             }
         }
         catch(Exception ex)
         {
             errorMessage = $"При сохранении произошла ошибка: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
         }
         finally
         {
@@ -808,9 +815,15 @@
         Navigation.NavigateTo("/");
     }
 
+    private void CloseError()
+    {
+        errorMessage = string.Empty;
+    }
+
     private async Task SendToAccountant()
     {
         errorMessage = string.Empty;
+        NotificationService.Clear();
 
         try
         {
@@ -824,11 +837,13 @@
             else
             {
                 errorMessage = "Не удалось отправить заявку бухгалтеру.";
+                NotificationService.ShowError(errorMessage);
             }
         }
         catch (Exception ex)
         {
             errorMessage = $"Ошибка при отправке заявки бухгалтеру: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
         }
     }
 
