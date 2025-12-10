@@ -101,25 +101,16 @@ public class ApiService
         }
     }
     
-    public async Task<bool> SaveOrder(OrderDto orderDto)
+    public async Task<HttpResponseMessage> SaveOrder(OrderDto orderDto)
     {
-        try
+        var token = await _localStorageService.GetItemAsync<string>("token");
+        var saveOrderDto = new SaveOrderCommand() { OrderDto = orderDto };
+        if (!string.IsNullOrEmpty(token))
         {
-            var token = await _localStorageService.GetItemAsync<string>("token");
-            var saveOrderDto = new SaveOrderCommand() { OrderDto = orderDto };
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-
-            var response = await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
-
-            return response.IsSuccessStatusCode;
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-        catch
-        {
-            return false;
-        }
+
+        return await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
     }
 
     public async Task<bool> ChangeStatusToWaitingInvoice(ChangeStatusToWaitingInvoiceDto changeStatusToWaitingInvoiceDto)

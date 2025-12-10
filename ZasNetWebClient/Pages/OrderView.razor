@@ -822,24 +822,28 @@
 
         try
         {
-            bool success;
+            bool success = false;
             if ((OrderId ?? 0) == 0)
             {
                 success = await ApiService.CreateOrder(orderModel);
             }
             else
             {
-                success = await ApiService.SaveOrder(orderModel);
+                var res = await ApiService.SaveOrder(orderModel);
+                var error = await res.Content.ReadAsStringAsync();
+                if (string.IsNullOrEmpty(error))
+                {
+                    success = true;
+                }
+                else
+                {
+                    NotificationService.ShowError($"При сохранении произошла ошибка. {error}");
+                }
             }
 
             if (success)
             {
                 Navigation.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "При сохранении произошла ошибка.";
-                NotificationService.ShowError(errorMessage);
             }
         }
         catch(Exception ex)
