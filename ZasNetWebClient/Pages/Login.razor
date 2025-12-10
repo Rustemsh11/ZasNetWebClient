@@ -65,13 +65,13 @@
             }
             else
             {
-                errorMessage = "Invalid login or password. Please try again.";
+                errorMessage = "Неправильный логин или пароль. Повторите попытку";
                 NotificationService.ShowError(errorMessage);
             }
         }
         catch
         {
-            errorMessage = "An error occurred during login. Please try again.";
+            errorMessage = "Произошла ошибка. Повторите попытку";
             NotificationService.ShowError(errorMessage);
         }
         finally
