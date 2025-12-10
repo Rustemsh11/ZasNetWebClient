@@ -4,35 +4,22 @@ namespace ZasNetWebClient.Models;
 
 public enum PaymentType
 {
-    [Description("�� ��������� ���")]
     None = 0,
-    [Description("��������")]
     Cash = 1,
-    [Description("���")]
     Electronic = 2,
-    [Description("�����")]
     Card = 3,
-    [Description("�������� � ���")]
     CashWithVat = 4,
-    [Description("�������� ��� ���")]
     CashWithoutVat = 5,
 }
 
 public enum OrderStatus
 {
-    [Description("������")]
     Created = 0,
-    [Description("����������� ������������")]
     ApprovedWithEmployers = 1,
-    [Description("� ������")]
     Processing = 2,
-    [Description("��������")]
     Finished = 3,
-    [Description("�������� �����")]
     CreatingInvoice = 4,
-    [Description("�������� ������")]
     AwaitingPayment = 5,
-    [Description("������")]
     Closed = 6,
 }
 
@@ -115,6 +102,7 @@ public class CreateOrderCommand
 public class SaveOrderCommand
 {
     public OrderDto OrderDto { get; set; } = new();
+    public int UserId;
 }
 
 public class ServiceDto

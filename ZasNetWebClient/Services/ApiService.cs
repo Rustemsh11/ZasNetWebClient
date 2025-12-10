@@ -142,6 +142,27 @@ public class ApiService
             return false;
         }
     }
+    
+    public async Task<bool> ChangeOrderStatus(ChangeOrderStatusCommand changeOrderStatusCommand)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/order/ChangeOrderStatus", changeOrderStatusCommand);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public async Task<bool> LockOrder(int orderId)
     {
@@ -182,7 +203,7 @@ public class ApiService
         }
     }
 
-    public async Task<List<CarDto>> GetAllCars()
+    public async Task<List<CarDto>> GetAllActiveCars()
     {
         try
         {
@@ -193,7 +214,7 @@ public class ApiService
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
             
-            var cars = await _httpClient.GetFromJsonAsync<List<CarDto>>("api/v1/car/GetAllCars");
+            var cars = await _httpClient.GetFromJsonAsync<List<CarDto>>("api/v1/car/GetActiveCars");
             return cars ?? new List<CarDto>();
         }
         catch(Exception ex)

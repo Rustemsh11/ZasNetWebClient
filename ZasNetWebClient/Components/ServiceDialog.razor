@@ -7,7 +7,7 @@
     <div class="dialog-overlay" @onclick="Close"></div>
     <div class="dialog-content">
         <div class="dialog-header">
-            <h3>���������� ������</h3>
+            <h3>Добавление услуги</h3>
             <button class="btn-close" @onclick="Close">&times;</button>
         </div>
         
@@ -16,9 +16,9 @@
                 <DataAnnotationsValidator />
                 
                 <div class="form-group">
-                    <label for="service">������</label>
+                    <label for="service">Услуга</label>
                     <select id="service" @bind="serviceModel.ServiceId" class="form-control" @bind:after="OnServiceChanged">
-                        <option value="">������� ������</option>
+                        <option value="">Выбрать услугу</option>
                         @foreach (var service in AvailableServices)
                         {
                             <option value="@service.Id">@service.Name</option>
@@ -28,27 +28,25 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="price">����</label>
-                    <InputNumber id="price" @bind-Value="Price" class="form-control" placeholder="������� ����" />
+                    <label for="price">Цена</label>
+                    <InputNumber id="price" @bind-Value="Price" class="form-control" placeholder="введите цену" />
                     <ValidationMessage For="@(() => serviceModel.Price)" />
                 </div>
 
                 <div class="form-group">
-                    <label for="volume">����� �����</label>
-                    <InputNumber id="volume" @bind-Value="Volume" class="form-control" placeholder="������� �����" />
+                    <label for="volume">Общий объем</label>
+                    <InputNumber id="volume" @bind-Value="Volume" class="form-control" placeholder="введите объем" />
                     <ValidationMessage For="@(() => serviceModel.TotalVolume)" />
                 </div>
                 
                 <div class="form-group">
-                    <label for="measure">��. ���������</label>
-                    <InputText id="measure" @bind-Value="Measure" class="form-control" placeholder="������� ��. ���������" />
+                    <label for="measure">Ед. измерения</label>
+                    <InputText id="measure" @bind-Value="Measure" class="form-control" placeholder="введите ед. измерения" />
                 </div>
 
-                @* Локальный текст ошибки убрали, используем глобальный alert *@
-
                 <div class="dialog-actions">
-                    <button type="button" class="btn-secondary" @onclick="Close">������</button>
-                    <button type="submit" class="btn-primary">��������</button>
+                    <button type="button" class="btn-secondary" @onclick="Close">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить</button>
                 </div>
             </EditForm>
         </div>
@@ -105,21 +103,21 @@
             };
         if (serviceModel.ServiceId == 0)
         {
-            errorMessage = "�������� ������";
+            errorMessage = "Выберите услугу";
             NotificationService.ShowError(errorMessage);
             return;
         }
 
         if (serviceModel.Price <= 0)
         {
-            errorMessage = "���� ������ ���� ���� 0";
+            errorMessage = "Цена должна быть выше 0";
             NotificationService.ShowError(errorMessage);
             return;
         }
 
         if (serviceModel.TotalVolume <= 0)
         {
-            errorMessage = "����� ��������� ������ ���� ���� 0";
+            errorMessage = "Общая стоимость должна быть выше 0";
             NotificationService.ShowError(errorMessage);
             return;
         }

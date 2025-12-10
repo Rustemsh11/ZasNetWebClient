@@ -81,19 +81,6 @@
                         <label for="price">Общая стоимость заявки</label>
                         <input type="text" id="price" class="form-control readonly-field" value="@(orderModel.OrderPriceAmount.ToString("C"))" readonly />
                         <ValidationMessage For="@(() => orderModel.OrderPriceAmount)" />
-                        <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                            <InputCheckbox id="urgentInvoice"
-                                           class="form-check-input"
-                                           @bind-Value="isNeedInvoiceArgently"
-                                           disabled="@(!IsOrderFinished)" />
-                            <label class="form-check-label" for="urgentInvoice" style="margin-right: 8px;">Срочный счет</label>
-                            <button type="button"
-                                class="btn-primary btn-compact"
-                                    @onclick="SendToAccountant"
-                                    disabled="@(!IsOrderFinished)">
-                                    <text>Отправить бухгалтеру</text>
-                            </button>
-                        </div>
                     </div>
                     <div class="form-group">
                         <label for="orderStatus">Статус заявки</label>
@@ -103,6 +90,25 @@
                         <label for="user">Диспетчер</label>
                         <input type="text" id="user" class="form-control readonly-field" value="@orderModel.CreatedUser.Name" readonly />
                     </div>
+                </div>
+                <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                    <InputCheckbox id="urgentInvoice"
+                                   class="form-check-input"
+                                   @bind-Value="isNeedInvoiceArgently"
+                                   disabled="@(!IsOrderFinished)" />
+                    <label class="form-check-label" for="urgentInvoice" style="margin-right: 8px;">Срочный счет</label>
+                    <button type="button"
+                        class="btn-primary btn-compact"
+                            @onclick="SendToAccountant"
+                            disabled="@(!IsOrderFinished)">
+                            <text>Отправить бухгалтеру</text>
+                    </button>
+                    <button type="button"
+                        class="btn-primary btn-compact"
+                            @onclick="CloseOrder"
+                            disabled="@(!CanCloseOrder)">
+                            <text>Закрыть заявку</text>
+                    </button>
                 </div>
             </div>
 
@@ -355,6 +361,12 @@
              ImageViewUrl="@imageDialogUrl"
              DownloadUrl="@fileDownloadUrl" />
 
+<ConfirmDialog IsVisible="@showConfirmDialog"
+               Title="Подтверждение"
+               Message="Подтвердите изменение закрытой заявки"
+               OnConfirm="@ConfirmSave"
+               OnCancel="@CancelSave" />
+
 @code {
     [Parameter] public int? OrderId { get; set; }
     private bool IsEditMode => (OrderId ?? 0) != 0;
@@ -366,6 +378,7 @@
     private bool showEmployeeDialog = false;
     private bool showCarDialog = false;
     private bool showImageDialog = false;
+    private bool showConfirmDialog = false;
     private string? imageDialogUrl;
     private string? fileDownloadUrl;
     private double imageZoom = 1.0;
@@ -656,7 +669,10 @@
             }
         }
 
-        orderModel.Status = OrderStatus.ApprovedWithEmployers;
+        if (orderModel.Status == OrderStatus.Created)
+        {
+            orderModel.Status = OrderStatus.ApprovedWithEmployers;
+        }
     }
 
     private void ApproveAllCars()
@@ -716,6 +732,8 @@
 
     private bool IsOrderFinished => orderModel.Status == OrderStatus.Finished;
 
+    private bool CanCloseOrder => orderModel.Status == OrderStatus.AwaitingPayment || orderModel.Status == OrderStatus.Finished;
+
     private string GetDocumentType(DocumentType documentType)
     {
         if (documentType == DocumentType.ActOfCompletedWorks)
@@ -771,6 +789,31 @@
     }
 
     private async Task HandleSave()
+    {
+        // Проверяем, если статус заявки Closed, показываем диалог подтверждения
+        if (orderModel.Status == OrderStatus.Closed)
+        {
+            showConfirmDialog = true;
+            return;
+        }
+
+        // Если статус не Closed, продолжаем обычное сохранение
+        await PerformSave();
+    }
+
+    private async Task ConfirmSave()
+    {
+        showConfirmDialog = false;
+        await PerformSave();
+    }
+
+    private void CancelSave()
+    {
+        showConfirmDialog = false;
+        // Отменяем операцию сохранения
+    }
+
+    private async Task PerformSave()
     {
         NormalizeOrderServiceIds();
         isSubmitting = true;
@@ -843,6 +886,35 @@
         catch (Exception ex)
         {
             errorMessage = $"Ошибка при отправке заявки бухгалтеру: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
+        }
+    }
+
+    private async Task CloseOrder()
+    {
+        errorMessage = string.Empty;
+        NotificationService.Clear();
+
+        try
+        {
+            var command = new ChangeOrderStatusCommand(orderModel.Id, OrderStatus.Closed);
+            var success = await ApiService.ChangeOrderStatus(command);
+
+            if (success)
+            {
+                // Локально обновляем статус, чтобы отразить изменения в UI
+                orderModel.Status = OrderStatus.Closed;
+                NotificationService.ShowInfo("Заявка успешно закрыта.");
+            }
+            else
+            {
+                errorMessage = "Не удалось закрыть заявку.";
+                NotificationService.ShowError(errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при закрытии заявки: {ex.Message}";
             NotificationService.ShowError(errorMessage);
         }
     }

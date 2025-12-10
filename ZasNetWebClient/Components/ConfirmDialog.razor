@@ -1,0 +1,36 @@
+@* Диалог подтверждения действия *@
+<div class="service-dialog @(IsVisible ? "visible" : "")">
+    <div class="dialog-overlay" @onclick="Cancel"></div>
+    <div class="dialog-content" style="max-width: 500px;">
+        <div class="dialog-header">
+            <h3>@Title</h3>
+            <button class="btn-close" @onclick="Cancel">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <p style="margin-bottom: 20px; font-size: 16px;">@Message</p>
+            <div class="dialog-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" @onclick="Cancel">Нет</button>
+                <button type="button" class="btn-primary" @onclick="Confirm">Да</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = "Подтверждение";
+    [Parameter] public string Message { get; set; } = "Вы уверены?";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync();
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}
+

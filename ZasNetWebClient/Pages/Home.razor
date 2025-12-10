@@ -47,7 +47,7 @@ else
         try
         {
             var ordersTask = ApiService.GetAllOrders();
-            var carsTask = ApiService.GetAllCars();
+            var carsTask = ApiService.GetAllActiveCars();
             
             await Task.WhenAll(ordersTask, carsTask);
             
