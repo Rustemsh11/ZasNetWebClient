@@ -91,24 +91,50 @@
                         <input type="text" id="user" class="form-control readonly-field" value="@orderModel.CreatedUser.Name" readonly />
                     </div>
                 </div>
-                <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-                    <InputCheckbox id="urgentInvoice"
-                                   class="form-check-input"
-                                   @bind-Value="isNeedInvoiceArgently"
-                                   disabled="@(!IsOrderFinished)" />
-                    <label class="form-check-label" for="urgentInvoice" style="margin-right: 8px;">Срочный счет</label>
+                @* <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;"> *@
+                <div style="display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <InputCheckbox id="urgentInvoice"
+                                       class="form-check-input"
+                                       @bind-Value="isNeedInvoiceArgently"
+                                       disabled="@(!IsOrderFinished)" />
+                        <label class="form-check-label" for="urgentInvoice" style="margin: 0; white-space: nowrap;">Срочный счет</label>
+                    </div>
                     <button type="button"
                         class="btn-primary btn-compact"
+                            style="flex-shrink: 0; white-space: nowrap;"
                             @onclick="SendToAccountant"
                             disabled="@(!IsOrderFinished)">
                             <text>Отправить бухгалтеру</text>
                     </button>
                     <button type="button"
                         class="btn-primary btn-compact"
+                            style="flex-shrink: 0; white-space: nowrap;"
                             @onclick="CloseOrder"
                             disabled="@(!CanCloseOrder)">
                             <text>Закрыть заявку</text>
                     </button>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                        <label for="statusSelect" style="margin: 0; white-space: nowrap; flex-shrink: 0;">Изменить статус:</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                            <InputSelect id="statusSelect" @bind-Value="selectedStatus" class="form-control" style="min-width: 150px; max-width: 220px; flex: 1 1 auto; padding: 4px 8px; font-size: 13px; height: auto;">
+                                <option value="@OrderStatus.Created">Создан</option>
+                                <option value="@OrderStatus.ApprovedWithEmployers">Подтвержден сотрудниками</option>
+                                <option value="@OrderStatus.Processing">В работе</option>
+                                <option value="@OrderStatus.Finished">Завершен</option>
+                                <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
+                                <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
+                                <option value="@OrderStatus.Closed">Закрыт</option>
+                            </InputSelect>
+                            <button type="button"
+                                    class="btn-primary btn-compact"
+                                    style="flex-shrink: 0; white-space: nowrap; padding: 4px 10px; font-size: 13px;"
+                                    @onclick="ChangeStatus"
+                                    disabled="@(!IsEditMode)">
+                                <text>Изменить статус</text>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -394,6 +420,7 @@
     private int uploadedFilesCount = 0;
     private int totalFilesCount = 0;
     private bool isNeedInvoiceArgently = false;
+    private OrderStatus selectedStatus = OrderStatus.Created;
 
     protected override async Task OnInitializedAsync()
     {
@@ -401,6 +428,7 @@
         {
             await TryLockAsync();
             orderModel = await ApiService.GetOrder(this.OrderId!.Value);
+            selectedStatus = orderModel.Status;
             RecalculateOrderTotal();
         }
         else
@@ -920,6 +948,35 @@
         catch (Exception ex)
         {
             errorMessage = $"Ошибка при закрытии заявки: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
+        }
+    }
+
+    private async Task ChangeStatus()
+    {
+        errorMessage = string.Empty;
+        NotificationService.Clear();
+
+        try
+        {
+            var command = new ChangeOrderStatusCommand(orderModel.Id, selectedStatus);
+            var success = await ApiService.ChangeOrderStatus(command);
+
+            if (success)
+            {
+                // Локально обновляем статус, чтобы отразить изменения в UI
+                orderModel.Status = selectedStatus;
+                NotificationService.ShowInfo($"Статус заявки успешно изменен на: {GetOrderStatusDescription(selectedStatus)}");
+            }
+            else
+            {
+                errorMessage = "Не удалось изменить статус заявки.";
+                NotificationService.ShowError(errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при изменении статуса заявки: {ex.Message}";
             NotificationService.ShowError(errorMessage);
         }
     }

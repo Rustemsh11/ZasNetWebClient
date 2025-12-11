@@ -1,0 +1,589 @@
+@page "/my-orders"
+@using ZasNetWebClient.Services
+@using ZasNetWebClient.Models
+@using Blazored.LocalStorage
+@inject ApiService ApiService
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager Navigation
+
+<PageTitle>Мои заявки - ZasNet</PageTitle>
+
+<div class="my-orders-container" @onclick="CloseAllDropdowns">
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1>Мои заявки</h1>
+                <p>Заявки, где вы являетесь диспетчером</p>
+            </div>
+            <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
+                <span>+</span> Создать заявку
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filters-header">
+            <h3>Фильтры</h3>
+            <button class="btn-secondary btn-compact" @onclick="async () => await ResetFilters()">
+                Сбросить все
+            </button>
+        </div>
+        
+        <div class="filters-grid">
+            <!-- Search by client name -->
+            <div class="filter-group">
+                <label for="client-search">Поиск по клиенту</label>
+                <input type="text" 
+                       id="client-search" 
+                       class="form-control" 
+                       placeholder="Введите название клиента..."
+                       value="@searchClient"
+                       @oninput="async (e) => { searchClient = e.Value?.ToString() ?? string.Empty; await ApplyFilters(); }" />
+            </div>
+
+            <!-- Date range filter -->
+            <div class="filter-group">
+                <label for="date-from">Дата с</label>
+                <input type="date" 
+                       id="date-from" 
+                       class="form-control" 
+                       value="@(dateFrom?.ToString("yyyy-MM-dd"))"
+                       @onchange="async (e) => { dateFrom = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()); await ApplyFilters(); }" />
+            </div>
+
+            <div class="filter-group">
+                <label for="date-to">Дата по</label>
+                <input type="date" 
+                       id="date-to" 
+                       class="form-control" 
+                       value="@(dateTo?.ToString("yyyy-MM-dd"))"
+                       @onchange="async (e) => { dateTo = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()); await ApplyFilters(); }" />
+            </div>
+
+            <!-- Status filter -->
+            <div class="filter-group">
+                <label for="status-filter">Статус</label>
+                <select id="status-filter" 
+                        class="form-control" 
+                        value="@selectedStatus"
+                        @onchange="async (e) => { selectedStatus = e.Value?.ToString() ?? string.Empty; await ApplyFilters(); }">
+                    <option value="">Все статусы</option>
+                    <option value="@OrderStatus.Created">Создан</option>
+                    <option value="@OrderStatus.ApprovedWithEmployers">Подтвержден сотрудниками</option>
+                    <option value="@OrderStatus.Processing">В работе</option>
+                    <option value="@OrderStatus.Finished">Завершен</option>
+                    <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
+                    <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
+                    <option value="@OrderStatus.Closed">Закрыт</option>
+                </select>
+            </div>
+
+            <!-- Payment type filter -->
+            <div class="filter-group">
+                <label for="payment-filter">Тип оплаты</label>
+                <select id="payment-filter" 
+                        class="form-control" 
+                        value="@selectedPaymentType"
+                        @onchange="async (e) => { selectedPaymentType = e.Value?.ToString() ?? string.Empty; await ApplyFilters(); }">
+                    <option value="">Все типы</option>
+                    <option value="@PaymentType.Cash">Наличные</option>
+                    <option value="@PaymentType.Electronic">СБП</option>
+                    <option value="@PaymentType.Card">Карта</option>
+                    <option value="@PaymentType.CashWithVat">Наличные с НДС</option>
+                    <option value="@PaymentType.CashWithoutVat">Наличные без НДС</option>
+                </select>
+            </div>
+
+            <!-- Service filter -->
+            <div class="filter-group filter-group-services">
+                <label for="service-dropdown">Услуги</label>
+                <div class="custom-dropdown">
+                    <button type="button" 
+                            class="dropdown-toggle form-control" 
+                            @onclick="ToggleServicesDropdown"
+                            @onclick:stopPropagation="true">
+                        <span class="dropdown-text">
+                            @if (selectedServiceIds.Any())
+                            {
+                                <text>Выбрано: @selectedServiceIds.Count</text>
+                            }
+                            else
+                            {
+                                <text>Выберите услуги</text>
+                            }
+                        </span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    
+                    @if (isServicesDropdownOpen)
+                    {
+                        <div class="dropdown-menu" @onclick:stopPropagation="true">
+                            @if (availableServices.Any())
+                            {
+                                <div class="dropdown-search">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           placeholder="Поиск услуги..."
+                                           value="@serviceSearchTerm"
+                                           @oninput="(e) => serviceSearchTerm = e.Value?.ToString() ?? string.Empty"
+                                           @onclick:stopPropagation="true" />
+                                </div>
+                                <div class="dropdown-items">
+                                    @foreach (var service in GetFilteredServices())
+                                    {
+                                        <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                            <input type="checkbox" 
+                                                   checked="@selectedServiceIds.Contains(service.Id)"
+                                                   @onchange="(e) => ToggleService(service.Id, ((ChangeEventArgs)e).Value)"
+                                                   @onclick:stopPropagation="true" />
+                                            <span>@service.Name</span>
+                                        </label>
+                                    }
+                                </div>
+                                <div class="dropdown-footer">
+                                    <button type="button" 
+                                            class="btn-secondary btn-compact" 
+                                            @onclick="ClearAllServices"
+                                            @onclick:stopPropagation="true">
+                                        Очистить всё
+                                    </button>
+                                    <button type="button" 
+                                            class="btn-primary btn-compact" 
+                                            @onclick="ApplyServicesFilter"
+                                            @onclick:stopPropagation="true">
+                                        Применить
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="dropdown-empty">
+                                    <span>Нет доступных услуг</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Active filters display -->
+        @if (HasActiveFilters())
+        {
+            <div class="active-filters">
+                <span class="active-filters-label">Активные фильтры:</span>
+                <div class="active-filters-list">
+                    @if (!string.IsNullOrWhiteSpace(searchClient))
+                    {
+                        <span class="filter-tag">
+                            Клиент: "@searchClient"
+                            <button @onclick="async () => { searchClient = string.Empty; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (dateFrom.HasValue)
+                    {
+                        <span class="filter-tag">
+                            С: @dateFrom.Value.ToString("dd.MM.yyyy")
+                            <button @onclick="async () => { dateFrom = null; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (dateTo.HasValue)
+                    {
+                        <span class="filter-tag">
+                            По: @dateTo.Value.ToString("dd.MM.yyyy")
+                            <button @onclick="async () => { dateTo = null; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (!string.IsNullOrEmpty(selectedStatus))
+                    {
+                        <span class="filter-tag">
+                            Статус: @GetOrderStatusDescription((OrderStatus)Enum.Parse(typeof(OrderStatus), selectedStatus))
+                            <button @onclick="async () => { selectedStatus = string.Empty; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (!string.IsNullOrEmpty(selectedPaymentType))
+                    {
+                        <span class="filter-tag">
+                            Оплата: @GetPaymentTypeDescription((PaymentType)Enum.Parse(typeof(PaymentType), selectedPaymentType))
+                            <button @onclick="async () => { selectedPaymentType = string.Empty; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (selectedServiceIds.Any())
+                    {
+                        @foreach (var serviceId in selectedServiceIds)
+                        {
+                            var serviceName = availableServices.FirstOrDefault(s => s.Id == serviceId)?.Name ?? "";
+                            <span class="filter-tag">
+                                Услуга: @serviceName
+                                <button @onclick="async () => await RemoveService(serviceId)">&times;</button>
+                            </span>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка заявок...</p>
+        </div>
+    }
+    else if (filteredOrders.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h3>Заявки не найдены</h3>
+            <p>
+                @if (HasActiveFilters())
+                {
+                    <text>Попробуйте изменить параметры фильтрации</text>
+                }
+                else
+                {
+                    <text>У вас пока нет заявок. Создайте первую заявку!</text>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <!-- Results summary -->
+        <div class="results-summary">
+            <span>Найдено заявок: <strong>@filteredOrders.Count</strong> @(totalOrdersCount > 0 && HasActiveFilters() ? $"из {totalOrdersCount}" : "")</span>
+        </div>
+
+        <!-- Orders list -->
+        <div class="orders-list">
+            @foreach (var order in filteredOrders)
+            {
+                <div class="order-card" @ondblclick="() => OpenOrder(order.Id)">
+                    <div class="order-card-header">
+                        <div class="order-id">
+                            <span class="order-label">Заявка</span>
+                            <span class="order-number">#@order.Id</span>
+                        </div>
+                        <div class="order-status status-@order.Status.ToString().ToLower()">
+                            @GetOrderStatusDescription(order.Status)
+                        </div>
+                    </div>
+
+                    <div class="order-card-body">
+                        <div class="order-info-row">
+                            <div class="order-info-item">
+                                <span class="info-label">Клиент:</span>
+                                <span class="info-value">@order.Client</span>
+                            </div>
+                            <div class="order-info-item">
+                                <span class="info-label">Дата начала:</span>
+                                <span class="info-value">@order.DateStart.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                            <div class="order-info-item">
+                                <span class="info-label">Дата окончания:</span>
+                                <span class="info-value">@order.DateEnd.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                        </div>
+
+                        <div class="order-info-row">
+                            <div class="order-info-item">
+                                <span class="info-label">Адрес:</span>
+                                <span class="info-value">@order.Address</span>
+                            </div>
+                            <div class="order-info-item">
+                                <span class="info-label">Тип оплаты:</span>
+                                <span class="info-value">@GetPaymentTypeDescription(order.PaymentType)</span>
+                            </div>
+                            <div class="order-info-item">
+                                <span class="info-label">Сумма:</span>
+                                <span class="info-value price">@order.OrderPriceAmount.ToString("C")</span>
+                            </div>
+                        </div>
+
+                        @if (order.ServiceNames.Any())
+                        {
+                            <div class="order-services">
+                                <span class="info-label">Услуги:</span>
+                                <div class="services-tags">
+                                    @foreach (var serviceName in order.ServiceNames)
+                                    {
+                                        <span class="service-tag">
+                                            @serviceName
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (order.CarNames.Any())
+                        {
+                            <div class="order-services">
+                                <span class="info-label">Машины:</span>
+                                <div class="services-tags">
+                                    @foreach (var carName in order.CarNames)
+                                    {
+                                        <span class="service-tag">
+                                            @carName
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="order-card-footer">
+                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                            Открыть
+                        </button>
+                        <span class="order-hint">Двойной клик для открытия</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<GetOrdersByFilterResponse> filteredOrders = new();
+    private List<ServiceDto> availableServices = new();
+    private EmployeeDto? currentUser;
+    private bool isLoading = false;
+    private int totalOrdersCount = 0;
+
+    // Filter properties
+    private string searchClient = string.Empty;
+    private DateTime? dateFrom = null;
+    private DateTime? dateTo = null;
+    private string selectedStatus = string.Empty;
+    private string selectedPaymentType = string.Empty;
+    private List<int> selectedServiceIds = new();
+    
+    // Dropdown state
+    private bool isServicesDropdownOpen = false;
+    private string serviceSearchTerm = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            // Get current user
+            currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+
+            // Load available services for filter
+            var parameters = await ApiService.GetCreateOrderParameters();
+            availableServices = parameters?.ServiceDtos ?? new List<ServiceDto>();
+
+            // Load orders with filters
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading orders: {ex.Message}");
+            filteredOrders = new List<GetOrdersByFilterResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        if (currentUser == null)
+        {
+            filteredOrders = new List<GetOrdersByFilterResponse>();
+            totalOrdersCount = 0;
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            // Создаем запрос с фильтрами
+            var request = new GetOrdersByFilterRequest
+            {
+                DateFrom = dateFrom,
+                DateTo = dateTo,
+                ClientSearchTerm = string.IsNullOrWhiteSpace(searchClient) ? null : searchClient,
+                CreatedEmployeeIds = new List<int> { currentUser.Id } // Фильтруем только заявки текущего пользователя
+            };
+
+            // Добавляем статус если выбран
+            if (!string.IsNullOrEmpty(selectedStatus))
+            {
+                var status = (OrderStatus)Enum.Parse(typeof(OrderStatus), selectedStatus);
+                request.Statuses = new List<OrderStatus> { status };
+            }
+
+            // Добавляем тип оплаты если выбран
+            if (!string.IsNullOrEmpty(selectedPaymentType))
+            {
+                var paymentType = (PaymentType)Enum.Parse(typeof(PaymentType), selectedPaymentType);
+                request.PaymentTypes = new List<PaymentType> { paymentType };
+            }
+
+            // Добавляем услуги если выбраны
+            if (selectedServiceIds.Any())
+            {
+                request.ServiceIds = selectedServiceIds.ToList();
+            }
+
+            // Получаем отфильтрованные заявки с сервера
+            filteredOrders = await ApiService.GetOrdersByFilter(request);
+
+            // Загружаем общее количество заявок пользователя (без фильтров) для отображения
+            if (totalOrdersCount == 0 && !HasActiveFilters())
+            {
+                totalOrdersCount = filteredOrders.Count;
+            }
+            else if (!HasActiveFilters())
+            {
+                totalOrdersCount = filteredOrders.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying filters: {ex.Message}");
+            filteredOrders = new List<GetOrdersByFilterResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        searchClient = string.Empty;
+        dateFrom = null;
+        dateTo = null;
+        selectedStatus = string.Empty;
+        selectedPaymentType = string.Empty;
+        selectedServiceIds.Clear();
+        await ApplyFilters();
+    }
+
+    private bool HasActiveFilters()
+    {
+        return !string.IsNullOrWhiteSpace(searchClient) ||
+               dateFrom.HasValue ||
+               dateTo.HasValue ||
+               !string.IsNullOrEmpty(selectedStatus) ||
+               !string.IsNullOrEmpty(selectedPaymentType) ||
+               selectedServiceIds.Any();
+    }
+
+    private void ToggleService(int serviceId, object? checkedValue)
+    {
+        var isChecked = checkedValue is bool b && b;
+        
+        if (isChecked)
+        {
+            if (!selectedServiceIds.Contains(serviceId))
+            {
+                selectedServiceIds.Add(serviceId);
+            }
+        }
+        else
+        {
+            selectedServiceIds.Remove(serviceId);
+        }
+        
+        // Только обновляем UI, НЕ применяем фильтры
+    }
+
+    private async Task RemoveService(int serviceId)
+    {
+        selectedServiceIds.Remove(serviceId);
+        await ApplyFilters();
+    }
+
+    private void ToggleServicesDropdown()
+    {
+        isServicesDropdownOpen = !isServicesDropdownOpen;
+        if (!isServicesDropdownOpen)
+        {
+            serviceSearchTerm = string.Empty;
+        }
+    }
+
+    private async Task ApplyServicesFilter()
+    {
+        isServicesDropdownOpen = false;
+        serviceSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private async Task ClearAllServices()
+    {
+        selectedServiceIds.Clear();
+        isServicesDropdownOpen = false;
+        serviceSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private List<ServiceDto> GetFilteredServices()
+    {
+        if (string.IsNullOrWhiteSpace(serviceSearchTerm))
+        {
+            return availableServices;
+        }
+
+        return availableServices
+            .Where(s => s.Name.Contains(serviceSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void CloseAllDropdowns()
+    {
+        if (isServicesDropdownOpen)
+        {
+            isServicesDropdownOpen = false;
+            serviceSearchTerm = string.Empty;
+        }
+    }
+
+    private void OpenOrder(int orderId)
+    {
+        Navigation.NavigateTo($"/order/{orderId}");
+    }
+
+    private string GetOrderStatusDescription(OrderStatus orderStatus)
+    {
+        return orderStatus switch
+        {
+            OrderStatus.Created => "Создан",
+            OrderStatus.ApprovedWithEmployers => "Подтвержден сотрудниками",
+            OrderStatus.Processing => "В работе",
+            OrderStatus.Finished => "Завершен",
+            OrderStatus.CreatingInvoice => "Ожидание счета",
+            OrderStatus.AwaitingPayment => "Ожидание оплаты",
+            OrderStatus.Closed => "Закрыт",
+            _ => "Неизвестно"
+        };
+    }
+
+    private string GetPaymentTypeDescription(PaymentType paymentType)
+    {
+        return paymentType switch
+        {
+            PaymentType.None => "Не указан",
+            PaymentType.Cash => "Наличные",
+            PaymentType.Electronic => "СБП",
+            PaymentType.Card => "Карта",
+            PaymentType.CashWithVat => "Наличные с НДС",
+            PaymentType.CashWithoutVat => "Наличные без НДС",
+            _ => "Неизвестно"
+        };
+    }
+}
+

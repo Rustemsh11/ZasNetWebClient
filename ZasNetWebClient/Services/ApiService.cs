@@ -214,6 +214,80 @@ public class ApiService
         }
     }
 
+    public async Task<List<GetOrdersByFilterResponse>> GetOrdersByFilter(GetOrdersByFilterRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>();
+
+            if (request.DateFrom.HasValue)
+            {
+                queryParams.Add($"DateFrom={request.DateFrom.Value:O}");
+            }
+
+            if (request.DateTo.HasValue)
+            {
+                queryParams.Add($"DateTo={request.DateTo.Value:O}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.ClientSearchTerm))
+            {
+                queryParams.Add($"ClientSearchTerm={Uri.EscapeDataString(request.ClientSearchTerm)}");
+            }
+
+            if (request.Statuses != null && request.Statuses.Any())
+            {
+                foreach (var status in request.Statuses)
+                {
+                    queryParams.Add($"Statuses={status}");
+                }
+            }
+
+            if (request.PaymentTypes != null && request.PaymentTypes.Any())
+            {
+                foreach (var paymentType in request.PaymentTypes)
+                {
+                    queryParams.Add($"PaymentTypes={paymentType}");
+                }
+            }
+
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    queryParams.Add($"ServiceIds={serviceId}");
+                }
+            }
+
+            if (request.CreatedEmployeeIds != null && request.CreatedEmployeeIds.Any())
+            {
+                foreach (var employeeId in request.CreatedEmployeeIds)
+                {
+                    queryParams.Add($"CreatedEmployeeIds={employeeId}");
+                }
+            }
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"api/v1/order/GetOrdersByFilter{queryString}";
+
+            var orders = await _httpClient.GetFromJsonAsync<List<GetOrdersByFilterResponse>>(url);
+            return orders ?? new List<GetOrdersByFilterResponse>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting orders by filter: {ex.Message}");
+            return new List<GetOrdersByFilterResponse>();
+        }
+    }
+
     public async Task<bool> AddDocument(IEnumerable<IBrowserFile> files, int orderId, DocumentType documentType, string? description = null, int? uploadedUserId = null)
     {
         try

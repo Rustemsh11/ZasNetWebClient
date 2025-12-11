@@ -133,3 +133,63 @@ public class CreateOrderParameters
     public List<CarDto> CarDtos { get; set; } = new();
     public List<PaymentType> PaymentTypes { get; set; } = new();
 }
+
+/// <summary>
+/// Запрос на получение заявок с фильтрацией
+/// </summary>
+public class GetOrdersByFilterRequest
+{
+    /// <summary>
+    /// Дата начала диапазона
+    /// </summary>
+    public DateTime? DateFrom { get; set; }
+
+    /// <summary>
+    /// Дата окончания диапазона
+    /// </summary>
+    public DateTime? DateTo { get; set; }
+
+    /// <summary>
+    /// Список статусов для фильтрации
+    /// </summary>
+    public List<OrderStatus>? Statuses { get; set; }
+
+    /// <summary>
+    /// Поисковый запрос по имени клиента
+    /// </summary>
+    public string? ClientSearchTerm { get; set; }
+
+    /// <summary>
+    /// Список типов оплаты для фильтрации
+    /// </summary>
+    public List<PaymentType>? PaymentTypes { get; set; }
+
+    /// <summary>
+    /// Список ID услуг для фильтрации
+    /// </summary>
+    public List<int>? ServiceIds { get; set; }
+
+    /// <summary>
+    /// Список ID сотрудников, создавших заявку
+    /// </summary>
+    public List<int>? CreatedEmployeeIds { get; set; }
+}
+
+/// <summary>
+/// Ответ с данными заявки (упрощенная версия)
+/// </summary>
+public class GetOrdersByFilterResponse
+{
+    public int Id { get; set; }
+    public string Client { get; set; } = string.Empty;
+    public DateTime DateStart { get; set; }
+    public DateTime DateEnd { get; set; }
+    public string Address { get; set; } = string.Empty;
+    public decimal OrderPriceAmount { get; set; }
+    public PaymentType PaymentType { get; set; }
+    public OrderStatus Status { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public string CreatedEmployeeName { get; set; } = string.Empty;
+    public List<string> ServiceNames { get; set; } = new();
+    public List<string> CarNames { get; set; } = new();
+}
