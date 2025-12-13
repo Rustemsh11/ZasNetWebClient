@@ -62,6 +62,10 @@
     private OrderServiceDto serviceModel = new ();
     private string errorMessage = string.Empty;
     public decimal Price = 0;
+    public decimal StandartPrecentForEmployee;
+    public decimal PrecentForMultipleEmployeers;
+    public decimal PrecentLaterOrderForEmployee;
+    public decimal PrecentLaterOrderForMultipleEmployeers;
     public double Volume = 0;
     public string Measure = "";
 
@@ -84,6 +88,10 @@
             Price = selectedService.MinPrice;
             Measure = selectedService.Measure;
             Volume = selectedService.MinVolume;
+            StandartPrecentForEmployee = selectedService.StandartPrecentForEmployee;
+            PrecentForMultipleEmployeers = selectedService.PrecentForMultipleEmployeers;
+            PrecentLaterOrderForEmployee = selectedService.PrecentLaterOrderForEmployee;
+            PrecentLaterOrderForMultipleEmployeers = selectedService.PrecentLaterOrderForMultipleEmployeers;
         }
     }
 
@@ -100,6 +108,10 @@
                 Price = Price * (decimal)Volume,
                 TotalVolume = Volume,
                 ServiceId = serviceModel.ServiceId,
+                StandartPrecentForEmployee = StandartPrecentForEmployee,
+                PrecentForMultipleEmployeers = PrecentForMultipleEmployeers,
+                PrecentLaterOrderForEmployee = PrecentLaterOrderForEmployee,
+                PrecentLaterOrderForMultipleEmployeers = PrecentLaterOrderForMultipleEmployeers,
             };
         if (serviceModel.ServiceId == 0)
         {

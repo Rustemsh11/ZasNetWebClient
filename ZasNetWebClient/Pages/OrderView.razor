@@ -72,6 +72,23 @@
                     <label for="description">Доп. информация</label>
                     <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" placeholder="введите доп. информацию" rows="1" />
                 </div>
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <div class="checkbox-wrapper">
+                            <InputCheckbox id="isAlmazOrder" @bind-Value="orderModel.IsAlmazOrder" class="form-check-input" />
+                            <label class="form-check-label" for="isAlmazOrder">Заявка Алмаз</label>
+                        </div>
+                    </div>
+                    @if (orderModel.PaymentType == PaymentType.Cash)
+                    {
+                        <div class="form-group">
+                            <div class="checkbox-wrapper">
+                                <InputCheckbox id="isCashWasTransferred" @bind-Value="orderModel.IsCashWasTransferred" class="form-check-input" />
+                                <label class="form-check-label" for="isCashWasTransferred">Наличные переведены</label>
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
 
             <div class="form-section">

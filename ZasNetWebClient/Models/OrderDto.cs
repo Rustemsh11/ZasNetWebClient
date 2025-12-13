@@ -29,6 +29,10 @@ public class OrderServiceDto
     public int ServiceId { get; set; }
     public decimal Price { get; set; }
     public double TotalVolume { get; set; }
+    public decimal StandartPrecentForEmployee { get; set; }
+    public decimal PrecentForMultipleEmployeers { get; set; }
+    public decimal PrecentLaterOrderForEmployee { get; set; }
+    public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
     public List<OrderServiceEmployeeDto> OrderServiceEmployeeDtos { get; set; } = new();
     public List<OrderServiceCarDto> OrderServiceCarDtos { get; set; } = new();
 }
@@ -47,6 +51,8 @@ public class OrderDto
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
     public OrderStatus Status { get; set; }
     public string? Description { get; set; }
+    public bool IsAlmazOrder { get; set; }
+    public bool IsCashWasTransferred { get; set; }
     public EmployeeDto CreatedUser { get; set; } = new();
     public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();
     public List<DocumentDto> Documents { get; set; } = new();
@@ -112,6 +118,14 @@ public class ServiceDto
     public decimal MinPrice { get; set; }
     public double MinVolume { get; set; }
     public string Measure { get; set; } = string.Empty;
+
+    public decimal StandartPrecentForEmployee { get; set; }
+
+    public decimal PrecentForMultipleEmployeers { get; set; }
+
+    public decimal PrecentLaterOrderForEmployee { get; set; }
+
+    public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
 }
 
 public class EmployeeDto
@@ -192,4 +206,111 @@ public class GetOrdersByFilterResponse
     public string CreatedEmployeeName { get; set; } = string.Empty;
     public List<string> ServiceNames { get; set; } = new();
     public List<string> CarNames { get; set; } = new();
+}
+
+/// <summary>
+/// Запрос на получение заработков сотрудников за месяц с фильтрацией
+/// </summary>
+public class GetEmployeeEarningByMonthRequest
+{
+    /// <summary>
+    /// Год (обязательный)
+    /// </summary>
+    public int Year { get; set; }
+
+    /// <summary>
+    /// Месяц (обязательный, 1-12)
+    /// </summary>
+    public int Month { get; set; }
+
+    /// <summary>
+    /// Список ID сотрудников для фильтрации
+    /// </summary>
+    public List<int>? EmployeeIds { get; set; }
+
+    /// <summary>
+    /// Поисковый запрос по имени клиента
+    /// </summary>
+    public string? ClientSearchTerm { get; set; }
+
+    /// <summary>
+    /// Дата начала диапазона для дополнительной фильтрации по датам заявки
+    /// </summary>
+    public DateTime? DateFrom { get; set; }
+
+    /// <summary>
+    /// Дата окончания диапазона для дополнительной фильтрации по датам заявки
+    /// </summary>
+    public DateTime? DateTo { get; set; }
+
+    /// <summary>
+    /// Список ID услуг для фильтрации
+    /// </summary>
+    public List<int>? ServiceIds { get; set; }
+}
+
+/// <summary>
+/// Ответ с данными о заработке сотрудника
+/// </summary>
+public class GetEmployeeEarningByMonthResponse
+{
+    /// <summary>
+    /// ID записи о заработке
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
+    /// ID заявки
+    /// </summary>
+    public int OrderId { get; set; }
+
+    /// <summary>
+    /// Клиент заявки
+    /// </summary>
+    public string Client { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Дата начала заявки
+    /// </summary>
+    public DateTime OrderDateStart { get; set; }
+
+    /// <summary>
+    /// Дата окончания заявки
+    /// </summary>
+    public DateTime OrderDateEnd { get; set; }
+
+    /// <summary>
+    /// Название услуги
+    /// </summary>
+    public string ServiceName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Сотрудник
+    /// </summary>
+    public EmployeeDto Employee { get; set; } = new();
+
+    /// <summary>
+    /// Процент для сотрудника
+    /// </summary>
+    public decimal ServiceEmployeePrecent { get; set; }
+
+    /// <summary>
+    /// Описание процента
+    /// </summary>
+    public string? PrecentEmployeeDescription { get; set; }
+
+    /// <summary>
+    /// Заработок сотрудника
+    /// </summary>
+    public decimal EmployeeEarning { get; set; }
+
+    /// <summary>
+    /// Общая стоимость услуги
+    /// </summary>
+    public decimal ServiceTotalPrice { get; set; }
+
+    /// <summary>
+    /// Объем работ
+    /// </summary>
+    public double TotalVolume { get; set; }
 }

@@ -336,4 +336,66 @@ public class ApiService
             return false;
         }
     }
+
+    public async Task<List<GetEmployeeEarningByMonthResponse>> GetEmployeeEarningsByMonth(GetEmployeeEarningByMonthRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"Year={request.Year}",
+                $"Month={request.Month}"
+            };
+
+            if (request.DateFrom.HasValue)
+            {
+                queryParams.Add($"DateFrom={request.DateFrom.Value:O}");
+            }
+
+            if (request.DateTo.HasValue)
+            {
+                queryParams.Add($"DateTo={request.DateTo.Value:O}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.ClientSearchTerm))
+            {
+                queryParams.Add($"ClientSearchTerm={Uri.EscapeDataString(request.ClientSearchTerm)}");
+            }
+
+            if (request.EmployeeIds != null && request.EmployeeIds.Any())
+            {
+                foreach (var employeeId in request.EmployeeIds)
+                {
+                    queryParams.Add($"EmployeeIds={employeeId}");
+                }
+            }
+
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    queryParams.Add($"ServiceIds={serviceId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EmployeeEarning/GetEmployeeEarningByMounth{queryString}";
+
+            var earnings = await _httpClient.GetFromJsonAsync<List<GetEmployeeEarningByMonthResponse>>(url);
+            return earnings ?? new List<GetEmployeeEarningByMonthResponse>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting employee earnings: {ex.Message}");
+            return new List<GetEmployeeEarningByMonthResponse>();
+        }
+    }
 }
