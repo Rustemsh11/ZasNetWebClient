@@ -251,13 +251,29 @@
     }
     else
     {
-        <!-- Results summary -->
+        <!-- Results summary with view toggle -->
         <div class="results-summary">
-            <span>Найдено заявок: <strong>@filteredOrders.Count</strong> @(totalOrdersCount > 0 && HasActiveFilters() ? $"из {totalOrdersCount}" : "")</span>
+            <div class="results-info">
+                <span>Найдено заявок: <strong>@filteredOrders.Count</strong> @(totalOrdersCount > 0 && HasActiveFilters() ? $"из {totalOrdersCount}" : "")</span>
+            </div>
+            <div class="view-toggle">
+                <button class="view-toggle-btn @(viewMode == ViewMode.Cards ? "active" : "")" 
+                        @onclick="() => SetViewMode(ViewMode.Cards)"
+                        title="Карточки">
+                    <span class="icon">⊞</span>
+                </button>
+                <button class="view-toggle-btn @(viewMode == ViewMode.List ? "active" : "")" 
+                        @onclick="() => SetViewMode(ViewMode.List)"
+                        title="Список">
+                    <span class="icon">☰</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Orders list -->
-        <div class="orders-list">
+        @if (viewMode == ViewMode.Cards)
+        {
+            <!-- Orders list (Cards) -->
+            <div class="orders-list">
             @foreach (var order in filteredOrders)
             {
                 <div class="order-card" @ondblclick="() => OpenOrder(order.Id)">
@@ -341,16 +357,90 @@
                     </div>
                 </div>
             }
-        </div>
+            </div>
+        }
+        else
+        {
+            <!-- Orders Table List -->
+            <div class="earnings-table-container">
+                <table class="earnings-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Адрес</th>
+                            <th>Дата начала</th>
+                            <th>Дата окончания</th>
+                            <th>Сумма</th>
+                            <th>Оплата</th>
+                            <th>Статус</th>
+                            <th>Услуги</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in filteredOrders)
+                        {
+                            <tr class="earning-row" @ondblclick="() => OpenOrder(order.Id)">
+                                <td class="order-id-cell">
+                                    <strong>#@order.Id</strong>
+                                </td>
+                                <td class="client-cell">@order.Client</td>
+                                <td class="address-cell">@order.Address</td>
+                                <td class="date-cell">@order.DateStart.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td class="date-cell">@order.DateEnd.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td class="price-cell">@order.OrderPriceAmount.ToString("C")</td>
+                                <td class="payment-cell">@GetPaymentTypeDescription(order.PaymentType)</td>
+                                <td class="status-cell">
+                                    <span class="order-status status-@order.Status.ToString().ToLower()">
+                                        @GetOrderStatusDescription(order.Status)
+                                    </span>
+                                </td>
+                                <td class="services-cell">
+                                    @if (order.ServiceNames.Any())
+                                    {
+                                        <div class="services-tags-compact">
+                                            @foreach (var serviceName in order.ServiceNames.Take(2))
+                                            {
+                                                <span class="service-tag-small">@serviceName</span>
+                                            }
+                                            @if (order.ServiceNames.Count > 2)
+                                            {
+                                                <span class="service-tag-small more">+@(order.ServiceNames.Count - 2)</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="empty-description">—</span>
+                                    }
+                                </td>
+                                <td class="action-cell">
+                                    <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                        Открыть
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>
 
 @code {
+    private enum ViewMode
+    {
+        Cards,
+        List
+    }
     private List<GetOrdersByFilterResponse> filteredOrders = new();
     private List<ServiceDto> availableServices = new();
     private EmployeeDto? currentUser;
     private bool isLoading = false;
     private int totalOrdersCount = 0;
+    private ViewMode viewMode = ViewMode.Cards;
 
     // Filter properties
     private string searchClient = string.Empty;
@@ -584,6 +674,12 @@
             PaymentType.CashWithoutVat => "Наличные без НДС",
             _ => "Неизвестно"
         };
+    }
+
+    private void SetViewMode(ViewMode mode)
+    {
+        viewMode = mode;
+        StateHasChanged();
     }
 }
 
