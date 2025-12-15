@@ -1,4 +1,4 @@
-@page "/employeeEarnings"
+@page "/dispetcherEarnings"
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Models
 @using Blazored.LocalStorage
@@ -6,14 +6,14 @@
 @inject ILocalStorageService LocalStorageService
 @inject NavigationManager Navigation
 
-<PageTitle>Заработки сотрудников - ZasNet</PageTitle>
+<PageTitle>Заработки диспетчеров - ZasNet</PageTitle>
 
 <div class="employee-earnings-container" @onclick="CloseAllDropdowns">
     <div class="page-header">
         <div class="header-content">
             <div>
-                <h1>Заработки сотрудников</h1>
-                <p>Просмотр заработков сотрудников за месяц</p>
+                <h1>Заработки диспетчеров</h1>
+                <p>Просмотр заработков диспетчеров за месяц</p>
             </div>
         </div>
     </div>
@@ -89,62 +89,62 @@
                        @onchange="async (e) => { dateTo = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()); await ApplyFilters(); }" />
             </div>
 
-            <!-- Employee filter -->
+            <!-- Dispetcher filter -->
             <div class="filter-group filter-group-employees">
-                <label for="employee-dropdown">Сотрудники</label>
+                <label for="dispetcher-dropdown">Диспетчеры</label>
                 <div class="custom-dropdown">
                     <button type="button" 
                             class="dropdown-toggle form-control" 
-                            @onclick="ToggleEmployeesDropdown"
+                            @onclick="ToggleDispetchersDropdown"
                             @onclick:stopPropagation="true">
                         <span class="dropdown-text">
-                            @if (selectedEmployeeIds.Any())
+                            @if (selectedDispetcherIds.Any())
                             {
-                                <text>Выбрано: @selectedEmployeeIds.Count</text>
+                                <text>Выбрано: @selectedDispetcherIds.Count</text>
                             }
                             else
                             {
-                                <text>Выберите сотрудников</text>
+                                <text>Выберите диспетчеров</text>
                             }
                         </span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     
-                    @if (isEmployeesDropdownOpen)
+                    @if (isDispetchersDropdownOpen)
                     {
                         <div class="dropdown-menu" @onclick:stopPropagation="true">
-                            @if (availableEmployees.Any())
+                            @if (availableDispetchers.Any())
                             {
                                 <div class="dropdown-search">
                                     <input type="text" 
                                            class="form-control" 
-                                           placeholder="Поиск сотрудника..."
-                                           value="@employeeSearchTerm"
-                                           @oninput="(e) => employeeSearchTerm = e.Value?.ToString() ?? string.Empty"
+                                           placeholder="Поиск диспетчера..."
+                                           value="@dispetcherSearchTerm"
+                                           @oninput="(e) => dispetcherSearchTerm = e.Value?.ToString() ?? string.Empty"
                                            @onclick:stopPropagation="true" />
                                 </div>
                                 <div class="dropdown-items">
-                                    @foreach (var employee in GetFilteredEmployees())
+                                    @foreach (var dispetcher in GetFilteredDispetchers())
                                     {
                                         <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
                                             <input type="checkbox" 
-                                                   checked="@selectedEmployeeIds.Contains(employee.Id)"
-                                                   @onchange="(e) => ToggleEmployee(employee.Id, ((ChangeEventArgs)e).Value)"
+                                                   checked="@selectedDispetcherIds.Contains(dispetcher.Id)"
+                                                   @onchange="(e) => ToggleDispetcher(dispetcher.Id, ((ChangeEventArgs)e).Value)"
                                                    @onclick:stopPropagation="true" />
-                                            <span>@employee.Name</span>
+                                            <span>@dispetcher.Name</span>
                                         </label>
                                     }
                                 </div>
                                 <div class="dropdown-footer">
                                     <button type="button" 
                                             class="btn-secondary btn-compact" 
-                                            @onclick="ClearAllEmployees"
+                                            @onclick="ClearAllDispetchers"
                                             @onclick:stopPropagation="true">
                                         Очистить всё
                                     </button>
                                     <button type="button" 
                                             class="btn-primary btn-compact" 
-                                            @onclick="ApplyEmployeesFilter"
+                                            @onclick="ApplyDispetchersFilter"
                                             @onclick:stopPropagation="true">
                                         Применить
                                     </button>
@@ -153,79 +153,7 @@
                             else
                             {
                                 <div class="dropdown-empty">
-                                    <span>Нет доступных сотрудников</span>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Service filter -->
-            <div class="filter-group filter-group-services">
-                <label for="service-dropdown">Услуги</label>
-                <div class="custom-dropdown">
-                    <button type="button" 
-                            class="dropdown-toggle form-control" 
-                            @onclick="ToggleServicesDropdown"
-                            @onclick:stopPropagation="true">
-                        <span class="dropdown-text">
-                            @if (selectedServiceIds.Any())
-                            {
-                                <text>Выбрано: @selectedServiceIds.Count</text>
-                            }
-                            else
-                            {
-                                <text>Выберите услуги</text>
-                            }
-                        </span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    
-                    @if (isServicesDropdownOpen)
-                    {
-                        <div class="dropdown-menu" @onclick:stopPropagation="true">
-                            @if (availableServices.Any())
-                            {
-                                <div class="dropdown-search">
-                                    <input type="text" 
-                                           class="form-control" 
-                                           placeholder="Поиск услуги..."
-                                           value="@serviceSearchTerm"
-                                           @oninput="(e) => serviceSearchTerm = e.Value?.ToString() ?? string.Empty"
-                                           @onclick:stopPropagation="true" />
-                                </div>
-                                <div class="dropdown-items">
-                                    @foreach (var service in GetFilteredServices())
-                                    {
-                                        <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
-                                            <input type="checkbox" 
-                                                   checked="@selectedServiceIds.Contains(service.Id)"
-                                                   @onchange="(e) => ToggleService(service.Id, ((ChangeEventArgs)e).Value)"
-                                                   @onclick:stopPropagation="true" />
-                                            <span>@service.Name</span>
-                                        </label>
-                                    }
-                                </div>
-                                <div class="dropdown-footer">
-                                    <button type="button" 
-                                            class="btn-secondary btn-compact" 
-                                            @onclick="ClearAllServices"
-                                            @onclick:stopPropagation="true">
-                                        Очистить всё
-                                    </button>
-                                    <button type="button" 
-                                            class="btn-primary btn-compact" 
-                                            @onclick="ApplyServicesFilter"
-                                            @onclick:stopPropagation="true">
-                                        Применить
-                                    </button>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="dropdown-empty">
-                                    <span>Нет доступных услуг</span>
+                                    <span>Нет доступных диспетчеров</span>
                                 </div>
                             }
                         </div>
@@ -264,25 +192,14 @@
                             <button @onclick="async () => { dateTo = null; await ApplyFilters(); }">&times;</button>
                         </span>
                     }
-                    @if (selectedEmployeeIds.Any())
+                    @if (selectedDispetcherIds.Any())
                     {
-                        @foreach (var employeeId in selectedEmployeeIds)
+                        @foreach (var dispetcherId in selectedDispetcherIds)
                         {
-                            var employeeName = availableEmployees.FirstOrDefault(e => e.Id == employeeId)?.Name ?? "";
+                            var dispetcherName = availableDispetchers.FirstOrDefault(e => e.Id == dispetcherId)?.Name ?? "";
                             <span class="filter-tag">
-                                Сотрудник: @employeeName
-                                <button @onclick="async () => await RemoveEmployee(employeeId)">&times;</button>
-                            </span>
-                        }
-                    }
-                    @if (selectedServiceIds.Any())
-                    {
-                        @foreach (var serviceId in selectedServiceIds)
-                        {
-                            var serviceName = availableServices.FirstOrDefault(s => s.Id == serviceId)?.Name ?? "";
-                            <span class="filter-tag">
-                                Услуга: @serviceName
-                                <button @onclick="async () => await RemoveService(serviceId)">&times;</button>
+                                Диспетчер: @dispetcherName
+                                <button @onclick="async () => await RemoveDispetcher(dispetcherId)">&times;</button>
                             </span>
                         }
                     }
@@ -347,10 +264,10 @@
                     <div class="earning-card-header">
                         <div class="earning-employee">
                             <span class="employee-icon">👤</span>
-                            <span class="employee-name">@earning.Employee.Name</span>
+                            <span class="employee-name">@earning.Dispetcher.Name</span>
                         </div>
                         <div class="earning-amount">
-                            @earning.EmployeeEarning.ToString("C")
+                            @earning.DispetcherEarning.ToString("C")
                         </div>
                     </div>
 
@@ -368,17 +285,6 @@
 
                         <div class="earning-info-row">
                             <div class="earning-info-item">
-                                <span class="info-label">Услуга:</span>
-                                <span class="info-value">@earning.ServiceName</span>
-                            </div>
-                            <div class="earning-info-item">
-                                <span class="info-label">Объем:</span>
-                                <span class="info-value">@earning.TotalVolume</span>
-                            </div>
-                        </div>
-
-                        <div class="earning-info-row">
-                            <div class="earning-info-item">
                                 <span class="info-label">Дата начала:</span>
                                 <span class="info-value">@earning.OrderDateStart.ToString("dd.MM.yyyy HH:mm")</span>
                             </div>
@@ -390,20 +296,20 @@
 
                         <div class="earning-info-row">
                             <div class="earning-info-item">
-                                <span class="info-label">Стоимость услуги:</span>
-                                <span class="info-value price">@earning.ServiceTotalPrice.ToString("C")</span>
+                                <span class="info-label">Стоимость заявки:</span>
+                                <span class="info-value price">@earning.OrderTotalPrice.ToString("C")</span>
                             </div>
                             <div class="earning-info-item">
-                                <span class="info-label">Процент сотрудника:</span>
-                                <span class="info-value">@earning.ServiceEmployeePrecent.ToString("0.##")%</span>
+                                <span class="info-label">Процент диспетчера:</span>
+                                <span class="info-value">@earning.DispetcherPrecent.ToString("0.##")%</span>
                             </div>
                         </div>
 
-                        @if (!string.IsNullOrEmpty(earning.PrecentEmployeeDescription))
+                        @if (!string.IsNullOrEmpty(earning.PrecentDispetcherDescription))
                         {
                             <div class="earning-description">
                                 <span class="info-label">Описание:</span>
-                                <span class="info-value">@earning.PrecentEmployeeDescription</span>
+                                <span class="info-value">@earning.PrecentDispetcherDescription</span>
                             </div>
                         }
                     </div>
@@ -425,11 +331,9 @@
                 <table class="earnings-table">
                     <thead>
                         <tr>
-                            <th>Сотрудник</th>
+                            <th>Диспетчер</th>
                             <th>Клиент</th>
-                            <th>Услуга</th>
-                            <th>Объем</th>
-                            <th>Стоимость услуги</th>
+                            <th>Стоимость заявки</th>
                             <th>Процент</th>
                             <th>Заработок</th>
                             <th>Дата</th>
@@ -443,21 +347,19 @@
                             <tr class="earning-row" @ondblclick="() => OpenOrder(earning.OrderId)">
                                 <td class="employee-cell">
                                     <span class="employee-icon">👤</span>
-                                    <span>@earning.Employee.Name</span>
+                                    <span>@earning.Dispetcher.Name</span>
                                 </td>
                                 <td class="client-cell">@earning.Client</td>
-                                <td class="service-cell">@earning.ServiceName</td>
-                                <td class="volume-cell">@earning.TotalVolume</td>
-                                <td class="price-cell">@earning.ServiceTotalPrice.ToString("C")</td>
-                                <td class="percent-cell">@earning.ServiceEmployeePrecent.ToString("0.##")%</td>
-                                <td class="earning-cell">@earning.EmployeeEarning.ToString("C")</td>
+                                <td class="price-cell">@earning.OrderTotalPrice.ToString("C")</td>
+                                <td class="percent-cell">@earning.DispetcherPrecent.ToString("0.##")%</td>
+                                <td class="earning-cell">@earning.DispetcherEarning.ToString("C")</td>
                                 <td class="date-range-cell">
                                     @earning.OrderDateStart.ToString("dd.MM.yyyy HH:mm") - @earning.OrderDateEnd.ToString("dd.MM.yyyy HH:mm")
                                 </td>
                                 <td class="description-cell">
-                                    @if (!string.IsNullOrEmpty(earning.PrecentEmployeeDescription))
+                                    @if (!string.IsNullOrEmpty(earning.PrecentDispetcherDescription))
                                     {
-                                        <span title="@earning.PrecentEmployeeDescription">@earning.PrecentEmployeeDescription</span>
+                                        <span title="@earning.PrecentDispetcherDescription">@earning.PrecentDispetcherDescription</span>
                                     }
                                     else
                                     {
@@ -485,9 +387,8 @@
         List
     }
 
-    private List<GetEmployeeEarningByMonthResponse> earnings = new();
-    private List<ServiceDto> availableServices = new();
-    private List<EmployeeDto> availableEmployees = new();
+    private List<GetDispetcherEarningByMounthResponse> earnings = new();
+    private List<EmployeeDto> availableDispetchers = new();
     private bool isLoading = false;
     private decimal totalEarnings = 0;
     private ViewMode viewMode = ViewMode.Cards;
@@ -498,14 +399,11 @@
     private string searchClient = string.Empty;
     private DateTime? dateFrom = null;
     private DateTime? dateTo = null;
-    private List<int> selectedEmployeeIds = new();
-    private List<int> selectedServiceIds = new();
-
+    private List<int> selectedDispetcherIds = new();
+    
     // Dropdown state
-    private bool isEmployeesDropdownOpen = false;
-    private bool isServicesDropdownOpen = false;
-    private string employeeSearchTerm = string.Empty;
-    private string serviceSearchTerm = string.Empty;
+    private bool isDispetchersDropdownOpen = false;
+    private string dispetcherSearchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -517,9 +415,7 @@
         isLoading = true;
         try
         {
-            // Load available services and employees for filters
-            availableServices = await ApiService.GetServices();
-            availableEmployees = await ApiService.GetDrivers();
+            availableDispetchers = await ApiService.GetDispetchers();
 
             // Load earnings with filters
             await ApplyFilters();
@@ -527,7 +423,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
-            earnings = new List<GetEmployeeEarningByMonthResponse>();
+            earnings = new List<GetDispetcherEarningByMounthResponse>();
         }
         finally
         {
@@ -541,7 +437,7 @@
         try
         {
             // Создаем запрос с фильтрами
-            var request = new GetEmployeeEarningByMonthRequest
+            var request = new GetDispetcherEarningByMounthRequest
             {
                 Year = selectedYear,
                 Month = selectedMonth,
@@ -550,28 +446,22 @@
                 ClientSearchTerm = string.IsNullOrWhiteSpace(searchClient) ? null : searchClient
             };
 
-            // Добавляем сотрудников если выбраны
-            if (selectedEmployeeIds.Any())
+            // Добавляем диспетчеров если выбраны
+            if (selectedDispetcherIds.Any())
             {
-                request.EmployeeIds = selectedEmployeeIds.ToList();
-            }
-
-            // Добавляем услуги если выбраны
-            if (selectedServiceIds.Any())
-            {
-                request.ServiceIds = selectedServiceIds.ToList();
+                request.DispetcherIds = selectedDispetcherIds.ToList();
             }
 
             // Получаем данные с сервера
-            earnings = await ApiService.GetEmployeeEarningsByMonth(request);
+            earnings = await ApiService.GetDispetcherEarningsByMonth(request);
             
             // Вычисляем общий заработок
-            totalEarnings = earnings.Sum(e => e.EmployeeEarning);
+            totalEarnings = earnings.Sum(e => e.DispetcherEarning);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error applying filters: {ex.Message}");
-            earnings = new List<GetEmployeeEarningByMonthResponse>();
+            earnings = new List<GetDispetcherEarningByMounthResponse>();
             totalEarnings = 0;
         }
         finally
@@ -588,8 +478,7 @@
         searchClient = string.Empty;
         dateFrom = null;
         dateTo = null;
-        selectedEmployeeIds.Clear();
-        selectedServiceIds.Clear();
+        selectedDispetcherIds.Clear();
         await ApplyFilters();
     }
 
@@ -598,139 +487,74 @@
         return !string.IsNullOrWhiteSpace(searchClient) ||
                dateFrom.HasValue ||
                dateTo.HasValue ||
-               selectedEmployeeIds.Any() ||
-               selectedServiceIds.Any();
+               selectedDispetcherIds.Any();
     }
 
-    private void ToggleEmployee(int employeeId, object? checkedValue)
+    private void ToggleDispetcher(int dispetcherId, object? checkedValue)
     {
         var isChecked = checkedValue is bool b && b;
         
         if (isChecked)
         {
-            if (!selectedEmployeeIds.Contains(employeeId))
+            if (!selectedDispetcherIds.Contains(dispetcherId))
             {
-                selectedEmployeeIds.Add(employeeId);
+                selectedDispetcherIds.Add(dispetcherId);
             }
         }
         else
         {
-            selectedEmployeeIds.Remove(employeeId);
+            selectedDispetcherIds.Remove(dispetcherId);
         }
     }
 
-    private async Task RemoveEmployee(int employeeId)
+    private async Task RemoveDispetcher(int dispetcherId)
     {
-        selectedEmployeeIds.Remove(employeeId);
+        selectedDispetcherIds.Remove(dispetcherId);
         await ApplyFilters();
     }
 
-    private void ToggleEmployeesDropdown()
+    private void ToggleDispetchersDropdown()
     {
-        isEmployeesDropdownOpen = !isEmployeesDropdownOpen;
-        if (!isEmployeesDropdownOpen)
+        isDispetchersDropdownOpen = !isDispetchersDropdownOpen;
+        if (!isDispetchersDropdownOpen)
         {
-            employeeSearchTerm = string.Empty;
+            dispetcherSearchTerm = string.Empty;
         }
     }
 
-    private async Task ApplyEmployeesFilter()
+    private async Task ApplyDispetchersFilter()
     {
-        isEmployeesDropdownOpen = false;
-        employeeSearchTerm = string.Empty;
+        isDispetchersDropdownOpen = false;
+        dispetcherSearchTerm = string.Empty;
         await ApplyFilters();
     }
 
-    private async Task ClearAllEmployees()
+    private async Task ClearAllDispetchers()
     {
-        selectedEmployeeIds.Clear();
-        isEmployeesDropdownOpen = false;
-        employeeSearchTerm = string.Empty;
+        selectedDispetcherIds.Clear();
+        isDispetchersDropdownOpen = false;
+        dispetcherSearchTerm = string.Empty;
         await ApplyFilters();
     }
 
-    private List<EmployeeDto> GetFilteredEmployees()
+    private List<EmployeeDto> GetFilteredDispetchers()
     {
-        if (string.IsNullOrWhiteSpace(employeeSearchTerm))
+        if (string.IsNullOrWhiteSpace(dispetcherSearchTerm))
         {
-            return availableEmployees;
+            return availableDispetchers;
         }
 
-        return availableEmployees
-            .Where(e => e.Name.Contains(employeeSearchTerm, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-    }
-
-    private void ToggleService(int serviceId, object? checkedValue)
-    {
-        var isChecked = checkedValue is bool b && b;
-        
-        if (isChecked)
-        {
-            if (!selectedServiceIds.Contains(serviceId))
-            {
-                selectedServiceIds.Add(serviceId);
-            }
-        }
-        else
-        {
-            selectedServiceIds.Remove(serviceId);
-        }
-    }
-
-    private async Task RemoveService(int serviceId)
-    {
-        selectedServiceIds.Remove(serviceId);
-        await ApplyFilters();
-    }
-
-    private void ToggleServicesDropdown()
-    {
-        isServicesDropdownOpen = !isServicesDropdownOpen;
-        if (!isServicesDropdownOpen)
-        {
-            serviceSearchTerm = string.Empty;
-        }
-    }
-
-    private async Task ApplyServicesFilter()
-    {
-        isServicesDropdownOpen = false;
-        serviceSearchTerm = string.Empty;
-        await ApplyFilters();
-    }
-
-    private async Task ClearAllServices()
-    {
-        selectedServiceIds.Clear();
-        isServicesDropdownOpen = false;
-        serviceSearchTerm = string.Empty;
-        await ApplyFilters();
-    }
-
-    private List<ServiceDto> GetFilteredServices()
-    {
-        if (string.IsNullOrWhiteSpace(serviceSearchTerm))
-        {
-            return availableServices;
-        }
-
-        return availableServices
-            .Where(s => s.Name.Contains(serviceSearchTerm, StringComparison.OrdinalIgnoreCase))
+        return availableDispetchers
+            .Where(e => e.Name.Contains(dispetcherSearchTerm, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 
     private void CloseAllDropdowns()
     {
-        if (isEmployeesDropdownOpen)
+        if (isDispetchersDropdownOpen)
         {
-            isEmployeesDropdownOpen = false;
-            employeeSearchTerm = string.Empty;
-        }
-        if (isServicesDropdownOpen)
-        {
-            isServicesDropdownOpen = false;
-            serviceSearchTerm = string.Empty;
+            isDispetchersDropdownOpen = false;
+            dispetcherSearchTerm = string.Empty;
         }
     }
 

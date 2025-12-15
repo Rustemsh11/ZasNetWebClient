@@ -78,6 +78,69 @@ public class ApiService
             return new CreateOrderParameters();
         }
     }
+    
+    public async Task<List<EmployeeDto>> GetDispetchers()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var dispetchers = await _httpClient.GetFromJsonAsync<List<EmployeeDto>>("api/v1/employee/GetDispetchers");
+
+            return dispetchers ?? new List<EmployeeDto>();
+        }
+        catch(Exception ex)
+        {
+            return new List<EmployeeDto>();
+        }
+    }
+    
+    public async Task<List<EmployeeDto>> GetDrivers()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var drivers = await _httpClient.GetFromJsonAsync<List<EmployeeDto>>("api/v1/employee/GetDrivers");
+
+            return drivers ?? new List<EmployeeDto>();
+        }
+        catch(Exception ex)
+        {
+            return new List<EmployeeDto>();
+        }
+    }
+    
+    public async Task<List<ServiceDto>> GetServices()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var services = await _httpClient.GetFromJsonAsync<List<ServiceDto>>("api/v1/service/GetServices");
+
+            return services ?? new List<ServiceDto>();
+        }
+        catch(Exception ex)
+        {
+            return new List<ServiceDto>();
+        }
+    }
 
     public async Task<bool> CreateOrder(OrderDto orderDto)
     {
@@ -396,6 +459,60 @@ public class ApiService
         {
             Console.WriteLine($"Error getting employee earnings: {ex.Message}");
             return new List<GetEmployeeEarningByMonthResponse>();
+        }
+    }
+
+    public async Task<List<GetDispetcherEarningByMounthResponse>> GetDispetcherEarningsByMonth(GetDispetcherEarningByMounthRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"Year={request.Year}",
+                $"Month={request.Month}"
+            };
+
+            if (request.DateFrom.HasValue)
+            {
+                queryParams.Add($"DateFrom={request.DateFrom.Value:O}");
+            }
+
+            if (request.DateTo.HasValue)
+            {
+                queryParams.Add($"DateTo={request.DateTo.Value:O}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.ClientSearchTerm))
+            {
+                queryParams.Add($"ClientSearchTerm={Uri.EscapeDataString(request.ClientSearchTerm)}");
+            }
+
+            if (request.DispetcherIds != null && request.DispetcherIds.Any())
+            {
+                foreach (var dispetcherId in request.DispetcherIds)
+                {
+                    queryParams.Add($"DispetcherIds={dispetcherId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/DispetcherEarning/GetDispetcherEarningByMounth{queryString}";
+
+            var earnings = await _httpClient.GetFromJsonAsync<List<GetDispetcherEarningByMounthResponse>>(url);
+            return earnings ?? new List<GetDispetcherEarningByMounthResponse>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting dispetcher earnings: {ex.Message}");
+            return new List<GetDispetcherEarningByMounthResponse>();
         }
     }
 }
