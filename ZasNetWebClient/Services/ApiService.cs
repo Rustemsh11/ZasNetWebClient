@@ -515,4 +515,26 @@ public class ApiService
             return new List<GetDispetcherEarningByMounthResponse>();
         }
     }
+
+    public async Task<bool> UpdateEmployeeEarning(EmployeeEarningUpdateCommand request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/UpdateEmployeeEarning", request);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating employee earning: {ex.Message}");
+            return false;
+        }
+    }
 }

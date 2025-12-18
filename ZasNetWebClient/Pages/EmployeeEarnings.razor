@@ -350,7 +350,7 @@
                             <span class="employee-name">@earning.Employee.Name</span>
                         </div>
                         <div class="earning-amount">
-                            @earning.EmployeeEarning.ToString("C")
+                            @earning.EmployeeEarningDto.EmployeeEarning.ToString("C")
                         </div>
                     </div>
 
@@ -395,24 +395,26 @@
                             </div>
                             <div class="earning-info-item">
                                 <span class="info-label">Процент сотрудника:</span>
-                                <span class="info-value">@earning.ServiceEmployeePrecent.ToString("0.##")%</span>
+                                    <span class="info-value">@earning.EmployeeEarningDto.ServiceEmployeePrecent.ToString("0.##")%</span>
                             </div>
                         </div>
 
-                        @if (!string.IsNullOrEmpty(earning.PrecentEmployeeDescription))
+                            @if (!string.IsNullOrEmpty(earning.EmployeeEarningDto.PrecentEmployeeDescription))
                         {
                             <div class="earning-description">
                                 <span class="info-label">Описание:</span>
-                                <span class="info-value">@earning.PrecentEmployeeDescription</span>
+                                    <span class="info-value">@earning.EmployeeEarningDto.PrecentEmployeeDescription</span>
                             </div>
                         }
                     </div>
 
                     <div class="earning-card-footer">
-                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(earning.OrderId)">
+                        <button class="btn-edit-card" @onclick="() => OpenEditModal(earning)" @onclick:stopPropagation="true" title="Редактировать">
+                            ✏️
+                        </button>
+                        <button class="btn-open-order" @onclick="() => OpenOrder(earning.OrderId)">
                             Открыть заявку
                         </button>
-                        <span class="order-hint">Двойной клик для открытия заявки</span>
                     </div>
                 </div>
             }
@@ -449,15 +451,15 @@
                                 <td class="service-cell">@earning.ServiceName</td>
                                 <td class="volume-cell">@earning.TotalVolume</td>
                                 <td class="price-cell">@earning.ServiceTotalPrice.ToString("C")</td>
-                                <td class="percent-cell">@earning.ServiceEmployeePrecent.ToString("0.##")%</td>
-                                <td class="earning-cell">@earning.EmployeeEarning.ToString("C")</td>
+                                <td class="percent-cell">@earning.EmployeeEarningDto.ServiceEmployeePrecent.ToString("0.##")%</td>
+                                <td class="earning-cell">@earning.EmployeeEarningDto.EmployeeEarning.ToString("C")</td>
                                 <td class="date-range-cell">
                                     @earning.OrderDateStart.ToString("dd.MM.yyyy HH:mm") - @earning.OrderDateEnd.ToString("dd.MM.yyyy HH:mm")
                                 </td>
                                 <td class="description-cell">
-                                    @if (!string.IsNullOrEmpty(earning.PrecentEmployeeDescription))
+                                    @if (!string.IsNullOrEmpty(earning.EmployeeEarningDto.PrecentEmployeeDescription))
                                     {
-                                        <span title="@earning.PrecentEmployeeDescription">@earning.PrecentEmployeeDescription</span>
+                                        <span title="@earning.EmployeeEarningDto.PrecentEmployeeDescription">@earning.EmployeeEarningDto.PrecentEmployeeDescription</span>
                                     }
                                     else
                                     {
@@ -465,9 +467,17 @@
                                     }
                                 </td>
                                 <td class="action-cell">
-                                    <button class="btn-primary btn-compact" @onclick="() => OpenOrder(earning.OrderId)">
-                                        Открыть
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon btn-edit" 
+                                                @onclick="() => OpenEditModal(earning)" 
+                                                @onclick:stopPropagation="true"
+                                                title="Редактировать">
+                                            ✏️
+                                        </button>
+                                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(earning.OrderId)">
+                                            Открыть
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -475,6 +485,98 @@
                 </table>
             </div>
         }
+    }
+
+    <!-- Edit Modal -->
+    @if (isEditModalOpen && editingEarning != null)
+    {
+        <div class="modal-overlay" @onclick="CloseEditModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h2>Редактирование заработка</h2>
+                    <button class="modal-close" @onclick="CloseEditModal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="edit-info-section">
+                        <div class="edit-info-row">
+                            <span class="edit-info-label">Сотрудник:</span>
+                            <span class="edit-info-value">@editingEarning.Employee.Name</span>
+                        </div>
+                        <div class="edit-info-row">
+                            <span class="edit-info-label">Заявка:</span>
+                            <span class="edit-info-value">#@editingEarning.OrderId - @editingEarning.Client</span>
+                        </div>
+                        <div class="edit-info-row">
+                            <span class="edit-info-label">Услуга:</span>
+                            <span class="edit-info-value">@editingEarning.ServiceName</span>
+                        </div>
+                        <div class="edit-info-row">
+                            <span class="edit-info-label">Стоимость услуги:</span>
+                            <span class="edit-info-value">@editingEarning.ServiceTotalPrice.ToString("C")</span>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="edit-percent">Процент сотрудника (%)</label>
+                            <input type="number" 
+                                   id="edit-percent" 
+                                   class="form-control" 
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   @bind="editPercent"
+                                   @oninput="CalculateEarning" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-earning">Заработок (₽)</label>
+                            <input type="number" 
+                                   id="edit-earning" 
+                                   class="form-control" 
+                                   step="0.01"
+                                   min="0"
+                                   @bind="editEarning"
+                                   @oninput="CalculatePercent" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-description">Описание</label>
+                            <textarea id="edit-description" 
+                                      class="form-control" 
+                                      rows="3"
+                                      placeholder="Укажите причину изменения..."
+                                      @bind="editDescription"></textarea>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(editErrorMessage))
+                    {
+                        <div class="error-message">
+                            ⚠️ @editErrorMessage
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" @onclick="CloseEditModal" disabled="@isSaving">
+                        Отмена
+                    </button>
+                    <button class="btn-primary" @onclick="SaveEmployeeEarning" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-small"></span>
+                            <text>Сохранение...</text>
+                        }
+                        else
+                        {
+                            <text>💾 Сохранить</text>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
     }
 </div>
 
@@ -564,9 +666,9 @@
 
             // Получаем данные с сервера
             earnings = await ApiService.GetEmployeeEarningsByMonth(request);
-            
+
             // Вычисляем общий заработок
-            totalEarnings = earnings.Sum(e => e.EmployeeEarning);
+            totalEarnings = earnings.Sum(e => e.EmployeeEarningDto.EmployeeEarning);
         }
         catch (Exception ex)
         {
@@ -605,7 +707,7 @@
     private void ToggleEmployee(int employeeId, object? checkedValue)
     {
         var isChecked = checkedValue is bool b && b;
-        
+
         if (isChecked)
         {
             if (!selectedEmployeeIds.Contains(employeeId))
@@ -664,7 +766,7 @@
     private void ToggleService(int serviceId, object? checkedValue)
     {
         var isChecked = checkedValue is bool b && b;
-        
+
         if (isChecked)
         {
             if (!selectedServiceIds.Contains(serviceId))
@@ -763,6 +865,129 @@
     {
         viewMode = mode;
         StateHasChanged();
+    }
+
+    // Edit modal state
+    private bool isEditModalOpen = false;
+    private bool isSaving = false;
+    private GetEmployeeEarningByMonthResponse? editingEarning = null;
+    private decimal editPercent = 0;
+    private decimal editEarning = 0;
+    private string editDescription = string.Empty;
+    private string editErrorMessage = string.Empty;
+
+    private void OpenEditModal(GetEmployeeEarningByMonthResponse earning)
+    {
+        editingEarning = earning;
+        editPercent = earning.EmployeeEarningDto.ServiceEmployeePrecent;
+        editEarning = earning.EmployeeEarningDto.EmployeeEarning;
+        editDescription = earning.EmployeeEarningDto.PrecentEmployeeDescription ?? string.Empty;
+        editErrorMessage = string.Empty;
+        isEditModalOpen = true;
+        StateHasChanged();
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalOpen = false;
+        editingEarning = null;
+        editPercent = 0;
+        editEarning = 0;
+        editDescription = string.Empty;
+        editErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private void CalculateEarning(ChangeEventArgs e)
+    {
+        if (editingEarning == null) return;
+
+        if (decimal.TryParse(e.Value?.ToString(), out decimal percent))
+        {
+            editPercent = percent;
+            editEarning = Math.Round(editingEarning.ServiceTotalPrice * percent / 100, 2);
+            StateHasChanged();
+        }
+    }
+
+    private void CalculatePercent(ChangeEventArgs e)
+    {
+        if (editingEarning == null) return;
+
+        if (decimal.TryParse(e.Value?.ToString(), out decimal earning))
+        {
+            editEarning = earning;
+            if (editingEarning.ServiceTotalPrice > 0)
+            {
+                editPercent = Math.Round(earning * 100 / editingEarning.ServiceTotalPrice, 2);
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveEmployeeEarning()
+    {
+        if (editingEarning == null) return;
+
+        // Validation
+        if (editPercent < 0 || editPercent > 100)
+        {
+            editErrorMessage = "Процент должен быть от 0 до 100";
+            return;
+        }
+
+        if (editEarning < 0)
+        {
+            editErrorMessage = "Заработок не может быть отрицательным";
+            return;
+        }
+
+        isSaving = true;
+        editErrorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var request = new EmployeeEarningUpdateCommand
+            {
+                EmployeeEarningDto = new EmployeeEarningDto()
+                {
+                    EmployeeEarningId = editingEarning.EmployeeEarningDto.EmployeeEarningId,
+                    ServiceEmployeePrecent = editPercent,
+                    EmployeeEarning = editEarning,
+                    PrecentEmployeeDescription = string.IsNullOrWhiteSpace(editDescription) ? null : editDescription
+                },
+            };
+
+            var success = await ApiService.UpdateEmployeeEarning(request);
+
+            if (success)
+            {
+                // Update the local data
+                editingEarning.EmployeeEarningDto.ServiceEmployeePrecent = editPercent;
+                editingEarning.EmployeeEarningDto.EmployeeEarning = editEarning;
+                editingEarning.EmployeeEarningDto.PrecentEmployeeDescription = editDescription;
+
+                // Recalculate total earnings
+                totalEarnings = earnings.Sum(e => e.EmployeeEarningDto.EmployeeEarning);
+
+                CloseEditModal();
+            }
+            else
+            {
+                editErrorMessage = "Ошибка при сохранении. Попробуйте снова.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving employee earning: {ex.Message}");
+            editErrorMessage = "Произошла ошибка при сохранении.";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
     }
 }
 

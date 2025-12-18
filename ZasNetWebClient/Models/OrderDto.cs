@@ -255,11 +255,6 @@ public class GetEmployeeEarningByMonthRequest
 public class GetEmployeeEarningByMonthResponse
 {
     /// <summary>
-    /// ID записи о заработке
-    /// </summary>
-    public int Id { get; set; }
-
-    /// <summary>
     /// ID заявки
     /// </summary>
     public int OrderId { get; set; }
@@ -289,20 +284,7 @@ public class GetEmployeeEarningByMonthResponse
     /// </summary>
     public EmployeeDto Employee { get; set; } = new();
 
-    /// <summary>
-    /// Процент для сотрудника
-    /// </summary>
-    public decimal ServiceEmployeePrecent { get; set; }
-
-    /// <summary>
-    /// Описание процента
-    /// </summary>
-    public string? PrecentEmployeeDescription { get; set; }
-
-    /// <summary>
-    /// Заработок сотрудника
-    /// </summary>
-    public decimal EmployeeEarning { get; set; }
+    public EmployeeEarningDto EmployeeEarningDto { get; set; }
 
     /// <summary>
     /// Общая стоимость услуги
@@ -313,6 +295,17 @@ public class GetEmployeeEarningByMonthResponse
     /// Объем работ
     /// </summary>
     public double TotalVolume { get; set; }
+}
+
+public class EmployeeEarningDto
+{
+    public int EmployeeEarningId { get; set; }
+
+    public decimal ServiceEmployeePrecent { get; set; }
+
+    public string? PrecentEmployeeDescription { get; set; }
+
+    public decimal EmployeeEarning { get; set; }
 }
 
 /// <summary>
@@ -405,4 +398,13 @@ public class GetDispetcherEarningByMounthResponse
     /// Общая стоимость заявки
     /// </summary>
     public decimal OrderTotalPrice { get; set; }
+}
+
+/// <summary>
+/// Запрос на обновление заработка сотрудника
+/// </summary>
+public class EmployeeEarningUpdateCommand
+
+{
+    public EmployeeEarningDto EmployeeEarningDto { get; set; }
 }
