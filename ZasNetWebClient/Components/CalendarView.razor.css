@@ -144,66 +144,68 @@
 
 /* Timeline Calendar */
 .calendar-timeline {
-    display: flex;
-    flex-direction: column;
+    display: block;
     overflow-x: auto;
+    overflow-y: auto;
     width: 100%;
+    max-height: calc(100vh - 200px);
 }
 
 .calendar-timeline-header {
-    display: grid;
-    grid-template-columns: 150px 1fr;
+    display: flex;
     background: #f8fafc;
     border-bottom: 2px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 10;
-    width: 100%;
+    min-width: fit-content;
 }
 
 .car-header {
+    min-width: 150px;
+    width: 150px;
     padding: 0.75rem;
     font-weight: 600;
     font-size: 0.875rem;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-right: 1px solid #e2e8f0;
+    border-right: 2px solid #cbd5e1;
     background: #f8fafc;
     position: sticky;
     left: 0;
-    z-index: 11;
+    z-index: 12;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
 }
 
 .hours-header {
-    display: grid;
-    grid-template-columns: repeat(25, minmax(60px, 1fr));
-    width: 100%;
+    display: flex;
 }
 
 .hour-cell {
+    min-width: 60px;
+    width: 60px;
     padding: 0.75rem 0.5rem;
     text-align: center;
     font-weight: 600;
     font-size: 0.875rem;
     color: #64748b;
     border-right: 1px solid #e2e8f0;
-    min-width: 60px;
+    flex-shrink: 0;
 }
 
 .calendar-timeline-body {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    min-width: fit-content;
 }
 
 .car-row {
-    display: grid;
-    grid-template-columns: 150px 1fr;
+    display: flex;
     border-bottom: 1px solid #e2e8f0;
     min-height: 80px;
     position: relative;
-    width: 100%;
 }
 
 .car-row:hover {
@@ -211,17 +213,21 @@
 }
 
 .car-name {
+    min-width: 150px;
+    width: 150px;
     padding: 0.75rem;
     font-weight: 500;
     font-size: 0.875rem;
     color: #1e293b;
-    border-right: 1px solid #e2e8f0;
+    border-right: 2px solid #cbd5e1;
     background: white;
     position: sticky;
     left: 0;
     z-index: 5;
     display: flex;
     align-items: center;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
 }
 
 .car-row:hover .car-name {
@@ -229,11 +235,10 @@
 }
 
 .hours-row {
-    display: grid;
-    grid-template-columns: repeat(25, minmax(60px, 1fr));
+    display: flex;
     position: relative;
     min-height: 80px;
-    width: 100%;
+    flex: 1;
 }
 
 .hours-row::after {
@@ -248,18 +253,12 @@
 }
 
 .hours-row .hour-cell {
+    min-width: 60px;
+    width: 60px;
     border-right: 1px solid #e2e8f0;
     position: relative;
-}
-
-.hours-row .hour-cell::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: #e2e8f0;
+    flex-shrink: 0;
+    padding: 0;
 }
 
 /* Order Blocks */
@@ -354,29 +353,20 @@
         flex: 1;
     }
 
-    .calendar-timeline-header,
-    .car-row {
-        grid-template-columns: 80px 1fr;
-    }
-
     .car-header, .car-name {
+        min-width: 80px;
+        width: 80px;
         font-size: 0.6875rem;
         padding: 0.5rem 0.375rem;
     }
 
     /* Уменьшаем минимальную ширину ячеек для маленьких экранов */
-    .hours-header {
-        grid-template-columns: repeat(25, minmax(40px, 1fr));
-    }
-
-    .hour-cell {
+    .hour-cell,
+    .hours-row .hour-cell {
         font-size: 0.625rem;
         padding: 0.5rem 0.125rem;
         min-width: 40px;
-    }
-
-    .hours-row {
-        grid-template-columns: repeat(25, minmax(40px, 1fr));
+        width: 40px;
     }
 
     .car-row {
@@ -448,29 +438,20 @@
         padding: 0.5rem 0.875rem;
     }
 
-    .calendar-timeline-header,
-    .car-row {
-        grid-template-columns: 100px 1fr;
-    }
-
     .car-header, .car-name {
+        min-width: 100px;
+        width: 100px;
         font-size: 0.75rem;
         padding: 0.625rem 0.5rem;
     }
 
     /* Ровные ячейки для средних мобильных */
-    .hours-header {
-        grid-template-columns: repeat(25, minmax(50px, 1fr));
-    }
-
-    .hour-cell {
+    .hour-cell,
+    .hours-row .hour-cell {
         font-size: 0.75rem;
         padding: 0.5rem 0.25rem;
         min-width: 50px;
-    }
-
-    .hours-row {
-        grid-template-columns: repeat(25, minmax(50px, 1fr));
+        width: 50px;
     }
 
     .car-row {
@@ -523,28 +504,19 @@
         padding: 0.5rem 0.875rem;
     }
 
-    .calendar-timeline-header,
-    .car-row {
-        grid-template-columns: 130px 1fr;
-    }
-
     .car-header, .car-name {
+        min-width: 130px;
+        width: 130px;
         font-size: 0.8125rem;
     }
 
     /* Ровные ячейки для планшетов */
-    .hours-header {
-        grid-template-columns: repeat(25, minmax(55px, 1fr));
-    }
-
-    .hour-cell {
+    .hour-cell,
+    .hours-row .hour-cell {
         font-size: 0.8125rem;
         padding: 0.625rem 0.375rem;
         min-width: 55px;
-    }
-
-    .hours-row {
-        grid-template-columns: repeat(25, minmax(55px, 1fr));
+        width: 55px;
     }
 
     .order-time {
@@ -562,9 +534,9 @@
 
 /* Large Tablets & Small Desktops (1025px - 1280px) */
 @media (min-width: 1025px) and (max-width: 1280px) {
-    .calendar-timeline-header,
-    .car-row {
-        grid-template-columns: 140px 1fr;
+    .car-header, .car-name {
+        min-width: 140px;
+        width: 140px;
     }
 }
 
@@ -612,18 +584,17 @@
         height: 2rem;
     }
 
+    .car-header, .car-name {
+        min-width: 90px;
+        width: 90px;
+    }
+
     /* Ровные ячейки в landscape режиме */
-    .hours-header {
-        grid-template-columns: repeat(25, minmax(45px, 1fr));
-    }
-
-    .hour-cell {
+    .hour-cell,
+    .hours-row .hour-cell {
         min-width: 45px;
+        width: 45px;
         padding: 0.375rem 0.125rem;
-    }
-
-    .hours-row {
-        grid-template-columns: repeat(25, minmax(45px, 1fr));
     }
 
     .car-row {
