@@ -33,6 +33,7 @@ public class OrderServiceDto
     public decimal PrecentForMultipleEmployeers { get; set; }
     public decimal PrecentLaterOrderForEmployee { get; set; }
     public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+    public bool IsAlmazService { get; set; }
     public List<OrderServiceEmployeeDto> OrderServiceEmployeeDtos { get; set; } = new();
     public List<OrderServiceCarDto> OrderServiceCarDtos { get; set; } = new();
 }
@@ -51,7 +52,6 @@ public class OrderDto
     public PaymentType PaymentType { get; set; } = PaymentType.Cash;
     public OrderStatus Status { get; set; }
     public string? Description { get; set; }
-    public bool IsAlmazOrder { get; set; }
     public bool IsCashWasTransferred { get; set; }
     public EmployeeDto CreatedUser { get; set; } = new();
     public List<OrderServiceDto> OrderServicesDtos { get; set; } = new();

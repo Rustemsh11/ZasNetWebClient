@@ -73,12 +73,6 @@
                     <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" placeholder="введите доп. информацию" rows="1" />
                 </div>
                 <div class="form-row" style="margin-top: 15px;">
-                    <div class="form-group">
-                        <div class="checkbox-wrapper">
-                            <InputCheckbox id="isAlmazOrder" @bind-Value="orderModel.IsAlmazOrder" class="form-check-input" />
-                            <label class="form-check-label" for="isAlmazOrder">Заявка Алмаз</label>
-                        </div>
-                    </div>
                     @if (orderModel.PaymentType == PaymentType.Cash)
                     {
                         <div class="form-group">
@@ -184,6 +178,7 @@
                                     <th>Сотрудники</th>
                                     <th></th>
                                     <th>Машины</th>
+                                    <th style="text-align: center;">Услуга Алмаза</th>
                                     <th></th>
                                     <th></th>
                                 </tr>
@@ -259,6 +254,9 @@
                                                     <div class="empty-selection">Не выбраны</div>
                                                 }
                                             </div>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <InputCheckbox id="isAlmazOrder" @bind-Value="service.IsAlmazService" class="form-check-input" />
                                         </td>
                                         <td>
                                             <button type="button" class="btn-primary btn-compact ml-compact" @onclick="() => ShowCarDialog(service)">

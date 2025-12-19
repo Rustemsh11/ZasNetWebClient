@@ -44,6 +44,13 @@
                     <InputText id="measure" @bind-Value="Measure" class="form-control" placeholder="введите ед. измерения" />
                 </div>
 
+                <div class="form-group">
+                    <label>
+                        <InputCheckbox @bind-Value="IsAlmazService" />
+                        Услуга Алмаз
+                    </label>
+                </div>
+
                 <div class="dialog-actions">
                     <button type="button" class="btn-secondary" @onclick="Close">Отмена</button>
                     <button type="submit" class="btn-primary">Добавить</button>
@@ -68,6 +75,7 @@
     public decimal PrecentLaterOrderForMultipleEmployeers;
     public double Volume = 0;
     public string Measure = "";
+    public bool IsAlmazService = false;
 
     protected override Task OnParametersSetAsync()
     {
@@ -99,6 +107,10 @@
     {
         serviceModel = new OrderServiceDto();
         errorMessage = string.Empty;
+        Price = 0;
+        Volume = 0;
+        Measure = "";
+        IsAlmazService = false;
     }
 
     private async Task HandleSubmit()
@@ -112,6 +124,7 @@
                 PrecentForMultipleEmployeers = PrecentForMultipleEmployeers,
                 PrecentLaterOrderForEmployee = PrecentLaterOrderForEmployee,
                 PrecentLaterOrderForMultipleEmployeers = PrecentLaterOrderForMultipleEmployeers,
+                IsAlmazService = IsAlmazService,
             };
         if (serviceModel.ServiceId == 0)
         {
