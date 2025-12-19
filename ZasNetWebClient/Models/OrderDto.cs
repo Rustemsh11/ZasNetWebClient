@@ -408,3 +408,11 @@ public class EmployeeEarningUpdateCommand
 {
     public EmployeeEarningDto EmployeeEarningDto { get; set; }
 }
+
+/// <summary>
+/// Запрос на обновление заработка диспетчера
+/// </summary>
+public class DispetcherEarningUpdateCommand
+{
+    public EmployeeEarningDto EmployeeEarningDto { get; set; }
+}

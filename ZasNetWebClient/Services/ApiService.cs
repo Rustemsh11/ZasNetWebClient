@@ -537,4 +537,26 @@ public class ApiService
             return false;
         }
     }
+
+    public async Task<bool> UpdateDispetcherEarning(DispetcherEarningUpdateCommand request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/UpdateDispetcherEarning", request);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating dispatcher earning: {ex.Message}");
+            return false;
+        }
+    }
 }
