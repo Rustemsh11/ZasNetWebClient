@@ -11,20 +11,30 @@
                 <h2>ZasNet</h2>
             </div>
 
-            <div class="navbar-menu">
-                <a href="/" class="nav-link @GetActiveClass("/")">Все заявки</a>
-                <a href="/my-orders" class="nav-link @GetActiveClass("/my-orders")">Мои заявки</a>
-                <a href="/employeeEarnings" class="nav-link @GetActiveClass("/employeeEarnings")">Заработки сотрудников</a>
-                <a href="/dispetcherEarnings" class="nav-link @GetActiveClass("/dispetcherEarnings")">Заработки диспетчеров</a>
-                <a href="/profile" class="nav-link @GetActiveClass("/profile")">Личные данные</a>
+            <button class="navbar-toggle" @onclick="ToggleMobileMenu" aria-label="Открыть меню">
+                <span class="hamburger-icon"></span>
+                <span class="hamburger-icon"></span>
+                <span class="hamburger-icon"></span>
+            </button>
+
+            <div class="navbar-menu @(isMobileMenuOpen ? "active" : "")">
+                <a href="/" class="nav-link @GetActiveClass("/")" @onclick="CloseMobileMenu">Все заявки</a>
+                <a href="/my-orders" class="nav-link @GetActiveClass("/my-orders")" @onclick="CloseMobileMenu">Мои заявки</a>
+                <a href="/employeeEarnings" class="nav-link @GetActiveClass("/employeeEarnings")" @onclick="CloseMobileMenu">Заработки сотрудников</a>
+                <a href="/dispetcherEarnings" class="nav-link @GetActiveClass("/dispetcherEarnings")" @onclick="CloseMobileMenu">Заработки диспетчеров</a>
+                <a href="/profile" class="nav-link @GetActiveClass("/profile")" @onclick="CloseMobileMenu">Личные данные</a>
             </div>
 
             <div class="navbar-user">
-                @* <span class="user-info">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</span> *@
                 <span class="user-info">@CurrentUser</span>
                 <button class="btn-logout" @onclick="Logout">Выйти</button>
             </div>
         </nav>
+
+        @if (isMobileMenuOpen)
+        {
+            <div class="mobile-menu-overlay" @onclick="CloseMobileMenu"></div>
+        }
 
         <main class="main-content">
             @Body
@@ -36,6 +46,8 @@
     [CascadingParameter]
     public Task<AuthenticationState>? AuthenticationState { get; set; }
     public string CurrentUser{ get; set; }
+    private bool isMobileMenuOpen = false;
+
     protected override async Task OnParametersSetAsync()
     {
         var state = await AuthenticationState;
@@ -62,6 +74,13 @@
         return Navigation.Uri.EndsWith(path) ? "active" : "";
     }
 
-    
+    private void ToggleMobileMenu()
+    {
+        isMobileMenuOpen = !isMobileMenuOpen;
+    }
 
+    private void CloseMobileMenu()
+    {
+        isMobileMenuOpen = false;
+    }
 }

@@ -103,23 +103,23 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (shouldScrollToHour8)
-        {
-            // Увеличиваем задержку и добавляем несколько попыток для надежности
-            await Task.Delay(100);
-            await ScrollToHour(6);
-            // Повторная попытка через небольшую задержку для надежности
-            await Task.Delay(100);
-            await ScrollToHour(6);
-            shouldScrollToHour8 = false;
-        }
+        // if (shouldScrollToHour8)
+        // {
+        //     // Увеличиваем задержку и добавляем несколько попыток для надежности
+        //     await Task.Delay(100);
+        //     await ScrollToHour(6);
+        //     // Повторная попытка через небольшую задержку для надежности
+        //     await Task.Delay(100);
+        //     await ScrollToHour(6);
+        //     shouldScrollToHour8 = false;
+        // }
         
-        // При первом рендере также прокручиваем к 8 часу
-        if (firstRender)
-        {
-            await Task.Delay(200);
-            await ScrollToHour(6);
-        }
+        // // При первом рендере также прокручиваем к 8 часу
+        // if (firstRender)
+        // {
+        //     await Task.Delay(200);
+        //     await ScrollToHour(6);
+        // }
     }
 
     private void BuildCalendar()
