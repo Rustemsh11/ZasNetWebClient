@@ -559,4 +559,593 @@ public class ApiService
             return false;
         }
     }
+
+    // Car CRUD operations
+    public async Task<List<CarDto>> GetCars()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var cars = await _httpClient.GetFromJsonAsync<List<CarDto>>("api/v1/car/GetCars");
+            return cars ?? new List<CarDto>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting cars: {ex.Message}");
+            return new List<CarDto>();
+        }
+    }
+
+    public async Task<bool> CreateCar(CarDto carDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateCarRequest
+            {
+                Number = carDto.Number,
+                Status = carDto.Status,
+                CarModelId = carDto.CarModel.Id
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/car/CreateCar", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating car: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateCar(CarDto carDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateCarCommand
+            {
+                Id = carDto.Id,
+                Number = carDto.Number,
+                Status = carDto.Status,
+                CarModelId = carDto.CarModel.Id
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/car/UpdateCar", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating car: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteCar(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteCarCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/car/DeleteCar")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting car: {ex.Message}");
+            return false;
+        }
+    }
+
+    // CarModel CRUD operations
+    public async Task<List<CarModelDto>> GetCarModels()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var carModels = await _httpClient.GetFromJsonAsync<List<CarModelDto>>("api/v1/carmodel/GetCarModels");
+            return carModels ?? new List<CarModelDto>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting car models: {ex.Message}");
+            return new List<CarModelDto>();
+        }
+    }
+
+    public async Task<bool> CreateCarModel(CarModelDto carModelDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateCarModelRequest { Name = carModelDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/carmodel/CreateCarModel", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating car model: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateCarModel(CarModelDto carModelDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateCarModelCommand { Id = carModelDto.Id, Name = carModelDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/carmodel/UpdateCarModel", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating car model: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteCarModel(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteCarModelCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/carmodel/DeleteCarModel")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting car model: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Employee CRUD operations
+    public async Task<List<EmployeeDto>> GetEmployees()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var employees = await _httpClient.GetFromJsonAsync<List<EmployeeDto>>("api/v1/employee/GetEmployees");
+            return employees ?? new List<EmployeeDto>();
+        }
+        catch(Exception ex)
+        {
+            return new List<EmployeeDto>();
+        }
+    }
+
+    public async Task<bool> CreateEmployee(EmployeeDto employeeDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateEmployeeRequest
+            {
+                Name = employeeDto.Name,
+                Phone = null,
+                Login = employeeDto.Login ?? "",
+                Password = employeeDto.Password ?? "",
+                RoleId = employeeDto.Role.Id
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/employee/CreateEmployee", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating employee: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateEmployee(EmployeeDto employeeDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateEmployeeCommand
+            {
+                Id = employeeDto.Id,
+                Name = employeeDto.Name,
+                Phone = null,
+                Login = employeeDto.Login ?? "",
+                Password = employeeDto.Password ?? "",
+                RoleId = employeeDto.Role.Id
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/employee/UpdateEmployee", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating employee: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteEmployee(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteEmployeeCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/employee/DeleteEmployee")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting employee: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Service CRUD operations
+    public async Task<bool> CreateService(ServiceDto serviceDto, int measureId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateServiceRequest
+            {
+                Name = serviceDto.Name,
+                Price = serviceDto.MinPrice,
+                MeasureId = measureId,
+                MinVolume = serviceDto.MinVolume,
+                StandartPrecentForEmployee = serviceDto.StandartPrecentForEmployee,
+                PrecentForMultipleEmployeers = serviceDto.PrecentForMultipleEmployeers,
+                PrecentLaterOrderForEmployee = serviceDto.PrecentLaterOrderForEmployee,
+                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/service/CreateService", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating service: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateService(ServiceDto serviceDto, int measureId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateServiceCommand
+            {
+                Id = serviceDto.Id,
+                Name = serviceDto.Name,
+                Price = serviceDto.MinPrice,
+                MeasureId = measureId,
+                MinVolume = serviceDto.MinVolume,
+                StandartPrecentForEmployee = serviceDto.StandartPrecentForEmployee,
+                PrecentForMultipleEmployeers = serviceDto.PrecentForMultipleEmployeers,
+                PrecentLaterOrderForEmployee = serviceDto.PrecentLaterOrderForEmployee,
+                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/service/UpdateService", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating service: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteService(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteServiceCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/service/DeleteService")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting service: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Role CRUD operations
+    public async Task<List<RoleDto>> GetRoles()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var roles = await _httpClient.GetFromJsonAsync<List<RoleDto>>("api/v1/role/GetRoles");
+            return roles ?? new List<RoleDto>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting roles: {ex.Message}");
+            return new List<RoleDto>();
+        }
+    }
+
+    public async Task<bool> CreateRole(RoleDto roleDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateRoleRequest { Name = roleDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/role/CreateRole", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating role: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateRole(RoleDto roleDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateRoleCommand { Id = roleDto.Id, Name = roleDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/role/UpdateRole", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating role: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteRole(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteRoleCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/role/DeleteRole")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting role: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Measure CRUD operations
+    public async Task<List<MeasureDto>> GetMeasures()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var measures = await _httpClient.GetFromJsonAsync<List<MeasureDto>>("api/v1/measure/GetMeasures");
+            return measures ?? new List<MeasureDto>();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error getting measures: {ex.Message}");
+            return new List<MeasureDto>();
+        }
+    }
+
+    public async Task<bool> CreateMeasure(MeasureDto measureDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new CreateMeasureRequest { Name = measureDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/measure/CreateMeasure", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error creating measure: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateMeasure(MeasureDto measureDto)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new UpdateMeasureCommand { Id = measureDto.Id, Name = measureDto.Name };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/measure/UpdateMeasure", command);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error updating measure: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteMeasure(int id)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteMeasureCommand { Id = id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/measure/DeleteMeasure")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Error deleting measure: {ex.Message}");
+            return false;
+        }
+    }
 }

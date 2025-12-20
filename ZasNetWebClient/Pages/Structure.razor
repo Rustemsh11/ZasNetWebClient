@@ -1,0 +1,707 @@
+@page "/structure"
+@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@using Microsoft.JSInterop
+@inject ApiService ApiService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+<div class="structure-container">
+    <aside class="structure-sidebar">
+        <h3 class="sidebar-title">Сущности</h3>
+        <nav class="entity-menu">
+            <button class="entity-item @(selectedEntity == "Car" ? "active" : "")" @onclick='() => SelectEntity("Car")'>
+                <span class="entity-icon">🚗</span>
+                <span>Машины</span>
+            </button>
+            <button class="entity-item @(selectedEntity == "CarModel" ? "active" : "")" @onclick='() => SelectEntity("CarModel")'>
+                <span class="entity-icon">🏷️</span>
+                <span>Модели машин</span>
+            </button>
+            <button class="entity-item @(selectedEntity == "Employee" ? "active" : "")" @onclick='() => SelectEntity("Employee")'>
+                <span class="entity-icon">👤</span>
+                <span>Сотрудники</span>
+            </button>
+            <button class="entity-item @(selectedEntity == "Service" ? "active" : "")" @onclick='() => SelectEntity("Service")'>
+                <span class="entity-icon">🛠️</span>
+                <span>Услуги</span>
+            </button>
+            <button class="entity-item @(selectedEntity == "Role" ? "active" : "")" @onclick='() => SelectEntity("Role")'>
+                <span class="entity-icon">🎭</span>
+                <span>Роли</span>
+            </button>
+            <button class="entity-item @(selectedEntity == "Measure" ? "active" : "")" @onclick='() => SelectEntity("Measure")'>
+                <span class="entity-icon">📏</span>
+                <span>Единицы измерения</span>
+            </button>
+        </nav>
+    </aside>
+
+    <main class="structure-content">
+        <div class="content-header">
+            <h2 class="content-title">@GetEntityTitle()</h2>
+            <button class="btn btn-primary" @onclick="OpenCreateDialog">
+                <span class="btn-icon">+</span>
+                Добавить
+            </button>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Загрузка...</p>
+            </div>
+        }
+        else
+        {
+            <div class="entity-list">
+                @switch (selectedEntity)
+                {
+                    case "Car":
+                        @foreach (var item in cars)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Number</h4>
+                                    <p class="card-details">Модель: @(item.CarModel?.Name ?? "Не указана")</p>
+                                    <p class="card-details">Статус: @GetCarStatus(item.Status)</p>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+
+                    case "CarModel":
+                        @foreach (var item in carModels)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Name</h4>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+
+                    case "Employee":
+                        @foreach (var item in employees)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Name</h4>
+                                    <p class="card-details">Логин: @(item.Login ?? "Не указан")</p>
+                                    <p class="card-details">Роль: @(item.Role?.Name ?? "Не указана")</p>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+
+                    case "Service":
+                        @foreach (var item in services)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Name</h4>
+                                    <p class="card-details">Мин. цена: @item.MinPrice.ToString("N2") ₽</p>
+                                    <p class="card-details">Мин. объем: @item.MinVolume @item.Measure</p>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+
+                    case "Role":
+                        @foreach (var item in roles)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Name</h4>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+
+                    case "Measure":
+                        @foreach (var item in measures)
+                        {
+                            <div class="entity-card">
+                                <div class="card-content">
+                                    <h4>@item.Name</h4>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
+                                    <button class="btn-icon-action delete" @onclick="() => DeleteEntity(item.Id)" title="Удалить">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        break;
+                }
+
+                @if (GetCurrentList().Count == 0)
+                {
+                    <div class="empty-state">
+                        <p>Нет данных для отображения</p>
+                        <button class="btn btn-primary" @onclick="OpenCreateDialog">Добавить первую запись</button>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>
+
+@if (showDialog)
+{
+    <div class="modal-overlay" @onclick="CloseDialog">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(isEditMode ? "Редактировать" : "Добавить") @GetEntityTitle()</h3>
+                <button class="btn-close" @onclick="CloseDialog">×</button>
+            </div>
+            <div class="modal-body">
+                @switch (selectedEntity)
+                {
+                    case "Car":
+                        <div class="form-group">
+                            <label>Номер машины *</label>
+                            <input type="text" class="form-control" @bind="editingCar.Number" placeholder="Введите номер" />
+                        </div>
+                        <div class="form-group">
+                            <label>Модель машины *</label>
+                            <select class="form-control" @bind="editingCar.CarModel.Id">
+                                <option value="0">Выберите модель</option>
+                                @foreach (var model in carModels)
+                                {
+                                    <option value="@model.Id">@model.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Статус *</label>
+                            <select class="form-control" @bind="editingCar.Status">
+                                <option value="0">Активна</option>
+                                <option value="1">Неактивна</option>
+                            </select>
+                        </div>
+                        break;
+
+                    case "CarModel":
+                        <div class="form-group">
+                            <label>Название модели *</label>
+                            <input type="text" class="form-control" @bind="editingCarModel.Name" placeholder="Введите название" />
+                        </div>
+                        break;
+
+                    case "Employee":
+                        <div class="form-group">
+                            <label>Имя сотрудника *</label>
+                            <input type="text" class="form-control" @bind="editingEmployee.Name" placeholder="Введите имя" />
+                        </div>
+                        <div class="form-group">
+                            <label>Логин *</label>
+                            <input type="text" class="form-control" @bind="editingEmployee.Login" placeholder="Введите логин" />
+                        </div>
+                        @if (!isEditMode)
+                        {
+                            <div class="form-group">
+                                <label>Пароль *</label>
+                                <input type="password" class="form-control" @bind="editingEmployee.Password" placeholder="Введите пароль" />
+                            </div>
+                        }
+                        <div class="form-group">
+                            <label>Роль *</label>
+                            <select class="form-control" @bind="editingEmployee.Role.Id">
+                                <option value="0">Выберите роль</option>
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role.Id">@role.Name</option>
+                                }
+                            </select>
+                        </div>
+                        break;
+
+                    case "Service":
+                        <div class="form-group">
+                            <label>Название услуги *</label>
+                            <input type="text" class="form-control" @bind="editingService.Name" placeholder="Введите название" />
+                        </div>
+                        <div class="form-group">
+                            <label>Минимальная цена *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.MinPrice" placeholder="0.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Минимальный объем *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.MinVolume" placeholder="0.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Единица измерения *</label>
+                            <select class="form-control" @bind="editingServiceMeasureId">
+                                <option value="0">Выберите единицу</option>
+                                @foreach (var measure in measures)
+                                {
+                                    <option value="@measure.Id">@measure.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Процент для сотрудника (стандарт) *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.StandartPrecentForEmployee" placeholder="0.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Процент для нескольких сотрудников *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentForMultipleEmployeers" placeholder="0.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Процент для позднего заказа (один сотрудник) *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForEmployee" placeholder="0.00" />
+                        </div>
+                        <div class="form-group">
+                            <label>Процент для позднего заказа (несколько сотрудников) *</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForMultipleEmployeers" placeholder="0.00" />
+                        </div>
+                        break;
+
+                    case "Role":
+                        <div class="form-group">
+                            <label>Название роли *</label>
+                            <input type="text" class="form-control" @bind="editingRole.Name" placeholder="Введите название" />
+                        </div>
+                        break;
+
+                    case "Measure":
+                        <div class="form-group">
+                            <label>Название единицы измерения *</label>
+                            <input type="text" class="form-control" @bind="editingMeasure.Name" placeholder="Введите название" />
+                        </div>
+                        break;
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseDialog">Отмена</button>
+                <button class="btn btn-primary" @onclick="SaveEntity">Сохранить</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string selectedEntity = "Car";
+    private bool isLoading = false;
+    private bool showDialog = false;
+    private bool isEditMode = false;
+
+    // Data lists
+    private List<CarDto> cars = new();
+    private List<CarModelDto> carModels = new();
+    private List<EmployeeDto> employees = new();
+    private List<ServiceDto> services = new();
+    private List<RoleDto> roles = new();
+    private List<MeasureDto> measures = new();
+
+    // Editing entities
+    private CarDto editingCar = new();
+    private CarModelDto editingCarModel = new();
+    private EmployeeDto editingEmployee = new();
+    private ServiceDto editingService = new();
+    private RoleDto editingRole = new();
+    private MeasureDto editingMeasure = new();
+    private int editingServiceMeasureId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllData();
+    }
+
+    private async Task LoadAllData()
+    {
+        isLoading = true;
+        try
+        {
+            var tasks = new List<Task>
+            {
+                LoadCars(),
+                LoadCarModels(),
+                LoadEmployees(),
+                LoadServices(),
+                LoadRoles(),
+                LoadMeasures()
+            };
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка загрузки данных: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SelectEntity(string entity)
+    {
+        selectedEntity = entity;
+        await LoadEntityData();
+    }
+
+    private async Task LoadEntityData()
+    {
+        isLoading = true;
+        try
+        {
+            switch (selectedEntity)
+            {
+                case "Car":
+                    await LoadCars();
+                    break;
+                case "CarModel":
+                    await LoadCarModels();
+                    break;
+                case "Employee":
+                    await LoadEmployees();
+                    break;
+                case "Service":
+                    await LoadServices();
+                    break;
+                case "Role":
+                    await LoadRoles();
+                    break;
+                case "Measure":
+                    await LoadMeasures();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка загрузки данных: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadCars()
+    {
+        cars = await ApiService.GetCars();
+    }
+
+    private async Task LoadCarModels()
+    {
+        carModels = await ApiService.GetCarModels();
+    }
+
+    private async Task LoadEmployees()
+    {
+        employees = await ApiService.GetEmployees();
+    }
+
+    private async Task LoadServices()
+    {
+        services = await ApiService.GetServices();
+    }
+
+    private async Task LoadRoles()
+    {
+        roles = await ApiService.GetRoles();
+    }
+
+    private async Task LoadMeasures()
+    {
+        measures = await ApiService.GetMeasures();
+    }
+
+    private void OpenCreateDialog()
+    {
+        isEditMode = false;
+        showDialog = true;
+        
+        // Reset editing entities
+        editingCar = new CarDto();
+        editingCarModel = new CarModelDto();
+        editingEmployee = new EmployeeDto();
+        editingService = new ServiceDto();
+        editingRole = new RoleDto();
+        editingMeasure = new MeasureDto();
+        editingServiceMeasureId = 0;
+    }
+
+    private void OpenEditDialog(object entity)
+    {
+        isEditMode = true;
+        showDialog = true;
+
+        switch (selectedEntity)
+        {
+            case "Car":
+                var car = (CarDto)entity;
+                editingCar = new CarDto
+                {
+                    Id = car.Id,
+                    Number = car.Number,
+                    Status = car.Status,
+                    CarModel = car.CarModel
+                };
+                break;
+            case "CarModel":
+                var carModel = (CarModelDto)entity;
+                editingCarModel = new CarModelDto { Id = carModel.Id, Name = carModel.Name };
+                break;
+            case "Employee":
+                var employee = (EmployeeDto)entity;
+                editingEmployee = new EmployeeDto
+                {
+                    Id = employee.Id,
+                    Name = employee.Name,
+                    Login = employee.Login,
+                    Role = employee.Role
+                };
+                break;
+            case "Service":
+                var service = (ServiceDto)entity;
+                editingService = new ServiceDto
+                {
+                    Id = service.Id,
+                    Name = service.Name,
+                    MinPrice = service.MinPrice,
+                    MinVolume = service.MinVolume,
+                    Measure = service.Measure,
+                    StandartPrecentForEmployee = service.StandartPrecentForEmployee,
+                    PrecentForMultipleEmployeers = service.PrecentForMultipleEmployeers,
+                    PrecentLaterOrderForEmployee = service.PrecentLaterOrderForEmployee,
+                    PrecentLaterOrderForMultipleEmployeers = service.PrecentLaterOrderForMultipleEmployeers
+                };
+                // Find measure ID by name
+                var measureForService = measures.FirstOrDefault(m => m.Name == service.Measure);
+                editingServiceMeasureId = measureForService?.Id ?? 0;
+                break;
+            case "Role":
+                var role = (RoleDto)entity;
+                editingRole = new RoleDto { Id = role.Id, Name = role.Name };
+                break;
+            case "Measure":
+                var measure = (MeasureDto)entity;
+                editingMeasure = new MeasureDto { Id = measure.Id, Name = measure.Name };
+                break;
+        }
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+    }
+
+    private async Task SaveEntity()
+    {
+        try
+        {
+            bool success = false;
+
+            switch (selectedEntity)
+            {
+                case "Car":
+                    if (string.IsNullOrWhiteSpace(editingCar.Number) || editingCar.CarModel.Id == 0)
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode 
+                        ? await ApiService.UpdateCar(editingCar)
+                        : await ApiService.CreateCar(editingCar);
+                    if (success) await LoadCars();
+                    break;
+
+                case "CarModel":
+                    if (string.IsNullOrWhiteSpace(editingCarModel.Name))
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode
+                        ? await ApiService.UpdateCarModel(editingCarModel)
+                        : await ApiService.CreateCarModel(editingCarModel);
+                    if (success) await LoadCarModels();
+                    break;
+
+                case "Employee":
+                    if (string.IsNullOrWhiteSpace(editingEmployee.Name) || 
+                        string.IsNullOrWhiteSpace(editingEmployee.Login) ||
+                        editingEmployee.Role.Id == 0 ||
+                        (!isEditMode && string.IsNullOrWhiteSpace(editingEmployee.Password)))
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode
+                        ? await ApiService.UpdateEmployee(editingEmployee)
+                        : await ApiService.CreateEmployee(editingEmployee);
+                    if (success) await LoadEmployees();
+                    break;
+
+                case "Service":
+                    if (string.IsNullOrWhiteSpace(editingService.Name) || 
+                        editingServiceMeasureId == 0)
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode
+                        ? await ApiService.UpdateService(editingService, editingServiceMeasureId)
+                        : await ApiService.CreateService(editingService, editingServiceMeasureId);
+                    if (success) await LoadServices();
+                    break;
+
+                case "Role":
+                    if (string.IsNullOrWhiteSpace(editingRole.Name))
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode
+                        ? await ApiService.UpdateRole(editingRole)
+                        : await ApiService.CreateRole(editingRole);
+                    if (success) await LoadRoles();
+                    break;
+
+                case "Measure":
+                    if (string.IsNullOrWhiteSpace(editingMeasure.Name))
+                    {
+                        NotificationService.ShowError("Заполните все обязательные поля");
+                        return;
+                    }
+                    success = isEditMode
+                        ? await ApiService.UpdateMeasure(editingMeasure)
+                        : await ApiService.CreateMeasure(editingMeasure);
+                    if (success) await LoadMeasures();
+                    break;
+            }
+
+            if (success)
+            {
+                NotificationService.ShowInfo(isEditMode ? "Запись обновлена успешно" : "Запись создана успешно");
+                CloseDialog();
+            }
+            else
+            {
+                NotificationService.ShowError("Ошибка при сохранении записи");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteEntity(int id)
+    {
+        if (!await JSConfirm("Вы уверены, что хотите удалить эту запись?"))
+            return;
+
+        try
+        {
+            bool success = false;
+
+            switch (selectedEntity)
+            {
+                case "Car":
+                    success = await ApiService.DeleteCar(id);
+                    if (success) await LoadCars();
+                    break;
+                case "CarModel":
+                    success = await ApiService.DeleteCarModel(id);
+                    if (success) await LoadCarModels();
+                    break;
+                case "Employee":
+                    success = await ApiService.DeleteEmployee(id);
+                    if (success) await LoadEmployees();
+                    break;
+                case "Service":
+                    success = await ApiService.DeleteService(id);
+                    if (success) await LoadServices();
+                    break;
+                case "Role":
+                    success = await ApiService.DeleteRole(id);
+                    if (success) await LoadRoles();
+                    break;
+                case "Measure":
+                    success = await ApiService.DeleteMeasure(id);
+                    if (success) await LoadMeasures();
+                    break;
+            }
+
+            if (success)
+            {
+                NotificationService.ShowInfo("Запись удалена успешно");
+            }
+            else
+            {
+                NotificationService.ShowError("Ошибка при удалении записи");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private string GetEntityTitle()
+    {
+        return selectedEntity switch
+        {
+            "Car" => "Машины",
+            "CarModel" => "Модели машин",
+            "Employee" => "Сотрудники",
+            "Service" => "Услуги",
+            "Role" => "Роли",
+            "Measure" => "Единицы измерения",
+            _ => ""
+        };
+    }
+
+    private string GetCarStatus(int status)
+    {
+        return status switch
+        {
+            0 => "Активна",
+            1 => "Неактивна",
+            _ => "Неизвестно"
+        };
+    }
+
+    private List<object> GetCurrentList()
+    {
+        return selectedEntity switch
+        {
+            "Car" => cars.Cast<object>().ToList(),
+            "CarModel" => carModels.Cast<object>().ToList(),
+            "Employee" => employees.Cast<object>().ToList(),
+            "Service" => services.Cast<object>().ToList(),
+            "Role" => roles.Cast<object>().ToList(),
+            "Measure" => measures.Cast<object>().ToList(),
+            _ => new List<object>()
+        };
+    }
+
+    private async Task<bool> JSConfirm(string message)
+    {
+        return await JSRuntime.InvokeAsync<bool>("confirm", message);
+    }
+}
+

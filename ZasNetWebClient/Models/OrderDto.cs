@@ -118,6 +118,7 @@ public class ServiceDto
     public decimal MinPrice { get; set; }
     public double MinVolume { get; set; }
     public string Measure { get; set; } = string.Empty;
+    public int MeasureId { get; set; }
 
     public decimal StandartPrecentForEmployee { get; set; }
 
@@ -132,12 +133,159 @@ public class EmployeeDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? Login { get; set; }
+    public string? Password { get; set; }
+    public RoleDto Role { get; set; } = new();
 }
 
 public class CarDto
 {
     public int Id { get; set; }
+    public string Name => $"{this.Number} ({this.CarModel?.Name})";
+    public string Number { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public CarModelDto? CarModel { get; set; } = new();
+}
+
+public class CarModelDto
+{
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+}
+
+public class RoleDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class MeasureDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+// Request/Command models for API
+public class CreateCarRequest
+{
+    public string Number { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public int? CarModelId { get; set; }
+}
+
+public class UpdateCarCommand
+{
+    public int Id { get; set; }
+    public string Number { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public int? CarModelId { get; set; }
+}
+
+public class DeleteCarCommand
+{
+    public int Id { get; set; }
+}
+
+public class CreateCarModelRequest
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class UpdateCarModelCommand
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class DeleteCarModelCommand
+{
+    public int Id { get; set; }
+}
+
+public class CreateEmployeeRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string Login { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public int RoleId { get; set; }
+}
+
+public class UpdateEmployeeCommand
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string Login { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public int RoleId { get; set; }
+}
+
+public class DeleteEmployeeCommand
+{
+    public int Id { get; set; }
+}
+
+public class CreateServiceRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int MeasureId { get; set; }
+    public double MinVolume { get; set; }
+    public decimal StandartPrecentForEmployee { get; set; }
+    public decimal PrecentForMultipleEmployeers { get; set; }
+    public decimal PrecentLaterOrderForEmployee { get; set; }
+    public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+}
+
+public class UpdateServiceCommand
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int MeasureId { get; set; }
+    public double MinVolume { get; set; }
+    public decimal StandartPrecentForEmployee { get; set; }
+    public decimal PrecentForMultipleEmployeers { get; set; }
+    public decimal PrecentLaterOrderForEmployee { get; set; }
+    public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+}
+
+public class DeleteServiceCommand
+{
+    public int Id { get; set; }
+}
+
+public class CreateRoleRequest
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class UpdateRoleCommand
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class DeleteRoleCommand
+{
+    public int Id { get; set; }
+}
+
+public class CreateMeasureRequest
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class UpdateMeasureCommand
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class DeleteMeasureCommand
+{
+    public int Id { get; set; }
 }
 
 public class CreateOrderParameters
