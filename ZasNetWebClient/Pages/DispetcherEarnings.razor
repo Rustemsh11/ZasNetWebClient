@@ -2,9 +2,11 @@
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Models
 @using Blazored.LocalStorage
+@using Microsoft.JSInterop
 @inject ApiService ApiService
 @inject ILocalStorageService LocalStorageService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Заработки диспетчеров - ZasNet</PageTitle>
 
@@ -159,6 +161,39 @@
                         </div>
                     }
                 </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+            @if (selectedDispetcherIds.Count == 1)
+            {
+                <button class="btn-report btn-compact btn-download"
+                        @onclick="DownloadReport"
+                        disabled="@isDownloadingReport"
+                        title="Скачать отчет">
+                    @if (isDownloadingReport)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">📥</span>
+                    }
+                    <span class="btn-text">Скачать отчет</span>
+                </button>
+                <button class="btn-report btn-compact btn-send"
+                        @onclick="SendReportToTelegram"
+                        disabled="@isSendingReport"
+                        title="Отправить отчет сотруднику в Telegram">
+                    @if (isSendingReport)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">📱</span>
+                    }
+                    <span class="btn-text">Отправить в Telegram</span>
+                </button>
+            }
             </div>
         </div>
 
@@ -485,7 +520,7 @@
         List
     }
 
-    private List<GetDispetcherEarningByMounthResponse> earnings = new();
+    private List<DispetcherEarningByFilterDto> earnings = new();
     private List<EmployeeDto> availableDispetchers = new();
     private bool isLoading = false;
     private decimal totalEarnings = 0;
@@ -521,7 +556,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
-            earnings = new List<GetDispetcherEarningByMounthResponse>();
+            earnings = new List<DispetcherEarningByFilterDto>();
         }
         finally
         {
@@ -559,7 +594,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error applying filters: {ex.Message}");
-            earnings = new List<GetDispetcherEarningByMounthResponse>();
+            earnings = new List<DispetcherEarningByFilterDto>();
             totalEarnings = 0;
         }
         finally
@@ -690,13 +725,17 @@
     // Edit modal state
     private bool isEditModalOpen = false;
     private bool isSaving = false;
-    private GetDispetcherEarningByMounthResponse? editingEarning = null;
+    private DispetcherEarningByFilterDto? editingEarning = null;
     private decimal editPercent = 0;
     private decimal editEarning = 0;
     private string editDescription = string.Empty;
     private string editErrorMessage = string.Empty;
 
-    private void OpenEditModal(GetDispetcherEarningByMounthResponse earning)
+    // Report state
+    private bool isDownloadingReport = false;
+    private bool isSendingReport = false;
+
+    private void OpenEditModal(DispetcherEarningByFilterDto earning)
     {
         editingEarning = earning;
         editPercent = earning.DispetcherPrecent;
@@ -806,6 +845,67 @@
         finally
         {
             isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadReport()
+    {
+        if (selectedDispetcherIds.Count != 1 || earnings.Count == 0)
+        {
+            return;
+        }
+
+        isDownloadingReport = true;
+        StateHasChanged();
+
+        try
+        {
+            var reportData = await ApiService.DownloadDispetcherEarningReport(earnings);
+
+            if (reportData != null && reportData.Length > 0)
+            {
+                // Get dispetcher name for filename
+                var dispetcherName = availableDispetchers.FirstOrDefault(e => e.Id == selectedDispetcherIds[0])?.Name ?? "Диспетчер";
+                var fileName = $"Отчет_{dispetcherName}_{GetMonthName(selectedMonth)}_{selectedYear}.pdf";
+
+                // Trigger download using JavaScript
+                var base64 = Convert.ToBase64String(reportData);
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error downloading report: {ex.Message}");
+        }
+        finally
+        {
+            isDownloadingReport = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendReportToTelegram()
+    {
+        if (selectedDispetcherIds.Count != 1 || earnings.Count == 0)
+        {
+            return;
+        }
+
+        isSendingReport = true;
+        StateHasChanged();
+
+        try
+        {
+            await ApiService.SendDispetcherEarningReportToTelegram(earnings);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending report to Telegram: {ex.Message}");
+        }
+        finally
+        {
+            isSendingReport = false;
             StateHasChanged();
         }
     }

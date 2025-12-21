@@ -135,6 +135,7 @@ public class EmployeeDto
     public string Name { get; set; } = string.Empty;
     public string? Login { get; set; }
     public string? Password { get; set; }
+    public decimal? DispetcherProcent { get; set; }
     public RoleDto Role { get; set; } = new();
 }
 
@@ -208,6 +209,7 @@ public class CreateEmployeeRequest
     public string? Phone { get; set; }
     public string Login { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    public decimal? DispetcherProcent { get; set; }
     public int RoleId { get; set; }
 }
 
@@ -218,6 +220,7 @@ public class UpdateEmployeeCommand
     public string? Phone { get; set; }
     public string Login { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    public decimal? DispetcherProcent { get; set; }
     public int RoleId { get; set; }
 }
 
@@ -400,7 +403,7 @@ public class GetEmployeeEarningByMonthRequest
 /// <summary>
 /// Ответ с данными о заработке сотрудника
 /// </summary>
-public class GetEmployeeEarningByMonthResponse
+public class EmployeeEarningByFilterDto
 {
     /// <summary>
     /// ID заявки
@@ -495,7 +498,7 @@ public class GetDispetcherEarningByMounthRequest
 /// <summary>
 /// Ответ с данными о заработке диспетчера
 /// </summary>
-public class GetDispetcherEarningByMounthResponse
+public class DispetcherEarningByFilterDto
 {
     /// <summary>
     /// ID записи о заработке

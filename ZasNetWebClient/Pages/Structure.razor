@@ -235,6 +235,13 @@
                                 }
                             </select>
                         </div>
+                        @if (IsDispetcherRoleSelected())
+                        {
+                            <div class="form-group">
+                                <label>Процент диспетчера (%)</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingEmployee.DispetcherProcent" placeholder="0.00" />
+                            </div>
+                        }
                         break;
 
                     case "Service":
@@ -471,7 +478,8 @@
                     Id = employee.Id,
                     Name = employee.Name,
                     Login = employee.Login,
-                    Role = employee.Role
+                    Role = employee.Role,
+                    DispetcherProcent = employee.DispetcherProcent
                 };
                 break;
             case "Service":
@@ -702,6 +710,15 @@
     private async Task<bool> JSConfirm(string message)
     {
         return await JSRuntime.InvokeAsync<bool>("confirm", message);
+    }
+
+    private bool IsDispetcherRoleSelected()
+    {
+        if (editingEmployee?.Role == null || editingEmployee.Role.Id == 0)
+            return false;
+
+        var selectedRole = roles.FirstOrDefault(r => r.Id == editingEmployee.Role.Id);
+        return selectedRole != null && selectedRole.Name.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
     }
 }
 

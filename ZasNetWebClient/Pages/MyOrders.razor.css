@@ -373,6 +373,12 @@
     border-top: 1px solid #e5e7eb;
 }
 
+.footer-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .order-hint {
     font-size: 0.6875rem;
     color: #94a3b8;
@@ -463,8 +469,18 @@
         padding: 0.5rem 0.75rem;
     }
 
-    .order-card-footer .btn-compact {
+    .footer-actions {
         width: 100%;
+        justify-content: space-between;
+    }
+
+    .footer-actions .btn-compact {
+        flex: 1;
+    }
+
+    .footer-actions .btn-icon {
+        flex: 0 0 auto;
+        min-width: 2.5rem;
     }
 
     .order-hint {
@@ -812,6 +828,13 @@
 
 .action-cell {
     text-align: right;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 /* Print styles */

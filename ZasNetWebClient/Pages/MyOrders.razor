@@ -350,9 +350,17 @@
                     </div>
 
                     <div class="order-card-footer">
-                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
-                            Открыть
-                        </button>
+                        <div class="footer-actions">
+                            <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                Открыть
+                            </button>
+                            <button class="btn-danger btn-compact btn-icon" 
+                                    @onclick="() => ShowDeleteConfirmation(order.Id)"
+                                    @onclick:stopPropagation="true"
+                                    title="Удалить заявку">
+                                🗑️
+                            </button>
+                        </div>
                         <span class="order-hint">Двойной клик для открытия</span>
                     </div>
                 </div>
@@ -416,9 +424,17 @@
                                     }
                                 </td>
                                 <td class="action-cell">
-                                    <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
-                                        Открыть
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                            Открыть
+                                        </button>
+                                        <button class="btn-danger btn-compact btn-icon" 
+                                                @onclick="() => ShowDeleteConfirmation(order.Id)"
+                                                @onclick:stopPropagation="true"
+                                                title="Удалить заявку">
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -428,6 +444,12 @@
         }
     }
 </div>
+
+<ConfirmDialog IsVisible="@showDeleteConfirmDialog"
+               Title="Удаление заявки"
+               Message="@($"Вы уверены, что хотите удалить заявку #{orderIdToDelete}? Это действие необратимо.")"
+               OnConfirm="@ConfirmDelete"
+               OnCancel="@CancelDelete" />
 
 @code {
     private enum ViewMode
@@ -453,6 +475,10 @@
     // Dropdown state
     private bool isServicesDropdownOpen = false;
     private string serviceSearchTerm = string.Empty;
+    
+    // Delete confirmation
+    private bool showDeleteConfirmDialog = false;
+    private int orderIdToDelete = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -680,6 +706,53 @@
     {
         viewMode = mode;
         StateHasChanged();
+    }
+
+    private void ShowDeleteConfirmation(int orderId)
+    {
+        orderIdToDelete = orderId;
+        showDeleteConfirmDialog = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        showDeleteConfirmDialog = false;
+
+        try
+        {
+            var success = await ApiService.DeleteOrder(orderIdToDelete);
+
+            if (success)
+            {
+                // Удаляем заявку из локального списка
+                var orderToRemove = filteredOrders.FirstOrDefault(o => o.Id == orderIdToDelete);
+                if (orderToRemove != null)
+                {
+                    filteredOrders.Remove(orderToRemove);
+                    totalOrdersCount = Math.Max(0, totalOrdersCount - 1);
+                }
+                
+                StateHasChanged();
+            }
+            else
+            {
+                Console.WriteLine("Не удалось удалить заявку.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении заявки: {ex.Message}");
+        }
+        finally
+        {
+            orderIdToDelete = 0;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmDialog = false;
+        orderIdToDelete = 0;
     }
 }
 

@@ -11,11 +11,13 @@ public class ApiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILocalStorageService _localStorageService;
+    private readonly NotificationService _notificationService;
 
-    public ApiService(HttpClient httpClient, ILocalStorageService localStorageService)
+    public ApiService(HttpClient httpClient, ILocalStorageService localStorageService, NotificationService notificationService)
     {
         _httpClient = httpClient;
         _localStorageService = localStorageService;
+        _notificationService = notificationService;
     }
     
     public async Task<List<Order>> GetAllOrders()
@@ -34,6 +36,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке заявок: {ex.Message}");
             return new List<Order>();
         }
     }
@@ -54,6 +57,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке заявки: {ex.Message}");
             return new OrderDto();
         }
     }
@@ -75,6 +79,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке параметров заявки: {ex.Message}");
             return new CreateOrderParameters();
         }
     }
@@ -96,6 +101,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке диспетчеров: {ex.Message}");
             return new List<EmployeeDto>();
         }
     }
@@ -117,6 +123,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке водителей: {ex.Message}");
             return new List<EmployeeDto>();
         }
     }
@@ -138,6 +145,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке услуг: {ex.Message}");
             return new List<ServiceDto>();
         }
     }
@@ -160,20 +168,29 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при создании заявки: {ex.Message}");
             return false;
         }
     }
     
     public async Task<HttpResponseMessage> SaveOrder(OrderDto orderDto)
     {
-        var token = await _localStorageService.GetItemAsync<string>("token");
-        var saveOrderDto = new SaveOrderCommand() { OrderDto = orderDto };
-        if (!string.IsNullOrEmpty(token))
+        try
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            var saveOrderDto = new SaveOrderCommand() { OrderDto = orderDto };
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
 
-        return await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
+            return await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при сохранении заявки: {ex.Message}");
+            return new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError);
+        }
     }
 
     public async Task<bool> ChangeStatusToWaitingInvoice(ChangeStatusToWaitingInvoiceDto changeStatusToWaitingInvoiceDto)
@@ -191,8 +208,9 @@ public class ApiService
 
             return response.IsSuccessStatusCode;
         }
-        catch
+        catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при изменении статуса заявки: {ex.Message}");
             return false;
         }
     }
@@ -212,8 +230,9 @@ public class ApiService
 
             return response.IsSuccessStatusCode;
         }
-        catch
+        catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при изменении статуса заявки: {ex.Message}");
             return false;
         }
     }
@@ -232,8 +251,9 @@ public class ApiService
             var response = await _httpClient.PostAsync($"api/v1/order/lock?orderId={orderId}", new StringContent(string.Empty));
             return response.IsSuccessStatusCode;
         }
-        catch
+        catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при блокировке заявки: {ex.Message}");
             return false;
         }
     }
@@ -273,6 +293,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке автомобилей: {ex.Message}");
             return new List<CarDto>();
         }
     }
@@ -346,7 +367,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting orders by filter: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при фильтрации заявок: {ex.Message}");
             return new List<GetOrdersByFilterResponse>();
         }
     }
@@ -396,11 +417,12 @@ public class ApiService
         }
         catch (Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке документа: {ex.Message}");
             return false;
         }
     }
 
-    public async Task<List<GetEmployeeEarningByMonthResponse>> GetEmployeeEarningsByMonth(GetEmployeeEarningByMonthRequest request)
+    public async Task<List<EmployeeEarningByFilterDto>> GetEmployeeEarningsByMonth(GetEmployeeEarningByMonthRequest request)
     {
         try
         {
@@ -452,17 +474,17 @@ public class ApiService
             var queryString = "?" + string.Join("&", queryParams);
             var url = $"api/v1/EmployeeEarning/GetEmployeeEarningByMounth{queryString}";
 
-            var earnings = await _httpClient.GetFromJsonAsync<List<GetEmployeeEarningByMonthResponse>>(url);
-            return earnings ?? new List<GetEmployeeEarningByMonthResponse>();
+            var earnings = await _httpClient.GetFromJsonAsync<List<EmployeeEarningByFilterDto>>(url);
+            return earnings ?? new List<EmployeeEarningByFilterDto>();
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting employee earnings: {ex.Message}");
-            return new List<GetEmployeeEarningByMonthResponse>();
+            _notificationService.ShowError($"Ошибка при загрузке заработков сотрудников: {ex.Message}");
+            return new List<EmployeeEarningByFilterDto>();
         }
     }
 
-    public async Task<List<GetDispetcherEarningByMounthResponse>> GetDispetcherEarningsByMonth(GetDispetcherEarningByMounthRequest request)
+    public async Task<List<DispetcherEarningByFilterDto>> GetDispetcherEarningsByMonth(GetDispetcherEarningByMounthRequest request)
     {
         try
         {
@@ -506,13 +528,13 @@ public class ApiService
             var queryString = "?" + string.Join("&", queryParams);
             var url = $"api/v1/DispetcherEarning/GetDispetcherEarningByMounth{queryString}";
 
-            var earnings = await _httpClient.GetFromJsonAsync<List<GetDispetcherEarningByMounthResponse>>(url);
-            return earnings ?? new List<GetDispetcherEarningByMounthResponse>();
+            var earnings = await _httpClient.GetFromJsonAsync<List<DispetcherEarningByFilterDto>>(url);
+            return earnings ?? new List<DispetcherEarningByFilterDto>();
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting dispetcher earnings: {ex.Message}");
-            return new List<GetDispetcherEarningByMounthResponse>();
+            _notificationService.ShowError($"Ошибка при загрузке заработков диспетчеров: {ex.Message}");
+            return new List<DispetcherEarningByFilterDto>();
         }
     }
 
@@ -533,7 +555,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating employee earning: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении заработка сотрудника: {ex.Message}");
             return false;
         }
     }
@@ -555,7 +577,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating dispatcher earning: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении заработка диспетчера: {ex.Message}");
             return false;
         }
     }
@@ -577,7 +599,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting cars: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при загрузке автомобилей: {ex.Message}");
             return new List<CarDto>();
         }
     }
@@ -597,7 +619,7 @@ public class ApiService
             {
                 Number = carDto.Number,
                 Status = carDto.Status,
-                CarModelId = carDto.CarModel.Id
+                CarModelId = carDto.CarModel?.Id ?? 0
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/CreateCar", request);
@@ -605,7 +627,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating car: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -626,7 +648,7 @@ public class ApiService
                 Id = carDto.Id,
                 Number = carDto.Number,
                 Status = carDto.Status,
-                CarModelId = carDto.CarModel.Id
+                CarModelId = carDto.CarModel?.Id ?? 0
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/UpdateCar", command);
@@ -634,7 +656,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating car: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -661,7 +683,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting car: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -683,7 +705,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting car models: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при загрузке моделей автомобилей: {ex.Message}");
             return new List<CarModelDto>();
         }
     }
@@ -705,7 +727,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating car model: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании модели автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -727,7 +749,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating car model: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении модели автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -754,7 +776,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting car model: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении модели автомобиля: {ex.Message}");
             return false;
         }
     }
@@ -776,6 +798,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
+            _notificationService.ShowError($"Ошибка при загрузке сотрудников: {ex.Message}");
             return new List<EmployeeDto>();
         }
     }
@@ -797,6 +820,7 @@ public class ApiService
                 Phone = null,
                 Login = employeeDto.Login ?? "",
                 Password = employeeDto.Password ?? "",
+                DispetcherProcent = employeeDto.DispetcherProcent,
                 RoleId = employeeDto.Role.Id
             };
 
@@ -805,7 +829,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating employee: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании сотрудника: {ex.Message}");
             return false;
         }
     }
@@ -828,6 +852,7 @@ public class ApiService
                 Phone = null,
                 Login = employeeDto.Login ?? "",
                 Password = employeeDto.Password ?? "",
+                DispetcherProcent = employeeDto.DispetcherProcent,
                 RoleId = employeeDto.Role.Id
             };
 
@@ -836,7 +861,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating employee: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении сотрудника: {ex.Message}");
             return false;
         }
     }
@@ -863,7 +888,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting employee: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении сотрудника: {ex.Message}");
             return false;
         }
     }
@@ -897,7 +922,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating service: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании услуги: {ex.Message}");
             return false;
         }
     }
@@ -931,7 +956,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating service: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении услуги: {ex.Message}");
             return false;
         }
     }
@@ -958,7 +983,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting service: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении услуги: {ex.Message}");
             return false;
         }
     }
@@ -980,7 +1005,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting roles: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при загрузке ролей: {ex.Message}");
             return new List<RoleDto>();
         }
     }
@@ -1002,7 +1027,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating role: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании роли: {ex.Message}");
             return false;
         }
     }
@@ -1024,7 +1049,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating role: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении роли: {ex.Message}");
             return false;
         }
     }
@@ -1051,7 +1076,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting role: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении роли: {ex.Message}");
             return false;
         }
     }
@@ -1073,7 +1098,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error getting measures: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при загрузке единиц измерения: {ex.Message}");
             return new List<MeasureDto>();
         }
     }
@@ -1095,7 +1120,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error creating measure: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при создании единицы измерения: {ex.Message}");
             return false;
         }
     }
@@ -1117,7 +1142,7 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error updating measure: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при обновлении единицы измерения: {ex.Message}");
             return false;
         }
     }
@@ -1144,7 +1169,179 @@ public class ApiService
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"Error deleting measure: {ex.Message}");
+            _notificationService.ShowError($"Ошибка при удалении единицы измерения: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteOrder(int orderId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteOrderCommand { Id = orderId };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/order/DeleteOrder")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при удалении заявки: {ex.Message}");
+            return false;
+        }
+    }
+    
+    public async Task<bool> DeleteDocument(int documentId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new DeleteDocumentCommand { Id = documentId };
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/v1/document/DeleteDocument")
+            {
+                Content = JsonContent.Create(command)
+            };
+            
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при удалении документа: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<byte[]?> DownloadEmployeeEarningReport(List<EmployeeEarningByFilterDto> data)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new DownloadEmployeeEarningReportRequest { Data = data };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/DownloadReport", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+
+            _notificationService.ShowError("Ошибка при скачивании отчета");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при скачивании отчета: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<bool> SendEmployeeEarningReportToTelegram(List<EmployeeEarningByFilterDto> data)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new SendEmployeeEarningReportToTelegramCommand { Data = data };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/SendReportToTelegram", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _notificationService.ShowInfo("Отчет успешно отправлен в Telegram");
+                return true;
+            }
+
+            _notificationService.ShowError("Ошибка при отправке отчета в Telegram");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при отправке отчета: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<byte[]?> DownloadDispetcherEarningReport(List<DispetcherEarningByFilterDto> data)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var request = new DownloadDispetcherEarningReportRequest { Data = data };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/DownloadReport", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+
+            _notificationService.ShowError("Ошибка при скачивании отчета");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при скачивании отчета: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<bool> SendDispetcherEarningReportToTelegram(List<DispetcherEarningByFilterDto> data)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new SendDispetcherEarningReportToTelegramCommand { Data = data };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/SendReportToTelegram", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _notificationService.ShowInfo("Отчет успешно отправлен в Telegram");
+                return true;
+            }
+
+            _notificationService.ShowError("Ошибка при отправке отчета в Telegram");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при отправке отчета: {ex.Message}");
             return false;
         }
     }
