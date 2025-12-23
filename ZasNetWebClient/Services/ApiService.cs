@@ -1345,4 +1345,312 @@ public class ApiService
             return false;
         }
     }
+
+    public async Task<List<CarEarningAnalyticsDto>> GetCarEarningAnalytics(GetCarEarningAnalyticsRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}"
+            };
+
+            if (request.CarIds != null && request.CarIds.Any())
+            {
+                foreach (var carId in request.CarIds)
+                {
+                    queryParams.Add($"CarIds={carId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/cars{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<CarEarningAnalyticsDto>>(url);
+            return analytics ?? new List<CarEarningAnalyticsDto>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке аналитики по машинам: {ex.Message}");
+            return new List<CarEarningAnalyticsDto>();
+        }
+    }
+
+    public async Task<List<ServiceEarningAnalyticsDto>> GetServiceEarningAnalytics(GetServiceEarningAnalyticsRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}"
+            };
+
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    queryParams.Add($"ServiceIds={serviceId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/services{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<ServiceEarningAnalyticsDto>>(url);
+            return analytics ?? new List<ServiceEarningAnalyticsDto>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке аналитики по услугам: {ex.Message}");
+            return new List<ServiceEarningAnalyticsDto>();
+        }
+    }
+
+    public async Task<List<DriverEarningAnalyticsDto>> GetDriverEarningAnalytics(GetDriverEarningAnalyticsRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}"
+            };
+
+            if (request.DriverIds != null && request.DriverIds.Any())
+            {
+                foreach (var driverId in request.DriverIds)
+                {
+                    queryParams.Add($"DriverIds={driverId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/drivers{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<DriverEarningAnalyticsDto>>(url);
+            return analytics ?? new List<DriverEarningAnalyticsDto>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке аналитики по водителям: {ex.Message}");
+            return new List<DriverEarningAnalyticsDto>();
+        }
+    }
+
+    public async Task<List<DispatcherEarningAnalyticsDto>> GetDispatcherEarningAnalytics(GetDispatcherEarningAnalyticsRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}"
+            };
+
+            if (request.DispatcherIds != null && request.DispatcherIds.Any())
+            {
+                foreach (var dispatcherId in request.DispatcherIds)
+                {
+                    queryParams.Add($"DispatcherIds={dispatcherId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/dispatchers{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<DispatcherEarningAnalyticsDto>>(url);
+            return analytics ?? new List<DispatcherEarningAnalyticsDto>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке аналитики по диспетчерам: {ex.Message}");
+            return new List<DispatcherEarningAnalyticsDto>();
+        }
+    }
+
+    public async Task<List<ServiceEarningByPeriodDto>> GetServiceEarningByPeriod(GetServiceEarningByPeriodRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"GroupPeriod={((int)request.GroupPeriod)}"
+            };
+
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    queryParams.Add($"ServiceIds={serviceId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/service-earnings-by-period{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<ServiceEarningByPeriodDto>>(url);
+            return analytics ?? new List<ServiceEarningByPeriodDto>();
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке аналитики по периодам: {ex.Message}");
+            return new List<ServiceEarningByPeriodDto>();
+        }
+    }
+
+    public async Task<List<CarEarningByPeriodDto>> GetCarEarningByPeriod(GetCarEarningByPeriodRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"GroupPeriod={((int)request.GroupPeriod)}"
+            };
+
+            if (request.CarIds != null && request.CarIds.Any())
+            {
+                foreach (var carId in request.CarIds)
+                {
+                    queryParams.Add($"CarIds={carId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/car-earnings-by-period{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<CarEarningByPeriodDto>>(url);
+            return analytics ?? new List<CarEarningByPeriodDto>();
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке заработков машин по периодам: {ex.Message}");
+            return new List<CarEarningByPeriodDto>();
+        }
+    }
+
+    public async Task<List<DriverEarningByPeriodDto>> GetDriverEarningByPeriod(GetDriverEarningByPeriodRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"GroupPeriod={((int)request.GroupPeriod)}"
+            };
+
+            if (request.DriverIds != null && request.DriverIds.Any())
+            {
+                foreach (var driverId in request.DriverIds)
+                {
+                    queryParams.Add($"DriverIds={driverId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/driver-earnings-by-period{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<DriverEarningByPeriodDto>>(url);
+            return analytics ?? new List<DriverEarningByPeriodDto>();
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке заработков водителей по периодам: {ex.Message}");
+            return new List<DriverEarningByPeriodDto>();
+        }
+    }
+
+    public async Task<List<DispatcherEarningByPeriodDto>> GetDispatcherEarningByPeriod(GetDispatcherEarningByPeriodRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"GroupPeriod={((int)request.GroupPeriod)}"
+            };
+
+            if (request.DispatcherIds != null && request.DispatcherIds.Any())
+            {
+                foreach (var dispatcherId in request.DispatcherIds)
+                {
+                    queryParams.Add($"DispatcherIds={dispatcherId}");
+                }
+            }
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/dispatcher-earnings-by-period{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<DispatcherEarningByPeriodDto>>(url);
+            return analytics ?? new List<DispatcherEarningByPeriodDto>();
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке заработков диспетчеров по периодам: {ex.Message}");
+            return new List<DispatcherEarningByPeriodDto>();
+        }
+    }
 }

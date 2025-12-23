@@ -1,0 +1,2049 @@
+@page "/earningAnalisys"
+@using ZasNetWebClient.Services
+@using ZasNetWebClient.Models
+@using Microsoft.JSInterop
+@inject ApiService ApiService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Аналитика заработков - ZasNet</PageTitle>
+
+<div class="earning-analytics-container" @onclick="CloseAllDropdowns">
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1>Аналитика заработков</h1>
+                <p>Анализ заработков по машинам, услугам, водителям и диспетчерам</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+        <button class="tab-button @(activeTab == "cars" ? "active" : "")" @onclick="@(() => SwitchTab("cars"))">
+            🚗 Машины
+        </button>
+        <button class="tab-button @(activeTab == "services" ? "active" : "")" @onclick="@(() => SwitchTab("services"))">
+            🛠️ Услуги
+        </button>
+        <button class="tab-button @(activeTab == "drivers" ? "active" : "")" @onclick="@(() => SwitchTab("drivers"))">
+            👨‍🔧 Водители
+        </button>
+        <button class="tab-button @(activeTab == "dispatchers" ? "active" : "")" @onclick="@(() => SwitchTab("dispatchers"))">
+            📞 Диспетчеры
+        </button>
+    </div>
+
+    @if (activeTab == "cars")
+    {
+        <!-- Cars Tab -->
+        <div class="tab-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Фильтры</h3>
+                    <button class="btn-secondary btn-compact" @onclick="ResetCarsFilters">
+                        Сбросить все
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="cars-date-from">Дата с</label>
+                        <input type="date"
+                               id="cars-date-from"
+                               class="form-control"
+                               value="@(carsRequest.DateFrom.ToString("yyyy-MM-dd"))"
+                               @onchange="OnCarsDateFromChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="cars-date-to">Дата по</label>
+                        <input type="date"
+                               id="cars-date-to"
+                               class="form-control"
+                               value="@(carsRequest.DateTo.ToString("yyyy-MM-dd"))"
+                               @onchange="OnCarsDateToChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Машины</label>
+                        <div class="custom-dropdown">
+                            <button type="button"
+                                    class="dropdown-toggle form-control"
+                                    @onclick="ToggleCarsDropdown"
+                                    @onclick:stopPropagation="true">
+                                <span class="dropdown-text">
+                                    @if (selectedCarIds.Any())
+                                    {
+                                        <text>Выбрано: @selectedCarIds.Count</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Все машины</text>
+                                    }
+                                </span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+
+                            @if (isCarsDropdownOpen)
+                            {
+                                <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                    @if (availableCars.Any())
+                                    {
+                                        <div class="dropdown-items">
+                                            @foreach (var car in availableCars)
+                                            {
+                                                <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                    <input type="checkbox"
+                                                           checked="@selectedCarIds.Contains(car.Id)"
+                                                           @onchange="(e) => ToggleCar(car.Id)"
+                                                           @onclick:stopPropagation="true" />
+                                                    <span>@car.Number @(car.CarModel != null ? $"({car.CarModel.Name})" : "")</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="dropdown-footer">
+                                            <button type="button"
+                                                    class="btn-secondary btn-compact"
+                                                    @onclick="ClearAllCars"
+                                                    @onclick:stopPropagation="true">
+                                                Очистить
+                                            </button>
+                                            <button type="button"
+                                                    class="btn-primary btn-compact"
+                                                    @onclick="ApplyCarsFilter"
+                                                    @onclick:stopPropagation="true">
+                                                Применить
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingCars)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Загрузка аналитики...</p>
+                </div>
+            }
+            else if (carsData.Any())
+            {
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="btn-toggle @(viewMode == "table" ? "active" : "")" @onclick="OnSwitchToTable">
+                        📊 Таблица
+                    </button>
+                    <button class="btn-toggle @(viewMode == "charts" ? "active" : "")" @onclick="OnSwitchToCharts">
+                        📈 Графики
+                    </button>
+                </div>
+
+                @if (viewMode == "charts")
+                {
+                    <!-- Chart Type Toggle -->
+                    <div class="chart-type-toggle">
+                        <button class="btn-chart-type @(chartType == "bar" ? "active" : "")" @onclick='() => SwitchChartType("bar")'>
+                            📊 Гистограмма
+                        </button>
+                        <button class="btn-chart-type @(chartType == "pie" ? "active" : "")" @onclick='() => SwitchChartType("pie")'>
+                            🥧 Диаграмма
+                        </button>
+                    </div>
+                }
+
+                @if (viewMode == "table")
+                {
+                    <div class="analytics-tables">
+                        <div class="analytics-section">
+                            <h2 class="section-title">Аналитика по машинам</h2>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Номер машины</th>
+                                            <th>Модель</th>
+                                            <th>Заявок</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var car in carsData.OrderByDescending(c => c.TotalEarnings))
+                                        {
+                                            <tr>
+                                                <td>@car.CarNumber</td>
+                                                <td>@(car.CarModel ?? "-")</td>
+                                                <td>@car.OrdersCount</td>
+                                                <td class="amount">@car.TotalEarnings.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2"><strong>Итого:</strong></td>
+                                            <td><strong>@carsData.Sum(c => c.OrdersCount)</strong></td>
+                                            <td class="amount"><strong>@carsData.Sum(c => c.TotalEarnings).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="analytics-charts">
+                        <div class="chart-section">
+                            <h2 class="section-title">Заработки по машинам</h2>
+                            <div class="chart-container">
+                                <canvas id="carsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Нет данных за выбранный период</p>
+                </div>
+            }
+
+            <!-- Car Earning By Period Block -->
+            <div class="period-analytics-section">
+                <div class="section-header">
+                    <h2 class="section-title">Заработок по машинам по периодам</h2>
+                </div>
+
+                <!-- Period Type Tabs -->
+                <div class="period-tabs">
+                    <button class="period-tab @(carsPeriodType == GroupPeriod.Day ? "active" : "")" 
+                            @onclick='() => SwitchCarsPeriodType(GroupPeriod.Day)'>
+                        📅 По дням
+                    </button>
+                    <button class="period-tab @(carsPeriodType == GroupPeriod.Month ? "active" : "")" 
+                            @onclick='() => SwitchCarsPeriodType(GroupPeriod.Month)'>
+                        📆 По месяцам
+                    </button>
+                    <button class="period-tab @(carsPeriodType == GroupPeriod.Year ? "active" : "")" 
+                            @onclick='() => SwitchCarsPeriodType(GroupPeriod.Year)'>
+                        📊 По годам
+                    </button>
+                </div>
+
+                @if (isLoadingCarsPeriodData)
+                {
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Загрузка данных...</p>
+                    </div>
+                }
+                else if (carsByPeriodData.Any())
+                {
+                    @if (viewMode == "table")
+                    {
+                        <!-- Table -->
+                        <div class="analytics-section">
+                            <h3 class="subsection-title">Детализация по периодам</h3>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Период</th>
+                                            <th>Машина</th>
+                                            <th>Модель</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in carsByPeriodData.OrderByDescending(s => s.Period).ThenByDescending(s => s.TotalEarning))
+                                        {
+                                            <tr>
+                                                <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
+                                                <td>@item.CarNumber</td>
+                                                <td>@item.CarModel</td>
+                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2"><strong>Итого:</strong></td>
+                                            <td class="amount"><strong>@carsByPeriodData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chart -->
+                        <div class="chart-section">
+                            <h3 class="subsection-title">График по периодам</h3>
+                            <div class="chart-container">
+                                <canvas id="carsPeriodChart"></canvas>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>Нет данных за выбранный период</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (activeTab == "services")
+    {
+        <!-- Services Tab -->
+        <div class="tab-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Фильтры</h3>
+                    <button class="btn-secondary btn-compact" @onclick="ResetServicesFilters">
+                        Сбросить все
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="services-date-from">Дата с</label>
+                        <input type="date"
+                               id="services-date-from"
+                               class="form-control"
+                               value="@(servicesRequest.DateFrom.ToString("yyyy-MM-dd"))"
+                               @onchange="OnServicesDateFromChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="services-date-to">Дата по</label>
+                        <input type="date"
+                               id="services-date-to"
+                               class="form-control"
+                               value="@(servicesRequest.DateTo.ToString("yyyy-MM-dd"))"
+                               @onchange="OnServicesDateToChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Услуги</label>
+                        <div class="custom-dropdown">
+                            <button type="button"
+                                    class="dropdown-toggle form-control"
+                                    @onclick="ToggleServicesDropdown"
+                                    @onclick:stopPropagation="true">
+                                <span class="dropdown-text">
+                                    @if (selectedServiceIds.Any())
+                                    {
+                                        <text>Выбрано: @selectedServiceIds.Count</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Все услуги</text>
+                                    }
+                                </span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+
+                            @if (isServicesDropdownOpen)
+                            {
+                                <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                    @if (availableServices.Any())
+                                    {
+                                        <div class="dropdown-items">
+                                            @foreach (var service in availableServices)
+                                            {
+                                                <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                    <input type="checkbox"
+                                                           checked="@selectedServiceIds.Contains(service.Id)"
+                                                           @onchange="(e) => ToggleService(service.Id)"
+                                                           @onclick:stopPropagation="true" />
+                                                    <span>@service.Name</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="dropdown-footer">
+                                            <button type="button"
+                                                    class="btn-secondary btn-compact"
+                                                    @onclick="ClearAllServices"
+                                                    @onclick:stopPropagation="true">
+                                                Очистить
+                                            </button>
+                                            <button type="button"
+                                                    class="btn-primary btn-compact"
+                                                    @onclick="ApplyServicesFilter"
+                                                    @onclick:stopPropagation="true">
+                                                Применить
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingServices)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Загрузка аналитики...</p>
+                </div>
+            }
+            else if (servicesData.Any())
+            {
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="btn-toggle @(viewMode == "table" ? "active" : "")" @onclick="OnSwitchToTable">
+                        📊 Таблица
+                    </button>
+                    <button class="btn-toggle @(viewMode == "charts" ? "active" : "")" @onclick="OnSwitchToCharts">
+                        📈 Графики
+                    </button>
+                </div>
+
+                @if (viewMode == "charts")
+                {
+                    <!-- Chart Type Toggle -->
+                    <div class="chart-type-toggle">
+                        <button class="btn-chart-type @(chartType == "bar" ? "active" : "")" @onclick='() => SwitchChartType("bar")'>
+                            📊 Гистограмма
+                        </button>
+                        <button class="btn-chart-type @(chartType == "pie" ? "active" : "")" @onclick='() => SwitchChartType("pie")'>
+                            🥧 Диаграмма
+                        </button>
+                    </div>
+                }
+
+                @if (viewMode == "table")
+                {
+                    <div class="analytics-tables">
+                        <div class="analytics-section">
+                            <h2 class="section-title">Аналитика по услугам</h2>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Услуга</th>
+                                            <th>Заявок</th>
+                                            <th>Услуг</th>
+                                            <th>Общий зар. сотрудников</th>
+                                            <th>Общая прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var service in servicesData.OrderByDescending(s => s.TotalEmployeesEarnings))
+                                        {
+                                            <tr>
+                                                <td>@service.ServiceName</td>
+                                                <td>@service.OrdersCount</td>
+                                                <td>@service.ServicesCount</td>
+                                                <td class="amount">@service.TotalEmployeesEarnings.ToString("N2") ₽</td>
+                                                <td class="amount">@service.TotalZasNetEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td><strong>Итого:</strong></td>
+                                            <td><strong>@servicesData.Sum(s => s.OrdersCount)</strong></td>
+                                            <td><strong>@servicesData.Sum(s => s.ServicesCount)</strong></td>
+                                            <td class="amount"><strong>@servicesData.Sum(s => s.TotalEmployeesEarnings).ToString("N2") ₽</strong></td>
+                                            <td class="amount"><strong>@servicesData.Sum(s => s.TotalZasNetEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="analytics-charts">
+                        <div class="chart-section">
+                            <h2 class="section-title">Заработки по услугам</h2>
+                            <div class="chart-container">
+                                <canvas id="servicesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Нет данных за выбранный период</p>
+                </div>
+            }
+
+            <!-- Service Earning By Period Block -->
+            <div class="period-analytics-section">
+                <div class="section-header">
+                    <h2 class="section-title">Заработок по услугам по периодам</h2>
+                </div>
+
+                <!-- Period Type Tabs -->
+                <div class="period-tabs">
+                    <button class="period-tab @(servicesPeriodType == GroupPeriod.Day ? "active" : "")" 
+                            @onclick='() => SwitchServicesPeriodType(GroupPeriod.Day)'>
+                        📅 По дням
+                    </button>
+                    <button class="period-tab @(servicesPeriodType == GroupPeriod.Month ? "active" : "")" 
+                            @onclick='() => SwitchServicesPeriodType(GroupPeriod.Month)'>
+                        📆 По месяцам
+                    </button>
+                    <button class="period-tab @(servicesPeriodType == GroupPeriod.Year ? "active" : "")" 
+                            @onclick='() => SwitchServicesPeriodType(GroupPeriod.Year)'>
+                        📊 По годам
+                    </button>
+                </div>
+
+                @if (isLoadingServicesPeriodData)
+                {
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Загрузка данных...</p>
+                    </div>
+                }
+                else if (servicesByPeriodData.Any())
+                {
+                    @if (viewMode == "table")
+                    {
+                        <!-- Table -->
+                        <div class="analytics-section">
+                            <h3 class="subsection-title">Детализация по периодам</h3>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Период</th>
+                                            <th>Услуга</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in servicesByPeriodData.OrderByDescending(s => s.Period).ThenByDescending(s => s.TotalEarning))
+                                        {
+                                            <tr>
+                                                <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
+                                                <td>@item.ServiceName</td>
+                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2"><strong>Итого:</strong></td>
+                                            <td class="amount"><strong>@servicesByPeriodData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chart -->
+                        <div class="chart-section">
+                            <h3 class="subsection-title">График по периодам</h3>
+                            <div class="chart-container">
+                                <canvas id="periodChart"></canvas>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>Нет данных за выбранный период</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (activeTab == "drivers")
+    {
+        <!-- Drivers Tab -->
+        <div class="tab-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Фильтры</h3>
+                    <button class="btn-secondary btn-compact" @onclick="ResetDriversFilters">
+                        Сбросить все
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="drivers-date-from">Дата с</label>
+                        <input type="date"
+                               id="drivers-date-from"
+                               class="form-control"
+                               value="@(driversRequest.DateFrom.ToString("yyyy-MM-dd"))"
+                               @onchange="OnDriversDateFromChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="drivers-date-to">Дата по</label>
+                        <input type="date"
+                               id="drivers-date-to"
+                               class="form-control"
+                               value="@(driversRequest.DateTo.ToString("yyyy-MM-dd"))"
+                               @onchange="OnDriversDateToChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Водители</label>
+                        <div class="custom-dropdown">
+                            <button type="button"
+                                    class="dropdown-toggle form-control"
+                                    @onclick="ToggleDriversDropdown"
+                                    @onclick:stopPropagation="true">
+                                <span class="dropdown-text">
+                                    @if (selectedDriverIds.Any())
+                                    {
+                                        <text>Выбрано: @selectedDriverIds.Count</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Все водители</text>
+                                    }
+                                </span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+
+                            @if (isDriversDropdownOpen)
+                            {
+                                <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                    @if (availableDrivers.Any())
+                                    {
+                                        <div class="dropdown-items">
+                                            @foreach (var driver in availableDrivers)
+                                            {
+                                                <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                    <input type="checkbox"
+                                                           checked="@selectedDriverIds.Contains(driver.Id)"
+                                                           @onchange="(e) => ToggleDriver(driver.Id)"
+                                                           @onclick:stopPropagation="true" />
+                                                    <span>@driver.Name</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="dropdown-footer">
+                                            <button type="button"
+                                                    class="btn-secondary btn-compact"
+                                                    @onclick="ClearAllDrivers"
+                                                    @onclick:stopPropagation="true">
+                                                Очистить
+                                            </button>
+                                            <button type="button"
+                                                    class="btn-primary btn-compact"
+                                                    @onclick="ApplyDriversFilter"
+                                                    @onclick:stopPropagation="true">
+                                                Применить
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingDrivers)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Загрузка аналитики...</p>
+                </div>
+            }
+            else if (driversData.Any())
+            {
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="btn-toggle @(viewMode == "table" ? "active" : "")" @onclick="OnSwitchToTable">
+                        📊 Таблица
+                    </button>
+                    <button class="btn-toggle @(viewMode == "charts" ? "active" : "")" @onclick="OnSwitchToCharts">
+                        📈 Графики
+                    </button>
+                </div>
+
+                @if (viewMode == "charts")
+                {
+                    <!-- Chart Type Toggle -->
+                    <div class="chart-type-toggle">
+                        <button class="btn-chart-type @(chartType == "bar" ? "active" : "")" @onclick='() => SwitchChartType("bar")'>
+                            📊 Гистограмма
+                        </button>
+                        <button class="btn-chart-type @(chartType == "pie" ? "active" : "")" @onclick='() => SwitchChartType("pie")'>
+                            🥧 Диаграмма
+                        </button>
+                    </div>
+                }
+
+                @if (viewMode == "table")
+                {
+                    <div class="analytics-tables">
+                        <div class="analytics-section">
+                            <h2 class="section-title">Аналитика по водителям</h2>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Водитель</th>
+                                            <th>Заявок</th>
+                                            <th>Прибыль от сотрудника</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var driver in driversData.OrderByDescending(d => d.TotalZasNetEarningByEmployee))
+                                        {
+                                            <tr>
+                                                <td>@driver.EmployeeName</td>
+                                                <td>@driver.OrdersCount</td>
+                                                <td class="amount">@driver.TotalZasNetEarningByEmployee.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td><strong>Итого:</strong></td>
+                                            <td><strong>@driversData.Sum(d => d.OrdersCount)</strong></td>
+                                            <td class="amount"><strong>@driversData.Sum(d => d.TotalZasNetEarningByEmployee).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="analytics-charts">
+                        <div class="chart-section">
+                            <h2 class="section-title">Заработки по водителям</h2>
+                            <div class="chart-container">
+                                <canvas id="driversChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Нет данных за выбранный период</p>
+                </div>
+            }
+
+            <!-- Driver Earning By Period Block -->
+            <div class="period-analytics-section">
+                <div class="section-header">
+                    <h2 class="section-title">Заработок по водителям по периодам</h2>
+                </div>
+
+                <!-- Period Type Tabs -->
+                <div class="period-tabs">
+                    <button class="period-tab @(driversPeriodType == GroupPeriod.Day ? "active" : "")" 
+                            @onclick='() => SwitchDriversPeriodType(GroupPeriod.Day)'>
+                        📅 По дням
+                    </button>
+                    <button class="period-tab @(driversPeriodType == GroupPeriod.Month ? "active" : "")" 
+                            @onclick='() => SwitchDriversPeriodType(GroupPeriod.Month)'>
+                        📆 По месяцам
+                    </button>
+                    <button class="period-tab @(driversPeriodType == GroupPeriod.Year ? "active" : "")" 
+                            @onclick='() => SwitchDriversPeriodType(GroupPeriod.Year)'>
+                        📊 По годам
+                    </button>
+                </div>
+
+                @if (isLoadingDriversPeriodData)
+                {
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Загрузка данных...</p>
+                    </div>
+                }
+                else if (driversByPeriodData.Any())
+                {
+                    @if (viewMode == "table")
+                    {
+                        <!-- Table -->
+                        <div class="analytics-section">
+                            <h3 class="subsection-title">Детализация по периодам</h3>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Период</th>
+                                            <th>Водитель</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in driversByPeriodData.OrderByDescending(s => s.Period).ThenByDescending(s => s.TotalEarning))
+                                        {
+                                            <tr>
+                                                <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
+                                                <td>@item.DriverName</td>
+                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2"><strong>Итого:</strong></td>
+                                            <td class="amount"><strong>@driversByPeriodData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chart -->
+                        <div class="chart-section">
+                            <h3 class="subsection-title">График по периодам</h3>
+                            <div class="chart-container">
+                                <canvas id="driversPeriodChart"></canvas>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>Нет данных за выбранный период</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (activeTab == "dispatchers")
+    {
+        <!-- Dispatchers Tab -->
+        <div class="tab-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Фильтры</h3>
+                    <button class="btn-secondary btn-compact" @onclick="ResetDispatchersFilters">
+                        Сбросить все
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="dispatchers-date-from">Дата с</label>
+                        <input type="date"
+                               id="dispatchers-date-from"
+                               class="form-control"
+                               value="@(dispatchersRequest.DateFrom.ToString("yyyy-MM-dd"))"
+                               @onchange="OnDispatchersDateFromChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="dispatchers-date-to">Дата по</label>
+                        <input type="date"
+                               id="dispatchers-date-to"
+                               class="form-control"
+                               value="@(dispatchersRequest.DateTo.ToString("yyyy-MM-dd"))"
+                               @onchange="OnDispatchersDateToChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Диспетчеры</label>
+                        <div class="custom-dropdown">
+                            <button type="button"
+                                    class="dropdown-toggle form-control"
+                                    @onclick="ToggleDispatchersDropdown"
+                                    @onclick:stopPropagation="true">
+                                <span class="dropdown-text">
+                                    @if (selectedDispatcherIds.Any())
+                                    {
+                                        <text>Выбрано: @selectedDispatcherIds.Count</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Все диспетчеры</text>
+                                    }
+                                </span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+
+                            @if (isDispatchersDropdownOpen)
+                            {
+                                <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                    @if (availableDispatchers.Any())
+                                    {
+                                        <div class="dropdown-items">
+                                            @foreach (var dispatcher in availableDispatchers)
+                                            {
+                                                <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                    <input type="checkbox"
+                                                           checked="@selectedDispatcherIds.Contains(dispatcher.Id)"
+                                                           @onchange="(e) => ToggleDispatcher(dispatcher.Id)"
+                                                           @onclick:stopPropagation="true" />
+                                                    <span>@dispatcher.Name</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="dropdown-footer">
+                                            <button type="button"
+                                                    class="btn-secondary btn-compact"
+                                                    @onclick="ClearAllDispatchers"
+                                                    @onclick:stopPropagation="true">
+                                                Очистить
+                                            </button>
+                                            <button type="button"
+                                                    class="btn-primary btn-compact"
+                                                    @onclick="ApplyDispatchersFilter"
+                                                    @onclick:stopPropagation="true">
+                                                Применить
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingDispatchers)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Загрузка аналитики...</p>
+                </div>
+            }
+            else if (dispatchersData.Any())
+            {
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="btn-toggle @(viewMode == "table" ? "active" : "")" @onclick="OnSwitchToTable">
+                        📊 Таблица
+                    </button>
+                    <button class="btn-toggle @(viewMode == "charts" ? "active" : "")" @onclick="OnSwitchToCharts">
+                        📈 Графики
+                    </button>
+                </div>
+
+                @if (viewMode == "charts")
+                {
+                    <!-- Chart Type Toggle -->
+                    <div class="chart-type-toggle">
+                        <button class="btn-chart-type @(chartType == "bar" ? "active" : "")" @onclick='() => SwitchChartType("bar")'>
+                            📊 Гистограмма
+                        </button>
+                        <button class="btn-chart-type @(chartType == "pie" ? "active" : "")" @onclick='() => SwitchChartType("pie")'>
+                            🥧 Диаграмма
+                        </button>
+                    </div>
+                }
+
+                @if (viewMode == "table")
+                {
+                    <div class="analytics-tables">
+                        <div class="analytics-section">
+                            <h2 class="section-title">Аналитика по диспетчерам</h2>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Диспетчер</th>
+                                            <th>Заявок</th>
+                                            <th>Зар. диспетчера</th>
+                                            <th>Прибыль от диспетчера</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var dispatcher in dispatchersData.OrderByDescending(d => d.TotalZasNetEarningFromDispetcher))
+                                        {
+                                            <tr>
+                                                <td>@dispatcher.EmployeeName</td>
+                                                <td>@dispatcher.OrdersCount</td>
+                                                <td class="amount">@dispatcher.TotalDispetcherEarnings.ToString("N2") ₽</td>
+                                                <td class="amount">@dispatcher.TotalZasNetEarningFromDispetcher.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td><strong>Итого:</strong></td>
+                                            <td><strong>@dispatchersData.Sum(d => d.OrdersCount)</strong></td>
+                                            <td class="amount"><strong>@dispatchersData.Sum(d => d.TotalDispetcherEarnings).ToString("N2") ₽</strong></td>
+                                            <td class="amount"><strong>@dispatchersData.Sum(d => d.TotalZasNetEarningFromDispetcher).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="analytics-charts">
+                        <div class="chart-section">
+                            <h2 class="section-title">Заработки по диспетчерам</h2>
+                            <div class="chart-container">
+                                <canvas id="dispatchersChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Нет данных за выбранный период</p>
+                </div>
+            }
+
+            <!-- Dispatcher Earning By Period Block -->
+            <div class="period-analytics-section">
+                <div class="section-header">
+                    <h2 class="section-title">Заработок по диспетчерам по периодам</h2>
+                </div>
+
+                <!-- Period Type Tabs -->
+                <div class="period-tabs">
+                    <button class="period-tab @(dispatchersPeriodType == GroupPeriod.Day ? "active" : "")" 
+                            @onclick='() => SwitchDispatchersPeriodType(GroupPeriod.Day)'>
+                        📅 По дням
+                    </button>
+                    <button class="period-tab @(dispatchersPeriodType == GroupPeriod.Month ? "active" : "")" 
+                            @onclick='() => SwitchDispatchersPeriodType(GroupPeriod.Month)'>
+                        📆 По месяцам
+                    </button>
+                    <button class="period-tab @(dispatchersPeriodType == GroupPeriod.Year ? "active" : "")" 
+                            @onclick='() => SwitchDispatchersPeriodType(GroupPeriod.Year)'>
+                        📊 По годам
+                    </button>
+                </div>
+
+                @if (isLoadingDispatchersPeriodData)
+                {
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Загрузка данных...</p>
+                    </div>
+                }
+                else if (dispatchersByPeriodData.Any())
+                {
+                    @if (viewMode == "table")
+                    {
+                        <!-- Table -->
+                        <div class="analytics-section">
+                            <h3 class="subsection-title">Детализация по периодам</h3>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Период</th>
+                                            <th>Диспетчер</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in dispatchersByPeriodData.OrderByDescending(s => s.Period).ThenByDescending(s => s.TotalEarning))
+                                        {
+                                            <tr>
+                                                <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
+                                                <td>@item.DispatcherName</td>
+                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2"><strong>Итого:</strong></td>
+                                            <td class="amount"><strong>@dispatchersByPeriodData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chart -->
+                        <div class="chart-section">
+                            <h3 class="subsection-title">График по периодам</h3>
+                            <div class="chart-container">
+                                <canvas id="dispatchersPeriodChart"></canvas>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>Нет данных за выбранный период</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string activeTab = "cars";
+    private string viewMode = "table";
+    private string chartType = "bar";
+
+    // Cars
+    private List<CarEarningAnalyticsDto> carsData = new();
+    private GetCarEarningAnalyticsRequest carsRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
+    private List<CarDto> availableCars = new();
+    private HashSet<int> selectedCarIds = new();
+    private bool isCarsDropdownOpen = false;
+    private bool isLoadingCars = false;
+
+    // Services
+    private List<ServiceEarningAnalyticsDto> servicesData = new();
+    private GetServiceEarningAnalyticsRequest servicesRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
+    private List<ServiceDto> availableServices = new();
+    private HashSet<int> selectedServiceIds = new();
+    private bool isServicesDropdownOpen = false;
+    private bool isLoadingServices = false;
+
+    // Drivers
+    private List<DriverEarningAnalyticsDto> driversData = new();
+    private GetDriverEarningAnalyticsRequest driversRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
+    private List<EmployeeDto> availableDrivers = new();
+    private HashSet<int> selectedDriverIds = new();
+    private bool isDriversDropdownOpen = false;
+    private bool isLoadingDrivers = false;
+
+    // Dispatchers
+    private List<DispatcherEarningAnalyticsDto> dispatchersData = new();
+    private GetDispatcherEarningAnalyticsRequest dispatchersRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
+    private List<EmployeeDto> availableDispatchers = new();
+    private HashSet<int> selectedDispatcherIds = new();
+    private bool isDispatchersDropdownOpen = false;
+    private bool isLoadingDispatchers = false;
+
+    // Service Earning By Period
+    private GroupPeriod servicesPeriodType = GroupPeriod.Day;
+    private List<ServiceEarningByPeriodDto> servicesByPeriodData = new();
+    private bool isLoadingServicesPeriodData = false;
+
+    // Car Earning By Period
+    private GroupPeriod carsPeriodType = GroupPeriod.Day;
+    private List<CarEarningByPeriodDto> carsByPeriodData = new();
+    private bool isLoadingCarsPeriodData = false;
+
+    // Driver Earning By Period
+    private GroupPeriod driversPeriodType = GroupPeriod.Day;
+    private List<DriverEarningByPeriodDto> driversByPeriodData = new();
+    private bool isLoadingDriversPeriodData = false;
+
+    // Dispatcher Earning By Period
+    private GroupPeriod dispatchersPeriodType = GroupPeriod.Day;
+    private List<DispatcherEarningByPeriodDto> dispatchersByPeriodData = new();
+    private bool isLoadingDispatchersPeriodData = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFilterData();
+        await LoadActiveTabData();
+    }
+
+    private async Task LoadFilterData()
+    {
+        availableCars = await ApiService.GetCars();
+        availableServices = await ApiService.GetServices();
+        availableDrivers = await ApiService.GetDrivers();
+        availableDispatchers = await ApiService.GetDispetchers();
+    }
+
+    private async Task SwitchTab(string tab)
+    {
+        activeTab = tab;
+        viewMode = "table";
+        StateHasChanged();
+        await LoadActiveTabData();
+    }
+
+    private async Task LoadActiveTabData()
+    {
+        if (activeTab == "cars")
+            await LoadCarsData();
+        else if (activeTab == "services")
+            await LoadServicesData();
+        else if (activeTab == "drivers")
+            await LoadDriversData();
+        else if (activeTab == "dispatchers")
+            await LoadDispatchersData();
+    }
+
+    // Cars methods
+    private async Task LoadCarsData()
+    {
+        isLoadingCars = true;
+        isLoadingCarsPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            carsRequest.CarIds = selectedCarIds.Any() ? selectedCarIds.ToList() : null;
+            
+            // Load both analytics and period data in parallel
+            var analyticsTask = ApiService.GetCarEarningAnalytics(carsRequest);
+            var periodTask = ApiService.GetCarEarningByPeriod(new GetCarEarningByPeriodRequest
+            {
+                DateFrom = carsRequest.DateFrom,
+                DateTo = carsRequest.DateTo,
+                CarIds = selectedCarIds.Any() ? selectedCarIds.ToList() : null,
+                GroupPeriod = carsPeriodType
+            });
+
+            await Task.WhenAll(analyticsTask, periodTask);
+            
+            carsData = await analyticsTask;
+            carsByPeriodData = await periodTask;
+        }
+        finally
+        {
+            isLoadingCars = false;
+            isLoadingCarsPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render charts if in charts mode
+        if (viewMode == "charts")
+        {
+            await Task.Delay(50);
+            await RenderCharts();
+        }
+    }
+
+    private async Task ResetCarsFilters()
+    {
+        carsRequest = new GetCarEarningAnalyticsRequest
+        {
+            DateFrom = DateTime.Now.AddMonths(-1).Date,
+            DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
+        };
+        selectedCarIds.Clear();
+        await LoadCarsData();
+    }
+
+    private void ToggleCarsDropdown()
+    {
+        isCarsDropdownOpen = !isCarsDropdownOpen;
+    }
+
+    private void ToggleCar(int carId)
+    {
+        if (selectedCarIds.Contains(carId))
+            selectedCarIds.Remove(carId);
+        else
+            selectedCarIds.Add(carId);
+    }
+
+    private void ClearAllCars()
+    {
+        selectedCarIds.Clear();
+    }
+
+    private async Task ApplyCarsFilter()
+    {
+        isCarsDropdownOpen = false;
+        await LoadCarsData();
+    }
+
+    private async Task OnCarsDateFromChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd");
+        carsRequest.DateFrom = DateTime.Parse(dateStr).Date;
+        await LoadCarsData();
+    }
+
+    private async Task OnCarsDateToChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
+        carsRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
+        await LoadCarsData();
+    }
+
+    // Services methods
+    private async Task LoadServicesData()
+    {
+        isLoadingServices = true;
+        isLoadingServicesPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            servicesRequest.ServiceIds = selectedServiceIds.Any() ? selectedServiceIds.ToList() : null;
+            
+            // Load both analytics and period data in parallel
+            var analyticsTask = ApiService.GetServiceEarningAnalytics(servicesRequest);
+            var periodTask = ApiService.GetServiceEarningByPeriod(new GetServiceEarningByPeriodRequest
+            {
+                DateFrom = servicesRequest.DateFrom,
+                DateTo = servicesRequest.DateTo,
+                ServiceIds = selectedServiceIds.Any() ? selectedServiceIds.ToList() : null,
+                GroupPeriod = servicesPeriodType
+            });
+
+            await Task.WhenAll(analyticsTask, periodTask);
+            
+            servicesData = await analyticsTask;
+            servicesByPeriodData = await periodTask;
+        }
+        finally
+        {
+            isLoadingServices = false;
+            isLoadingServicesPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render charts if in charts mode
+        if (viewMode == "charts")
+        {
+            await Task.Delay(50);
+            await RenderCharts();
+        }
+    }
+
+    private async Task ResetServicesFilters()
+    {
+        servicesRequest = new GetServiceEarningAnalyticsRequest
+        {
+            DateFrom = DateTime.Now.AddMonths(-1).Date,
+            DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
+        };
+        selectedServiceIds.Clear();
+        servicesPeriodType = GroupPeriod.Day; // Reset period type to default
+        await LoadServicesData();
+    }
+
+    private void ToggleServicesDropdown()
+    {
+        isServicesDropdownOpen = !isServicesDropdownOpen;
+    }
+
+    private void ToggleService(int serviceId)
+    {
+        if (selectedServiceIds.Contains(serviceId))
+            selectedServiceIds.Remove(serviceId);
+        else
+            selectedServiceIds.Add(serviceId);
+    }
+
+    private void ClearAllServices()
+    {
+        selectedServiceIds.Clear();
+    }
+
+    private async Task ApplyServicesFilter()
+    {
+        isServicesDropdownOpen = false;
+        await LoadServicesData();
+    }
+
+    private async Task OnServicesDateFromChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd");
+        servicesRequest.DateFrom = DateTime.Parse(dateStr).Date;
+        await LoadServicesData();
+    }
+
+    private async Task OnServicesDateToChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
+        servicesRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
+        await LoadServicesData();
+    }
+
+    // Drivers methods
+    private async Task LoadDriversData()
+    {
+        isLoadingDrivers = true;
+        isLoadingDriversPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            driversRequest.DriverIds = selectedDriverIds.Any() ? selectedDriverIds.ToList() : null;
+            
+            // Load both analytics and period data in parallel
+            var analyticsTask = ApiService.GetDriverEarningAnalytics(driversRequest);
+            var periodTask = ApiService.GetDriverEarningByPeriod(new GetDriverEarningByPeriodRequest
+            {
+                DateFrom = driversRequest.DateFrom,
+                DateTo = driversRequest.DateTo,
+                DriverIds = selectedDriverIds.Any() ? selectedDriverIds.ToList() : null,
+                GroupPeriod = driversPeriodType
+            });
+
+            await Task.WhenAll(analyticsTask, periodTask);
+            
+            driversData = await analyticsTask;
+            driversByPeriodData = await periodTask;
+        }
+        finally
+        {
+            isLoadingDrivers = false;
+            isLoadingDriversPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render charts if in charts mode
+        if (viewMode == "charts")
+        {
+            await Task.Delay(50);
+            await RenderCharts();
+        }
+    }
+
+    private async Task ResetDriversFilters()
+    {
+        driversRequest = new GetDriverEarningAnalyticsRequest
+        {
+            DateFrom = DateTime.Now.AddMonths(-1).Date,
+            DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
+        };
+        selectedDriverIds.Clear();
+        await LoadDriversData();
+    }
+
+    private void ToggleDriversDropdown()
+    {
+        isDriversDropdownOpen = !isDriversDropdownOpen;
+    }
+
+    private void ToggleDriver(int driverId)
+    {
+        if (selectedDriverIds.Contains(driverId))
+            selectedDriverIds.Remove(driverId);
+        else
+            selectedDriverIds.Add(driverId);
+    }
+
+    private void ClearAllDrivers()
+    {
+        selectedDriverIds.Clear();
+    }
+
+    private async Task ApplyDriversFilter()
+    {
+        isDriversDropdownOpen = false;
+        await LoadDriversData();
+    }
+
+    private async Task OnDriversDateFromChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd");
+        driversRequest.DateFrom = DateTime.Parse(dateStr).Date;
+        await LoadDriversData();
+    }
+
+    private async Task OnDriversDateToChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
+        driversRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
+        await LoadDriversData();
+    }
+
+    // Dispatchers methods
+    private async Task LoadDispatchersData()
+    {
+        isLoadingDispatchers = true;
+        isLoadingDispatchersPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            dispatchersRequest.DispatcherIds = selectedDispatcherIds.Any() ? selectedDispatcherIds.ToList() : null;
+            
+            // Load both analytics and period data in parallel
+            var analyticsTask = ApiService.GetDispatcherEarningAnalytics(dispatchersRequest);
+            var periodTask = ApiService.GetDispatcherEarningByPeriod(new GetDispatcherEarningByPeriodRequest
+            {
+                DateFrom = dispatchersRequest.DateFrom,
+                DateTo = dispatchersRequest.DateTo,
+                DispatcherIds = selectedDispatcherIds.Any() ? selectedDispatcherIds.ToList() : null,
+                GroupPeriod = dispatchersPeriodType
+            });
+
+            await Task.WhenAll(analyticsTask, periodTask);
+            
+            dispatchersData = await analyticsTask;
+            dispatchersByPeriodData = await periodTask;
+        }
+        finally
+        {
+            isLoadingDispatchers = false;
+            isLoadingDispatchersPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render charts if in charts mode
+        if (viewMode == "charts")
+        {
+            await Task.Delay(50);
+            await RenderCharts();
+        }
+    }
+
+    private async Task ResetDispatchersFilters()
+    {
+        dispatchersRequest = new GetDispatcherEarningAnalyticsRequest
+        {
+            DateFrom = DateTime.Now.AddMonths(-1).Date,
+            DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
+        };
+        selectedDispatcherIds.Clear();
+        await LoadDispatchersData();
+    }
+
+    private void ToggleDispatchersDropdown()
+    {
+        isDispatchersDropdownOpen = !isDispatchersDropdownOpen;
+    }
+
+    private void ToggleDispatcher(int dispatcherId)
+    {
+        if (selectedDispatcherIds.Contains(dispatcherId))
+            selectedDispatcherIds.Remove(dispatcherId);
+        else
+            selectedDispatcherIds.Add(dispatcherId);
+    }
+
+    private void ClearAllDispatchers()
+    {
+        selectedDispatcherIds.Clear();
+    }
+
+    private async Task ApplyDispatchersFilter()
+    {
+        isDispatchersDropdownOpen = false;
+        await LoadDispatchersData();
+    }
+
+    private async Task OnDispatchersDateFromChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd");
+        dispatchersRequest.DateFrom = DateTime.Parse(dateStr).Date;
+        await LoadDispatchersData();
+    }
+
+    private async Task OnDispatchersDateToChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
+        dispatchersRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
+        await LoadDispatchersData();
+    }
+
+    private void CloseAllDropdowns()
+    {
+        isCarsDropdownOpen = false;
+        isServicesDropdownOpen = false;
+        isDriversDropdownOpen = false;
+        isDispatchersDropdownOpen = false;
+    }
+
+    private void OnSwitchToTable()
+    {
+        viewMode = "table";
+        StateHasChanged();
+    }
+
+    private async Task OnSwitchToCharts()
+    {
+        viewMode = "charts";
+        StateHasChanged();
+        await Task.Delay(50);
+        await RenderCharts();
+    }
+
+    private async Task SwitchChartType(string type)
+    {
+        chartType = type;
+        StateHasChanged();
+        await Task.Delay(50);
+        await RenderCharts();
+    }
+
+    private async Task RenderCharts()
+    {
+        await Task.Delay(100);
+
+        if (activeTab == "cars" && carsData.Any())
+        {
+            var labels = carsData.Select(c => c.CarNumber).ToArray();
+            var data = carsData.Select(c => (double)c.TotalEarnings).ToArray();
+            
+            if (chartType == "bar")
+            {
+                await JSRuntime.InvokeVoidAsync("renderBarChart", "carsChart", labels, data, "Заработок (₽)", "#3b82f6");
+            }
+            else
+            {
+                var colors = GenerateColors(data.Length, "#3b82f6");
+                await JSRuntime.InvokeVoidAsync("renderPieChart", "carsChart", labels, data, colors);
+            }
+
+            // Also render period chart for cars tab
+            if (carsByPeriodData.Any())
+            {
+                await RenderCarsPeriodChart();
+            }
+        }
+        else if (activeTab == "services" && servicesData.Any())
+        {
+            var labels = servicesData.Select(s => s.ServiceName).ToArray();
+            var data = servicesData.Select(s => (double)s.TotalEmployeesEarnings).ToArray();
+            
+            if (chartType == "bar")
+            {
+                await JSRuntime.InvokeVoidAsync("renderBarChart", "servicesChart", labels, data, "Заработок (₽)", "#10b981");
+            }
+            else
+            {
+                var colors = GenerateColors(data.Length, "#10b981");
+                await JSRuntime.InvokeVoidAsync("renderPieChart", "servicesChart", labels, data, colors);
+            }
+
+            // Also render period chart for services tab
+            if (servicesByPeriodData.Any())
+            {
+                await RenderServicesPeriodChart();
+            }
+        }
+        else if (activeTab == "drivers" && driversData.Any())
+        {
+            var labels = driversData.Select(d => d.EmployeeName).ToArray();
+            var data = driversData.Select(d => (double)d.TotalZasNetEarningByEmployee).ToArray();
+            
+            if (chartType == "bar")
+            {
+                await JSRuntime.InvokeVoidAsync("renderBarChart", "driversChart", labels, data, "Заработок (₽)", "#f59e0b");
+            }
+            else
+            {
+                var colors = GenerateColors(data.Length, "#f59e0b");
+                await JSRuntime.InvokeVoidAsync("renderPieChart", "driversChart", labels, data, colors);
+            }
+
+            // Also render period chart for drivers tab
+            if (driversByPeriodData.Any())
+            {
+                await RenderDriversPeriodChart();
+            }
+        }
+        else if (activeTab == "dispatchers" && dispatchersData.Any())
+        {
+            var labels = dispatchersData.Select(d => d.EmployeeName).ToArray();
+            var data = dispatchersData.Select(d => (double)d.TotalDispetcherEarnings).ToArray();
+            
+            if (chartType == "bar")
+            {
+                await JSRuntime.InvokeVoidAsync("renderBarChart", "dispatchersChart", labels, data, "Заработок (₽)", "#8b5cf6");
+            }
+            else
+            {
+                var colors = GenerateColors(data.Length, "#8b5cf6");
+                await JSRuntime.InvokeVoidAsync("renderPieChart", "dispatchersChart", labels, data, colors);
+            }
+
+            // Also render period chart for dispatchers tab
+            if (dispatchersByPeriodData.Any())
+            {
+                await RenderDispatchersPeriodChart();
+            }
+        }
+    }
+
+    private string[] GenerateColors(int count, string baseColor)
+    {
+        // Список цветов для круговой диаграммы
+        var colorPalette = new[]
+        {
+            "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444",
+            "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#14b8a6",
+            "#eab308", "#6366f1", "#22c55e", "#f43f5e", "#0ea5e9"
+        };
+
+        // Если элементов больше, чем цветов в палитре, генерируем оттенки базового цвета
+        if (count <= colorPalette.Length)
+        {
+            return colorPalette.Take(count).ToArray();
+        }
+
+        var colors = new string[count];
+        for (int i = 0; i < count; i++)
+        {
+            colors[i] = colorPalette[i % colorPalette.Length];
+        }
+        return colors;
+    }
+
+    // Service Earning By Period methods
+    private async Task LoadServicesByPeriodData()
+    {
+        isLoadingServicesPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            servicesByPeriodData = await ApiService.GetServiceEarningByPeriod(new GetServiceEarningByPeriodRequest
+            {
+                DateFrom = servicesRequest.DateFrom,
+                DateTo = servicesRequest.DateTo,
+                ServiceIds = selectedServiceIds.Any() ? selectedServiceIds.ToList() : null,
+                GroupPeriod = servicesPeriodType
+            });
+        }
+        finally
+        {
+            isLoadingServicesPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render chart if in charts mode
+        if (viewMode == "charts" && servicesByPeriodData.Any())
+        {
+            await Task.Delay(50);
+            await RenderServicesPeriodChart();
+        }
+    }
+
+    private async Task SwitchServicesPeriodType(GroupPeriod newPeriodType)
+    {
+        servicesPeriodType = newPeriodType;
+        StateHasChanged();
+        await LoadServicesByPeriodData();
+    }
+
+    private async Task RenderServicesPeriodChart()
+    {
+        await Task.Delay(100);
+
+        // Генерируем все периоды из диапазона фильтра
+        var allPeriods = GenerateAllPeriods(servicesRequest.DateFrom, servicesRequest.DateTo, servicesPeriodType);
+
+        // Форматируем метки для оси X
+        var labels = allPeriods.Select(p => FormatPeriod(p, servicesPeriodType)).ToArray();
+
+        // Если нет данных, показываем пустой график
+        if (!servicesByPeriodData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "periodChart", labels, Array.Empty<object>());
+            return;
+        }
+
+        // Получаем все уникальные услуги из данных
+        var allServices = servicesByPeriodData
+            .Select(s => new { s.ServiceId, s.ServiceName })
+            .Distinct()
+            .OrderBy(s => s.ServiceName)
+            .ToList();
+
+        // Создаём dataset для каждой услуги
+        var datasets = allServices.Select(service => 
+        {
+            var serviceData = allPeriods.Select(period =>
+            {
+                var item = servicesByPeriodData.FirstOrDefault(s => 
+                    s.ServiceId == service.ServiceId && s.Period == period);
+                return item != null ? (double)item.TotalEarning : 0.0;
+            }).ToArray();
+
+            return new
+            {
+                label = service.ServiceName,
+                data = serviceData
+            };
+        }).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "periodChart", labels, datasets);
+    }
+
+    private List<DateTime> GenerateAllPeriods(DateTime dateFrom, DateTime dateTo, GroupPeriod groupPeriod)
+    {
+        var periods = new List<DateTime>();
+
+        switch (groupPeriod)
+        {
+            case GroupPeriod.Day:
+                // Генерируем все дни от dateFrom до dateTo
+                for (var date = dateFrom.Date; date <= dateTo.Date; date = date.AddDays(1))
+                {
+                    periods.Add(date);
+                }
+                break;
+
+            case GroupPeriod.Month:
+                // Генерируем все месяцы от dateFrom до dateTo
+                var currentMonth = new DateTime(dateFrom.Year, dateFrom.Month, 1);
+                var endMonth = new DateTime(dateTo.Year, dateTo.Month, 1);
+                
+                while (currentMonth <= endMonth)
+                {
+                    periods.Add(currentMonth);
+                    currentMonth = currentMonth.AddMonths(1);
+                }
+                break;
+
+            case GroupPeriod.Year:
+                // Генерируем все годы от dateFrom до dateTo
+                var currentYear = new DateTime(dateFrom.Year, 1, 1);
+                var endYear = new DateTime(dateTo.Year, 1, 1);
+                
+                while (currentYear <= endYear)
+                {
+                    periods.Add(currentYear);
+                    currentYear = currentYear.AddYears(1);
+                }
+                break;
+        }
+
+        return periods;
+    }
+
+    private string FormatPeriod(DateTime period, GroupPeriod groupPeriod)
+    {
+        return groupPeriod switch
+        {
+            GroupPeriod.Day => period.ToString("dd.MM.yyyy"),
+            GroupPeriod.Month => period.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ru-RU")),
+            GroupPeriod.Year => period.ToString("yyyy"),
+            _ => period.ToString("dd.MM.yyyy")
+        };
+    }
+
+    // Car Earning By Period methods
+    private async Task LoadCarsByPeriodData()
+    {
+        isLoadingCarsPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            carsByPeriodData = await ApiService.GetCarEarningByPeriod(new GetCarEarningByPeriodRequest
+            {
+                DateFrom = carsRequest.DateFrom,
+                DateTo = carsRequest.DateTo,
+                CarIds = selectedCarIds.Any() ? selectedCarIds.ToList() : null,
+                GroupPeriod = carsPeriodType
+            });
+        }
+        finally
+        {
+            isLoadingCarsPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render chart if in charts mode
+        if (viewMode == "charts" && carsByPeriodData.Any())
+        {
+            await Task.Delay(50);
+            await RenderCarsPeriodChart();
+        }
+    }
+
+    private async Task SwitchCarsPeriodType(GroupPeriod newPeriodType)
+    {
+        carsPeriodType = newPeriodType;
+        StateHasChanged();
+        await LoadCarsByPeriodData();
+    }
+
+    private async Task RenderCarsPeriodChart()
+    {
+        await Task.Delay(100);
+
+        var allPeriods = GenerateAllPeriods(carsRequest.DateFrom, carsRequest.DateTo, carsPeriodType);
+        var labels = allPeriods.Select(p => FormatPeriod(p, carsPeriodType)).ToArray();
+
+        if (!carsByPeriodData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "carsPeriodChart", labels, Array.Empty<object>());
+            return;
+        }
+
+        var allCars = carsByPeriodData
+            .Select(s => new { s.CarId, s.CarNumber })
+            .Distinct()
+            .OrderBy(s => s.CarNumber)
+            .ToList();
+
+        var datasets = allCars.Select(car => 
+        {
+            var carData = allPeriods.Select(period =>
+            {
+                var item = carsByPeriodData.FirstOrDefault(s => 
+                    s.CarId == car.CarId && s.Period == period);
+                return item != null ? (double)item.TotalEarning : 0.0;
+            }).ToArray();
+
+            return new
+            {
+                label = car.CarNumber,
+                data = carData
+            };
+        }).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "carsPeriodChart", labels, datasets);
+    }
+
+    // Driver Earning By Period methods
+    private async Task LoadDriversByPeriodData()
+    {
+        isLoadingDriversPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            driversByPeriodData = await ApiService.GetDriverEarningByPeriod(new GetDriverEarningByPeriodRequest
+            {
+                DateFrom = driversRequest.DateFrom,
+                DateTo = driversRequest.DateTo,
+                DriverIds = selectedDriverIds.Any() ? selectedDriverIds.ToList() : null,
+                GroupPeriod = driversPeriodType
+            });
+        }
+        finally
+        {
+            isLoadingDriversPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render chart if in charts mode
+        if (viewMode == "charts" && driversByPeriodData.Any())
+        {
+            await Task.Delay(50);
+            await RenderDriversPeriodChart();
+        }
+    }
+
+    private async Task SwitchDriversPeriodType(GroupPeriod newPeriodType)
+    {
+        driversPeriodType = newPeriodType;
+        StateHasChanged();
+        await LoadDriversByPeriodData();
+    }
+
+    private async Task RenderDriversPeriodChart()
+    {
+        await Task.Delay(100);
+
+        var allPeriods = GenerateAllPeriods(driversRequest.DateFrom, driversRequest.DateTo, driversPeriodType);
+        var labels = allPeriods.Select(p => FormatPeriod(p, driversPeriodType)).ToArray();
+
+        if (!driversByPeriodData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "driversPeriodChart", labels, Array.Empty<object>());
+            return;
+        }
+
+        var allDrivers = driversByPeriodData
+            .Select(s => new { s.DriverId, s.DriverName })
+            .Distinct()
+            .OrderBy(s => s.DriverName)
+            .ToList();
+
+        var datasets = allDrivers.Select(driver => 
+        {
+            var driverData = allPeriods.Select(period =>
+            {
+                var item = driversByPeriodData.FirstOrDefault(s => 
+                    s.DriverId == driver.DriverId && s.Period == period);
+                return item != null ? (double)item.TotalEarning : 0.0;
+            }).ToArray();
+
+            return new
+            {
+                label = driver.DriverName,
+                data = driverData
+            };
+        }).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "driversPeriodChart", labels, datasets);
+    }
+
+    // Dispatcher Earning By Period methods
+    private async Task LoadDispatchersByPeriodData()
+    {
+        isLoadingDispatchersPeriodData = true;
+        StateHasChanged();
+        try
+        {
+            dispatchersByPeriodData = await ApiService.GetDispatcherEarningByPeriod(new GetDispatcherEarningByPeriodRequest
+            {
+                DateFrom = dispatchersRequest.DateFrom,
+                DateTo = dispatchersRequest.DateTo,
+                DispatcherIds = selectedDispatcherIds.Any() ? selectedDispatcherIds.ToList() : null,
+                GroupPeriod = dispatchersPeriodType
+            });
+        }
+        finally
+        {
+            isLoadingDispatchersPeriodData = false;
+            StateHasChanged();
+        }
+        
+        // Render chart if in charts mode
+        if (viewMode == "charts" && dispatchersByPeriodData.Any())
+        {
+            await Task.Delay(50);
+            await RenderDispatchersPeriodChart();
+        }
+    }
+
+    private async Task SwitchDispatchersPeriodType(GroupPeriod newPeriodType)
+    {
+        dispatchersPeriodType = newPeriodType;
+        StateHasChanged();
+        await LoadDispatchersByPeriodData();
+    }
+
+    private async Task RenderDispatchersPeriodChart()
+    {
+        await Task.Delay(100);
+
+        var allPeriods = GenerateAllPeriods(dispatchersRequest.DateFrom, dispatchersRequest.DateTo, dispatchersPeriodType);
+        var labels = allPeriods.Select(p => FormatPeriod(p, dispatchersPeriodType)).ToArray();
+
+        if (!dispatchersByPeriodData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "dispatchersPeriodChart", labels, Array.Empty<object>());
+            return;
+        }
+
+        var allDispatchers = dispatchersByPeriodData
+            .Select(s => new { s.DispatcherId, s.DispatcherName })
+            .Distinct()
+            .OrderBy(s => s.DispatcherName)
+            .ToList();
+
+        var datasets = allDispatchers.Select(dispatcher => 
+        {
+            var dispatcherData = allPeriods.Select(period =>
+            {
+                var item = dispatchersByPeriodData.FirstOrDefault(s => 
+                    s.DispatcherId == dispatcher.DispatcherId && s.Period == period);
+                return item != null ? (double)item.TotalEarning : 0.0;
+            }).ToArray();
+
+            return new
+            {
+                label = dispatcher.DispatcherName,
+                data = dispatcherData
+            };
+        }).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "dispatchersPeriodChart", labels, datasets);
+    }
+}
