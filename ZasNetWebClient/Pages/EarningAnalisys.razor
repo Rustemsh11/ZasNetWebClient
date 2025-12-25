@@ -19,6 +19,9 @@
 
     <!-- Tabs -->
     <div class="tabs-container">
+        <button class="tab-button @(activeTab == "zasnet" ? "active" : "")" @onclick="@(() => SwitchTab("zasnet"))">
+            💰 Заработок компании
+        </button>
         <button class="tab-button @(activeTab == "cars" ? "active" : "")" @onclick="@(() => SwitchTab("cars"))">
             🚗 Машины
         </button>
@@ -33,7 +36,131 @@
         </button>
     </div>
 
-    @if (activeTab == "cars")
+    @if (activeTab == "zasnet")
+    {
+        <!-- ZasNet Company Earning Tab -->
+        <div class="tab-content">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Фильтры</h3>
+                    <button class="btn-secondary btn-compact" @onclick="ResetZasNetFilters">
+                        Сбросить все
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="zasnet-date-from">Дата с</label>
+                        <input type="date"
+                               id="zasnet-date-from"
+                               class="form-control"
+                               value="@(zasNetRequest.DateFrom.ToString("yyyy-MM-dd"))"
+                               @onchange="OnZasNetDateFromChanged" />
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="zasnet-date-to">Дата по</label>
+                        <input type="date"
+                               id="zasnet-date-to"
+                               class="form-control"
+                               value="@(zasNetRequest.DateTo.ToString("yyyy-MM-dd"))"
+                               @onchange="OnZasNetDateToChanged" />
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingZasNet)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Загрузка аналитики...</p>
+                </div>
+            }
+            else if (zasNetData.Any())
+            {
+                <!-- Period Type Tabs -->
+                <div class="period-tabs">
+                    <button class="period-tab @(zasNetPeriodType == GroupPeriod.Day ? "active" : "")" 
+                            @onclick='() => SwitchZasNetPeriodType(GroupPeriod.Day)'>
+                        📅 По дням
+                    </button>
+                    <button class="period-tab @(zasNetPeriodType == GroupPeriod.Month ? "active" : "")" 
+                            @onclick='() => SwitchZasNetPeriodType(GroupPeriod.Month)'>
+                        📆 По месяцам
+                    </button>
+                    <button class="period-tab @(zasNetPeriodType == GroupPeriod.Year ? "active" : "")" 
+                            @onclick='() => SwitchZasNetPeriodType(GroupPeriod.Year)'>
+                        📊 По годам
+                    </button>
+                </div>
+
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="btn-toggle @(viewMode == "table" ? "active" : "")" @onclick="OnSwitchToTable">
+                        📊 Таблица
+                    </button>
+                    <button class="btn-toggle @(viewMode == "charts" ? "active" : "")" @onclick="OnSwitchToCharts">
+                        📈 График
+                    </button>
+                </div>
+
+                @if (viewMode == "table")
+                {
+                    <!-- Table View -->
+                    <div class="analytics-tables">
+                        <div class="analytics-section">
+                            <h2 class="section-title">Заработок компании по периодам</h2>
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Период</th>
+                                            <th>Прибыль</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in zasNetData.OrderByDescending(s => s.Period))
+                                        {
+                                            <tr>
+                                                <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
+                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td><strong>Итого:</strong></td>
+                                            <td class="amount"><strong>@zasNetData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Chart View -->
+                    <div class="analytics-charts">
+                        <div class="chart-section">
+                            <h2 class="section-title">Динамика заработка компании</h2>
+                            <div class="chart-container">
+                                <canvas id="zasNetChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Нет данных за выбранный период</p>
+                </div>
+            }
+        </div>
+    }
+    else if (activeTab == "cars")
     {
         <!-- Cars Tab -->
         <div class="tab-content">
@@ -1101,9 +1228,15 @@
 </div>
 
 @code {
-    private string activeTab = "cars";
+    private string activeTab = "zasnet";
     private string viewMode = "table";
     private string chartType = "bar";
+
+    // ZasNet Company Earning
+    private List<ZasNetEarningByPeriodDto> zasNetData = new();
+    private GetZasNetEarningRequest zasNetRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
+    private GroupPeriod zasNetPeriodType = GroupPeriod.Day;
+    private bool isLoadingZasNet = false;
 
     // Cars
     private List<CarEarningAnalyticsDto> carsData = new();
@@ -1181,7 +1314,9 @@
 
     private async Task LoadActiveTabData()
     {
-        if (activeTab == "cars")
+        if (activeTab == "zasnet")
+            await LoadZasNetData();
+        else if (activeTab == "cars")
             await LoadCarsData();
         else if (activeTab == "services")
             await LoadServicesData();
@@ -1189,6 +1324,89 @@
             await LoadDriversData();
         else if (activeTab == "dispatchers")
             await LoadDispatchersData();
+    }
+
+    // ZasNet Company Earning methods
+    private async Task LoadZasNetData()
+    {
+        isLoadingZasNet = true;
+        StateHasChanged();
+        try
+        {
+            zasNetRequest.GroupPeriod = zasNetPeriodType;
+            zasNetData = await ApiService.GetZasNetEarning(zasNetRequest);
+        }
+        finally
+        {
+            isLoadingZasNet = false;
+            StateHasChanged();
+        }
+        
+        // Render chart if in charts mode
+        if (viewMode == "charts" && zasNetData.Any())
+        {
+            await Task.Delay(50);
+            await RenderZasNetChart();
+        }
+    }
+
+    private async Task ResetZasNetFilters()
+    {
+        zasNetRequest = new GetZasNetEarningRequest
+        {
+            DateFrom = DateTime.Now.AddMonths(-1).Date,
+            DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
+        };
+        zasNetPeriodType = GroupPeriod.Day;
+        await LoadZasNetData();
+    }
+
+    private async Task OnZasNetDateFromChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd");
+        zasNetRequest.DateFrom = DateTime.Parse(dateStr).Date;
+        await LoadZasNetData();
+    }
+
+    private async Task OnZasNetDateToChanged(ChangeEventArgs e)
+    {
+        var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
+        zasNetRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
+        await LoadZasNetData();
+    }
+
+    private async Task SwitchZasNetPeriodType(GroupPeriod newPeriodType)
+    {
+        zasNetPeriodType = newPeriodType;
+        StateHasChanged();
+        await LoadZasNetData();
+    }
+
+    private async Task RenderZasNetChart()
+    {
+        await Task.Delay(100);
+
+        // Генерируем все периоды из диапазона фильтра
+        var allPeriods = GenerateAllPeriods(zasNetRequest.DateFrom, zasNetRequest.DateTo, zasNetPeriodType);
+
+        // Форматируем метки для оси X
+        var labels = allPeriods.Select(p => FormatPeriod(p, zasNetPeriodType)).ToArray();
+
+        // Если нет данных, показываем пустой график
+        if (!zasNetData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("renderLineChart", "zasNetChart", labels, Array.Empty<double>(), "Прибыль (₽)", "#10b981");
+            return;
+        }
+
+        // Создаем массив данных для всех периодов
+        var data = allPeriods.Select(period =>
+        {
+            var item = zasNetData.FirstOrDefault(s => s.Period == period);
+            return item != null ? (double)item.TotalEarning : 0.0;
+        }).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("renderLineChart", "zasNetChart", labels, data, "Прибыль (₽)", "#10b981");
     }
 
     // Cars methods
@@ -1582,7 +1800,11 @@
     {
         await Task.Delay(100);
 
-        if (activeTab == "cars" && carsData.Any())
+        if (activeTab == "zasnet" && zasNetData.Any())
+        {
+            await RenderZasNetChart();
+        }
+        else if (activeTab == "cars" && carsData.Any())
         {
             var labels = carsData.Select(c => c.CarNumber).ToArray();
             var data = carsData.Select(c => (double)c.TotalEarnings).ToArray();

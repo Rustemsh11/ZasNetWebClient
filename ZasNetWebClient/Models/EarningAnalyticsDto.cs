@@ -491,3 +491,45 @@ public class GetDispatcherEarningByPeriodRequest
     public GroupPeriod GroupPeriod { get; set; } = GroupPeriod.Day;
 }
 
+/// <summary>
+/// Прибыль компании ZasNet за период
+/// </summary>
+public class ZasNetEarningByPeriodDto
+{
+    /// <summary>
+    /// Период (дата для дня, первый день месяца для месяца, первый день года для года)
+    /// </summary>
+    public DateTime Period { get; set; }
+
+    /// <summary>
+    /// Тип периода для группировки
+    /// </summary>
+    public GroupPeriod GroupPeriod { get; set; }
+
+    /// <summary>
+    /// Общая прибыль компании за период
+    /// </summary>
+    public decimal TotalEarning { get; set; }
+}
+
+/// <summary>
+/// Запрос на получение прибыли компании по периодам
+/// </summary>
+public class GetZasNetEarningRequest
+{
+    /// <summary>
+    /// Дата начала периода (обязательная)
+    /// </summary>
+    public DateTime DateFrom { get; set; }
+
+    /// <summary>
+    /// Дата окончания периода (обязательная)
+    /// </summary>
+    public DateTime DateTo { get; set; }
+
+    /// <summary>
+    /// Тип периода для группировки
+    /// </summary>
+    public GroupPeriod GroupPeriod { get; set; } = GroupPeriod.Day;
+}
+

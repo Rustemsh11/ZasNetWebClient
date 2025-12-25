@@ -1653,4 +1653,34 @@ public class ApiService
             return new List<DispatcherEarningByPeriodDto>();
         }
     }
+
+    public async Task<List<ZasNetEarningByPeriodDto>> GetZasNetEarning(GetZasNetEarningRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var queryParams = new List<string>
+            {
+                $"DateFrom={Uri.EscapeDataString(request.DateFrom.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"DateTo={Uri.EscapeDataString(request.DateTo.ToString("yyyy-MM-ddTHH:mm:ss"))}",
+                $"GroupPeriod={((int)request.GroupPeriod)}"
+            };
+
+            var queryString = "?" + string.Join("&", queryParams);
+            var url = $"api/v1/EarningAnalytics/zasnet-earning{queryString}";
+
+            var analytics = await _httpClient.GetFromJsonAsync<List<ZasNetEarningByPeriodDto>>(url);
+            return analytics ?? new List<ZasNetEarningByPeriodDto>();
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке заработков компании: {ex.Message}");
+            return new List<ZasNetEarningByPeriodDto>();
+        }
+    }
 }
