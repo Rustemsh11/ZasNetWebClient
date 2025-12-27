@@ -67,6 +67,16 @@
                                value="@(zasNetRequest.DateTo.ToString("yyyy-MM-dd"))"
                                @onchange="OnZasNetDateToChanged" />
                     </div>
+
+                    <div class="filter-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox"
+                                   id="zasnet-include-vat"
+                                   checked="@includeVat"
+                                   @onchange="OnIncludeVatChanged" />
+                            <span>С учетом налога</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -116,22 +126,33 @@
                                     <thead>
                                         <tr>
                                             <th>Период</th>
-                                            <th>Прибыль</th>
+                                            <th>Общая прибыль</th>
+                                            <th>Прибыль Алмаза</th>
+                                            <th>Общая прибыль Алмаза</th>
+                                            <th>Общая прибыль Айрата</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var item in zasNetData.OrderByDescending(s => s.Period))
                                         {
+                                            var commonEarning = includeVat ? item.CommonEarningWithVat : item.CommonEarning;
+                                            var almazEarning = includeVat ? item.AlmazEarningWithVat : item.AlmazEarning;
                                             <tr>
                                                 <td>@FormatPeriod(item.Period, item.GroupPeriod)</td>
-                                                <td class="amount">@item.TotalEarning.ToString("N2") ₽</td>
+                                                <td class="amount">@commonEarning.ToString("N2") ₽</td>
+                                                <td class="amount">@almazEarning.ToString("N2") ₽</td>
+                                                <td class="amount">@((commonEarning / 2.0m + almazEarning).ToString("N2")) ₽</td>
+                                                <td class="amount">@((commonEarning / 2.0m).ToString("N2")) ₽</td>
                                             </tr>
                                         }
                                     </tbody>
                                     <tfoot>
                                         <tr>
                                             <td><strong>Итого:</strong></td>
-                                            <td class="amount"><strong>@zasNetData.Sum(s => s.TotalEarning).ToString("N2") ₽</strong></td>
+                                            <td class="amount"><strong>@(includeVat ? zasNetData.Sum(s => s.CommonEarningWithVat).ToString("N2") : zasNetData.Sum(s => s.CommonEarning).ToString("N2")) ₽</strong></td>
+                                            <td class="amount"><strong>@(includeVat ? zasNetData.Sum(s => s.AlmazEarningWithVat).ToString("N2") : zasNetData.Sum(s => s.AlmazEarning).ToString("N2")) ₽</strong></td>
+                                            <td class="amount"><strong>@(includeVat ? zasNetData.Sum(s => s.CommonEarningWithVat / 2.0m + s.AlmazEarningWithVat).ToString("N2") : zasNetData.Sum(s => s.CommonEarning / 2.0m + s.AlmazEarning).ToString("N2")) ₽</strong></td>
+                                            <td class="amount"><strong>@(includeVat ? zasNetData.Sum(s => s.CommonEarningWithVat / 2.0m).ToString("N2") : zasNetData.Sum(s => s.CommonEarning / 2.0m).ToString("N2")) ₽</strong></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -1237,6 +1258,7 @@
     private GetZasNetEarningRequest zasNetRequest = new() { DateFrom = DateTime.Now.AddMonths(-1).Date, DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1) };
     private GroupPeriod zasNetPeriodType = GroupPeriod.Day;
     private bool isLoadingZasNet = false;
+    private bool includeVat = false;
 
     // Cars
     private List<CarEarningAnalyticsDto> carsData = new();
@@ -1358,6 +1380,7 @@
             DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
         };
         zasNetPeriodType = GroupPeriod.Day;
+        includeVat = false;
         await LoadZasNetData();
     }
 
@@ -1373,6 +1396,19 @@
         var dateStr = e.Value?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd");
         zasNetRequest.DateTo = DateTime.Parse(dateStr).Date.AddDays(1).AddTicks(-1);
         await LoadZasNetData();
+    }
+
+    private async Task OnIncludeVatChanged(ChangeEventArgs e)
+    {
+        includeVat = (bool)(e.Value ?? false);
+        StateHasChanged();
+        
+        // Перерисовываем график если в режиме графиков
+        if (viewMode == "charts" && zasNetData.Any())
+        {
+            await Task.Delay(50);
+            await RenderZasNetChart();
+        }
     }
 
     private async Task SwitchZasNetPeriodType(GroupPeriod newPeriodType)
@@ -1395,18 +1431,68 @@
         // Если нет данных, показываем пустой график
         if (!zasNetData.Any())
         {
-            await JSRuntime.InvokeVoidAsync("renderLineChart", "zasNetChart", labels, Array.Empty<double>(), "Прибыль (₽)", "#10b981");
+            await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "zasNetChart", labels, Array.Empty<object>());
             return;
         }
 
-        // Создаем массив данных для всех периодов
-        var data = allPeriods.Select(period =>
+        // Создаем массивы данных для каждой линии
+        var commonEarningData = allPeriods.Select(period =>
         {
             var item = zasNetData.FirstOrDefault(s => s.Period == period);
-            return item != null ? (double)item.TotalEarning : 0.0;
+            if (item == null) return 0.0;
+            return includeVat ? (double)item.CommonEarningWithVat : (double)item.CommonEarning;
         }).ToArray();
 
-        await JSRuntime.InvokeVoidAsync("renderLineChart", "zasNetChart", labels, data, "Прибыль (₽)", "#10b981");
+        var almazEarningData = allPeriods.Select(period =>
+        {
+            var item = zasNetData.FirstOrDefault(s => s.Period == period);
+            if (item == null) return 0.0;
+            return includeVat ? (double)item.AlmazEarningWithVat : (double)item.AlmazEarning;
+        }).ToArray();
+
+        var almazTotalData = allPeriods.Select(period =>
+        {
+            var item = zasNetData.FirstOrDefault(s => s.Period == period);
+            if (item == null) return 0.0;
+            var commonEarning = includeVat ? item.CommonEarningWithVat : item.CommonEarning;
+            var almazEarning = includeVat ? item.AlmazEarningWithVat : item.AlmazEarning;
+            return (double)(commonEarning / 2.0m + almazEarning);
+        }).ToArray();
+
+        var airatTotalData = allPeriods.Select(period =>
+        {
+            var item = zasNetData.FirstOrDefault(s => s.Period == period);
+            if (item == null) return 0.0;
+            var commonEarning = includeVat ? item.CommonEarningWithVat : item.CommonEarning;
+            return (double)(commonEarning / 2.0m);
+        }).ToArray();
+
+        // Создаем datasets для многолинейного графика
+        var datasets = new[]
+        {
+            new
+            {
+                label = "Общая прибыль",
+                data = commonEarningData
+            },
+            new
+            {
+                label = "Прибыль Алмаза",
+                data = almazEarningData
+            },
+            new
+            {
+                label = "Итоговая прибыль Алмаза",
+                data = almazTotalData
+            },
+            new
+            {
+                label = "Итоговая прибыль Айрата",
+                data = airatTotalData
+            }
+        };
+
+        await JSRuntime.InvokeVoidAsync("renderMultiLineChart", "zasNetChart", labels, datasets);
     }
 
     // Cars methods

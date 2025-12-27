@@ -15,9 +15,3 @@ public class SendEmployeeEarningReportToTelegramCommand
 {
     public List<EmployeeEarningByFilterDto> Data { get; set; } = new();
 }
-
-
-
-
-
-
