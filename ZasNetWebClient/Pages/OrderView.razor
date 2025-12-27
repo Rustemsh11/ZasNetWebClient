@@ -121,6 +121,13 @@
                     <button type="button"
                         class="btn-primary btn-compact"
                             style="flex-shrink: 0; white-space: nowrap;"
+                        @onclick="SendedToClient"
+                            disabled="@(orderModel.Status != OrderStatus.SendingPayment)">
+                            <text>Сч. отправлен клиенту</text>
+                    </button>
+                    <button type="button"
+                        class="btn-primary btn-compact"
+                            style="flex-shrink: 0; white-space: nowrap;"
                             @onclick="CloseOrder"
                             disabled="@(!CanCloseOrder)">
                             <text>Закрыть заявку</text>
@@ -141,6 +148,7 @@
                                 <option value="@OrderStatus.Processing">В работе</option>
                                 <option value="@OrderStatus.Finished">Завершен</option>
                                 <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
+                                <option value="@OrderStatus.SendingPayment">Ожидание отправки счета</option>
                                 <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
                                 <option value="@OrderStatus.Closed">Закрыт</option>
                             </InputSelect>
@@ -787,6 +795,10 @@
         {
             return "Ожидание счета";
         }
+        else if (orderStatus == OrderStatus.SendingPayment)
+        {
+            return "Ожидание отправки счета";
+        }
         else if (orderStatus == OrderStatus.AwaitingPayment)
         {
             return "Ожидание оплаты";
@@ -960,6 +972,35 @@
         catch (Exception ex)
         {
             errorMessage = $"Ошибка при отправке заявки бухгалтеру: {ex.Message}";
+            NotificationService.ShowError(errorMessage);
+        }
+    }
+    
+    private async Task SendedToClient()
+    {
+        errorMessage = string.Empty;
+        NotificationService.Clear();
+
+        try
+        {
+            var command = new ChangeOrderStatusCommand(orderModel.Id, OrderStatus.AwaitingPayment);
+            var success = await ApiService.ChangeOrderStatus(command);
+
+            if (success)
+            {
+                // Локально обновляем статус, чтобы отразить изменения в UI
+                orderModel.Status = OrderStatus.AwaitingPayment;
+                NotificationService.ShowInfo($"Статус заявки успешно изменен на: {GetOrderStatusDescription(OrderStatus.AwaitingPayment)}");
+            }
+            else
+            {
+                errorMessage = "Не удалось изменить статус заявки.";
+                NotificationService.ShowError(errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при изменении статуса заявки: {ex.Message}";
             NotificationService.ShowError(errorMessage);
         }
     }

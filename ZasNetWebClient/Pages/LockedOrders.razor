@@ -1,0 +1,188 @@
+@page "/lockedOrders"
+@using ZasNetWebClient.Services
+@using ZasNetWebClient.Models
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
+<PageTitle>Заблокированные заявки - ZasNet</PageTitle>
+
+<div class="locked-orders-container">
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1>Заблокированные заявки</h1>
+                <p>Список заявок, которые заблокированы пользователями</p>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка заблокированных заявок...</p>
+        </div>
+    }
+    else if (lockedOrders.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">🔓</div>
+            <h3>Нет заблокированных заявок</h3>
+            <p>Все заявки доступны для редактирования</p>
+        </div>
+    }
+    else
+    {
+        <!-- Results summary -->
+        <div class="results-summary">
+            <div class="results-info">
+                <span>Найдено заблокированных заявок: <strong>@lockedOrders.Count</strong></span>
+            </div>
+        </div>
+
+        <!-- Locked Orders Table List -->
+        <div class="earnings-table-container">
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Клиент</th>
+                        <th>Дата заявки</th>
+                        <th>Заблокировано пользователем</th>
+                        <th>Дата блокировки</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in lockedOrders)
+                    {
+                        <tr class="earning-row" @ondblclick="() => OpenOrder(order.Id)">
+                            <td class="order-id-cell">
+                                <strong>#@order.Id</strong>
+                            </td>
+                            <td class="client-cell">@order.OrderClientName</td>
+                            <td class="date-cell">@order.OrderDate.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="locked-by-cell">
+                                @if (!string.IsNullOrEmpty(order.LockedByUserName))
+                                {
+                                    <span>@order.LockedByUserName</span>
+                                }
+                                else
+                                {
+                                    <span class="empty-description">—</span>
+                                }
+                            </td>
+                            <td class="date-cell">
+                                @if (order.LockedAt.HasValue)
+                                {
+                                    <span>@order.LockedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                }
+                                else
+                                {
+                                    <span class="empty-description">—</span>
+                                }
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons">
+                                    <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                        Открыть
+                                    </button>
+                                    <button class="btn-secondary btn-compact" 
+                                            @onclick="() => ResetLock(order.Id)"
+                                            @onclick:stopPropagation="true"
+                                            title="Сбросить блокировку"
+                                            disabled="@isResetting">
+                                        @if (isResetting && resettingOrderId == order.Id)
+                                        {
+                                            <span>⏳</span>
+                                        }
+                                        else
+                                        {
+                                            <span>🔓 Сбросить</span>
+                                        }
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<GetLockedOrdersResponse> lockedOrders = new();
+    private bool isLoading = false;
+    private bool isResetting = false;
+    private int resettingOrderId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            lockedOrders = await ApiService.GetLockedOrders();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading locked orders: {ex.Message}");
+            lockedOrders = new List<GetLockedOrdersResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenOrder(int orderId)
+    {
+        Navigation.NavigateTo($"/order/{orderId}");
+    }
+
+    private async Task ResetLock(int orderId)
+    {
+        if (isResetting)
+            return;
+
+        isResetting = true;
+        resettingOrderId = orderId;
+        
+        try
+        {
+            var success = await ApiService.ResetLockedOrder(orderId);
+
+            if (success)
+            {
+                NotificationService.ShowInfo($"Блокировка заявки #{orderId} успешно сброшена");
+                // Удаляем заявку из списка
+                var orderToRemove = lockedOrders.FirstOrDefault(o => o.Id == orderId);
+                if (orderToRemove != null)
+                {
+                    lockedOrders.Remove(orderToRemove);
+                }
+                StateHasChanged();
+            }
+            else
+            {
+                NotificationService.ShowError($"Не удалось сбросить блокировку заявки #{orderId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка при сбросе блокировки: {ex.Message}");
+        }
+        finally
+        {
+            isResetting = false;
+            resettingOrderId = 0;
+        }
+    }
+}
+

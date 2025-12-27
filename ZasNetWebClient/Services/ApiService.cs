@@ -1683,4 +1683,48 @@ public class ApiService
             return new List<ZasNetEarningByPeriodDto>();
         }
     }
+
+    public async Task<List<GetLockedOrdersResponse>> GetLockedOrders()
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            
+            var lockedOrders = await _httpClient.GetFromJsonAsync<List<GetLockedOrdersResponse>>("api/v1/order/GetLockedOrders");
+            return lockedOrders ?? new List<GetLockedOrdersResponse>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке заблокированных заявок: {ex.Message}");
+            return new List<GetLockedOrdersResponse>();
+        }
+    }
+
+    public async Task<bool> ResetLockedOrder(int orderId)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new ResetLocksCommand { OrderId = orderId };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/order/ResetLockedOrder", command);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при сбросе блокировки заявки: {ex.Message}");
+            return false;
+        }
+    }
 }

@@ -74,6 +74,7 @@
                     <option value="@OrderStatus.Processing">В работе</option>
                     <option value="@OrderStatus.Finished">Завершен</option>
                     <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
+                    <option value="@OrderStatus.SendingPayment">Ожидание отправки счета</option>
                     <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
                     <option value="@OrderStatus.Closed">Закрыт</option>
                 </select>
@@ -682,6 +683,7 @@
             OrderStatus.Processing => "В работе",
             OrderStatus.Finished => "Завершен",
             OrderStatus.CreatingInvoice => "Ожидание счета",
+            OrderStatus.SendingPayment => "Ожидание отправки счета",
             OrderStatus.AwaitingPayment => "Ожидание оплаты",
             OrderStatus.Closed => "Закрыт",
             _ => "Неизвестно"
