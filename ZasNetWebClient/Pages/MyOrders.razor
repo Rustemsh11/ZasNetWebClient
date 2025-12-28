@@ -167,6 +167,156 @@
                     }
                 </div>
             </div>
+
+            <!-- Driver filter (visible only for admin) -->
+            @if (IsAdmin())
+            {
+                <div class="filter-group filter-group-services">
+                    <label for="driver-dropdown">Водители</label>
+                    <div class="custom-dropdown">
+                        <button type="button" 
+                                class="dropdown-toggle form-control" 
+                                @onclick="ToggleDriversDropdown"
+                                @onclick:stopPropagation="true">
+                            <span class="dropdown-text">
+                                @if (selectedDriverIds.Any())
+                                {
+                                    <text>Выбрано: @selectedDriverIds.Count</text>
+                                }
+                                else
+                                {
+                                    <text>Выберите водителей</text>
+                                }
+                            </span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        
+                        @if (isDriversDropdownOpen)
+                        {
+                            <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                @if (availableDrivers.Any())
+                                {
+                                    <div class="dropdown-search">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               placeholder="Поиск водителя..."
+                                               value="@driverSearchTerm"
+                                               @oninput="(e) => driverSearchTerm = e.Value?.ToString() ?? string.Empty"
+                                               @onclick:stopPropagation="true" />
+                                    </div>
+                                    <div class="dropdown-items">
+                                        @foreach (var driver in GetFilteredDrivers())
+                                        {
+                                            <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                <input type="checkbox" 
+                                                       checked="@selectedDriverIds.Contains(driver.Id)"
+                                                       @onchange="(e) => ToggleDriver(driver.Id, ((ChangeEventArgs)e).Value)"
+                                                       @onclick:stopPropagation="true" />
+                                                <span>@driver.Name</span>
+                                            </label>
+                                        }
+                                    </div>
+                                    <div class="dropdown-footer">
+                                        <button type="button" 
+                                                class="btn-secondary btn-compact" 
+                                                @onclick="ClearAllDrivers"
+                                                @onclick:stopPropagation="true">
+                                            Очистить всё
+                                        </button>
+                                        <button type="button" 
+                                                class="btn-primary btn-compact" 
+                                                @onclick="ApplyDriversFilter"
+                                                @onclick:stopPropagation="true">
+                                            Применить
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="dropdown-empty">
+                                        <span>Нет доступных водителей</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Dispetcher filter (visible only for admin) -->
+            @if (IsAdmin())
+            {
+                <div class="filter-group filter-group-services">
+                    <label for="dispetcher-dropdown">Диспетчеры</label>
+                    <div class="custom-dropdown">
+                        <button type="button" 
+                                class="dropdown-toggle form-control" 
+                                @onclick="ToggleDispetchersDropdown"
+                                @onclick:stopPropagation="true">
+                            <span class="dropdown-text">
+                                @if (selectedDispetcherIds.Any())
+                                {
+                                    <text>Выбрано: @selectedDispetcherIds.Count</text>
+                                }
+                                else
+                                {
+                                    <text>Выберите диспетчеров</text>
+                                }
+                            </span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        
+                        @if (isDispetchersDropdownOpen)
+                        {
+                            <div class="dropdown-menu" @onclick:stopPropagation="true">
+                                @if (availableDispetchers.Any())
+                                {
+                                    <div class="dropdown-search">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               placeholder="Поиск диспетчера..."
+                                               value="@dispetcherSearchTerm"
+                                               @oninput="(e) => dispetcherSearchTerm = e.Value?.ToString() ?? string.Empty"
+                                               @onclick:stopPropagation="true" />
+                                    </div>
+                                    <div class="dropdown-items">
+                                        @foreach (var dispetcher in GetFilteredDispetchers())
+                                        {
+                                            <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                                <input type="checkbox" 
+                                                       checked="@selectedDispetcherIds.Contains(dispetcher.Id)"
+                                                       @onchange="(e) => ToggleDispetcher(dispetcher.Id, ((ChangeEventArgs)e).Value)"
+                                                       @onclick:stopPropagation="true" />
+                                                <span>@dispetcher.Name</span>
+                                            </label>
+                                        }
+                                    </div>
+                                    <div class="dropdown-footer">
+                                        <button type="button" 
+                                                class="btn-secondary btn-compact" 
+                                                @onclick="ClearAllDispetchers"
+                                                @onclick:stopPropagation="true">
+                                            Очистить всё
+                                        </button>
+                                        <button type="button" 
+                                                class="btn-primary btn-compact" 
+                                                @onclick="ApplyDispetchersFilter"
+                                                @onclick:stopPropagation="true">
+                                            Применить
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="dropdown-empty">
+                                        <span>Нет доступных диспетчеров</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
         </div>
 
         <!-- Active filters display -->
@@ -218,6 +368,28 @@
                             <span class="filter-tag">
                                 Услуга: @serviceName
                                 <button @onclick="async () => await RemoveService(serviceId)">&times;</button>
+                            </span>
+                        }
+                    }
+                    @if (IsAdmin() && selectedDriverIds.Any())
+                    {
+                        @foreach (var driverId in selectedDriverIds)
+                        {
+                            var driverName = availableDrivers.FirstOrDefault(d => d.Id == driverId)?.Name ?? "";
+                            <span class="filter-tag">
+                                Водитель: @driverName
+                                <button @onclick="async () => await RemoveDriver(driverId)">&times;</button>
+                            </span>
+                        }
+                    }
+                    @if (IsAdmin() && selectedDispetcherIds.Any())
+                    {
+                        @foreach (var dispetcherId in selectedDispetcherIds)
+                        {
+                            var dispetcherName = availableDispetchers.FirstOrDefault(d => d.Id == dispetcherId)?.Name ?? "";
+                            <span class="filter-tag">
+                                Диспетчер: @dispetcherName
+                                <button @onclick="async () => await RemoveDispetcher(dispetcherId)">&times;</button>
                             </span>
                         }
                     }
@@ -460,6 +632,8 @@
     }
     private List<GetOrdersByFilterResponse> filteredOrders = new();
     private List<ServiceDto> availableServices = new();
+    private List<EmployeeDto> availableDrivers = new();
+    private List<EmployeeDto> availableDispetchers = new();
     private EmployeeDto? currentUser;
     private bool isLoading = false;
     private int totalOrdersCount = 0;
@@ -472,10 +646,16 @@
     private string selectedStatus = string.Empty;
     private string selectedPaymentType = string.Empty;
     private List<int> selectedServiceIds = new();
+    private List<int> selectedDriverIds = new();
+    private List<int> selectedDispetcherIds = new();
     
     // Dropdown state
     private bool isServicesDropdownOpen = false;
+    private bool isDriversDropdownOpen = false;
+    private bool isDispetchersDropdownOpen = false;
     private string serviceSearchTerm = string.Empty;
+    private string driverSearchTerm = string.Empty;
+    private string dispetcherSearchTerm = string.Empty;
     
     // Delete confirmation
     private bool showDeleteConfirmDialog = false;
@@ -498,6 +678,16 @@
             var parameters = await ApiService.GetCreateOrderParameters();
             availableServices = parameters?.ServiceDtos ?? new List<ServiceDto>();
 
+            // Load drivers and dispetchers if user is admin
+            if (IsAdmin())
+            {
+                availableDrivers = await ApiService.GetDrivers();
+                availableDispetchers = await ApiService.GetDispetchers();
+            }
+
+            // Setup default filters based on user role
+            SetupDefaultFilters();
+
             // Load orders with filters
             await ApplyFilters();
         }
@@ -509,6 +699,40 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private bool IsAdmin()
+    {
+        return currentUser?.Role?.Name?.ToLower() == "admin";
+    }
+
+    private string GetUserRole()
+    {
+        return currentUser?.Role?.Name?.ToLower() ?? string.Empty;
+    }
+
+    private void SetupDefaultFilters()
+    {
+        if (currentUser == null) return;
+
+        var roleName = GetUserRole();
+
+        // Если пользователь не админ, устанавливаем фильтры по умолчанию
+        if (!IsAdmin())
+        {
+            if (roleName == "водитель")
+            {
+                // Для водителя заполняем фильтр по водителям текущим пользователем
+                selectedDriverIds = new List<int> { currentUser.Id };
+                selectedDispetcherIds = new List<int>();
+            }
+            else if (roleName == "диспетчер")
+            {
+                // Для диспетчера заполняем фильтр по диспетчерам текущим пользователем
+                selectedDispetcherIds = new List<int> { currentUser.Id };
+                selectedDriverIds = new List<int>();
+            }
         }
     }
 
@@ -529,9 +753,44 @@
             {
                 DateFrom = dateFrom,
                 DateTo = dateTo,
-                ClientSearchTerm = string.IsNullOrWhiteSpace(searchClient) ? null : searchClient,
-                CreatedEmployeeIds = new List<int> { currentUser.Id } // Фильтруем только заявки текущего пользователя
+                ClientSearchTerm = string.IsNullOrWhiteSpace(searchClient) ? null : searchClient
             };
+
+            // Добавляем фильтры по сотрудникам в зависимости от роли
+            if (IsAdmin())
+            {
+                // Для админа используем выбранные фильтры
+                if (selectedDispetcherIds.Any())
+                {
+                    request.CreatedEmployeeIds = selectedDispetcherIds.ToList();
+                }
+                if (selectedDriverIds.Any())
+                {
+                    request.ExecutedEmployeeIds = selectedDriverIds.ToList();
+                }
+            }
+            else
+            {
+                // Для не-админов используем автозаполненные фильтры
+                var roleName = GetUserRole();
+                
+                if (roleName == "водитель")
+                {
+                    // Для водителя фильтруем по выполненным заявкам
+                    if (selectedDriverIds.Any())
+                    {
+                        request.ExecutedEmployeeIds = selectedDriverIds.ToList();
+                    }
+                }
+                else if (roleName == "диспетчер")
+                {
+                    // Для диспетчера фильтруем по созданным заявкам
+                    if (selectedDispetcherIds.Any())
+                    {
+                        request.CreatedEmployeeIds = selectedDispetcherIds.ToList();
+                    }
+                }
+            }
 
             // Добавляем статус если выбран
             if (!string.IsNullOrEmpty(selectedStatus))
@@ -586,17 +845,38 @@
         selectedStatus = string.Empty;
         selectedPaymentType = string.Empty;
         selectedServiceIds.Clear();
+        
+        // Сброс фильтров по сотрудникам зависит от роли
+        if (IsAdmin())
+        {
+            selectedDriverIds.Clear();
+            selectedDispetcherIds.Clear();
+        }
+        else
+        {
+            // Для не-админов восстанавливаем значения по умолчанию
+            SetupDefaultFilters();
+        }
+        
         await ApplyFilters();
     }
 
     private bool HasActiveFilters()
     {
-        return !string.IsNullOrWhiteSpace(searchClient) ||
+        var hasBasicFilters = !string.IsNullOrWhiteSpace(searchClient) ||
                dateFrom.HasValue ||
                dateTo.HasValue ||
                !string.IsNullOrEmpty(selectedStatus) ||
                !string.IsNullOrEmpty(selectedPaymentType) ||
                selectedServiceIds.Any();
+        
+        // Для админов также проверяем фильтры по сотрудникам
+        if (IsAdmin())
+        {
+            return hasBasicFilters || selectedDriverIds.Any() || selectedDispetcherIds.Any();
+        }
+        
+        return hasBasicFilters;
     }
 
     private void ToggleService(int serviceId, object? checkedValue)
@@ -667,6 +947,136 @@
             isServicesDropdownOpen = false;
             serviceSearchTerm = string.Empty;
         }
+        if (isDriversDropdownOpen)
+        {
+            isDriversDropdownOpen = false;
+            driverSearchTerm = string.Empty;
+        }
+        if (isDispetchersDropdownOpen)
+        {
+            isDispetchersDropdownOpen = false;
+            dispetcherSearchTerm = string.Empty;
+        }
+    }
+
+    // Driver filter methods
+    private void ToggleDriver(int driverId, object? checkedValue)
+    {
+        var isChecked = checkedValue is bool b && b;
+        
+        if (isChecked)
+        {
+            if (!selectedDriverIds.Contains(driverId))
+            {
+                selectedDriverIds.Add(driverId);
+            }
+        }
+        else
+        {
+            selectedDriverIds.Remove(driverId);
+        }
+    }
+
+    private async Task RemoveDriver(int driverId)
+    {
+        selectedDriverIds.Remove(driverId);
+        await ApplyFilters();
+    }
+
+    private void ToggleDriversDropdown()
+    {
+        isDriversDropdownOpen = !isDriversDropdownOpen;
+        if (!isDriversDropdownOpen)
+        {
+            driverSearchTerm = string.Empty;
+        }
+    }
+
+    private async Task ApplyDriversFilter()
+    {
+        isDriversDropdownOpen = false;
+        driverSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private async Task ClearAllDrivers()
+    {
+        selectedDriverIds.Clear();
+        isDriversDropdownOpen = false;
+        driverSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private List<EmployeeDto> GetFilteredDrivers()
+    {
+        if (string.IsNullOrWhiteSpace(driverSearchTerm))
+        {
+            return availableDrivers;
+        }
+
+        return availableDrivers
+            .Where(d => d.Name.Contains(driverSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    // Dispetcher filter methods
+    private void ToggleDispetcher(int dispetcherId, object? checkedValue)
+    {
+        var isChecked = checkedValue is bool b && b;
+        
+        if (isChecked)
+        {
+            if (!selectedDispetcherIds.Contains(dispetcherId))
+            {
+                selectedDispetcherIds.Add(dispetcherId);
+            }
+        }
+        else
+        {
+            selectedDispetcherIds.Remove(dispetcherId);
+        }
+    }
+
+    private async Task RemoveDispetcher(int dispetcherId)
+    {
+        selectedDispetcherIds.Remove(dispetcherId);
+        await ApplyFilters();
+    }
+
+    private void ToggleDispetchersDropdown()
+    {
+        isDispetchersDropdownOpen = !isDispetchersDropdownOpen;
+        if (!isDispetchersDropdownOpen)
+        {
+            dispetcherSearchTerm = string.Empty;
+        }
+    }
+
+    private async Task ApplyDispetchersFilter()
+    {
+        isDispetchersDropdownOpen = false;
+        dispetcherSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private async Task ClearAllDispetchers()
+    {
+        selectedDispetcherIds.Clear();
+        isDispetchersDropdownOpen = false;
+        dispetcherSearchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private List<EmployeeDto> GetFilteredDispetchers()
+    {
+        if (string.IsNullOrWhiteSpace(dispetcherSearchTerm))
+        {
+            return availableDispetchers;
+        }
+
+        return availableDispetchers
+            .Where(d => d.Name.Contains(dispetcherSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     private void OpenOrder(int orderId)

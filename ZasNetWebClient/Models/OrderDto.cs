@@ -339,6 +339,11 @@ public class GetOrdersByFilterRequest
     /// Список ID сотрудников, создавших заявку
     /// </summary>
     public List<int>? CreatedEmployeeIds { get; set; }
+
+    /// <summary>
+    /// Список ID сотрудников, которые выполняли заявку
+    /// </summary>
+    public List<int>? ExecutedEmployeeIds { get; set; }
 }
 
 /// <summary>

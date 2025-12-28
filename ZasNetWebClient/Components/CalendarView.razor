@@ -35,7 +35,33 @@
         </div>
     }
 
-    <div class="calendar-timeline" @ref="timelineContainer">
+    <!-- View Toggle -->
+    <div class="results-summary">
+        <div class="results-info">
+            <span>Найдено заявок: <strong>@dayOrders.Count</strong></span>
+        </div>
+        <div class="view-toggle">
+            <button class="view-toggle-btn @(viewMode == ViewMode.Calendar ? "active" : "")" 
+                    @onclick="() => SetViewMode(ViewMode.Calendar)"
+                    title="Календарь">
+                <span class="icon">📅</span>
+            </button>
+            <button class="view-toggle-btn @(viewMode == ViewMode.Cards ? "active" : "")" 
+                    @onclick="() => SetViewMode(ViewMode.Cards)"
+                    title="Карточки">
+                <span class="icon">⊞</span>
+            </button>
+            <button class="view-toggle-btn @(viewMode == ViewMode.List ? "active" : "")" 
+                    @onclick="() => SetViewMode(ViewMode.List)"
+                    title="Список">
+                <span class="icon">☰</span>
+            </button>
+        </div>
+    </div>
+
+    @if (viewMode == ViewMode.Calendar)
+    {
+        <div class="calendar-timeline" @ref="timelineContainer">
         <div class="calendar-timeline-header">
             <div class="car-header">Машина</div>
             <div class="hours-header" @ref="hoursHeader">
@@ -76,6 +102,162 @@
             }
         </div>
     </div>
+    }
+    else if (viewMode == ViewMode.Cards)
+    {
+        @if (dayOrders.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>Заявки не найдены</h3>
+                <p>На выбранную дату нет заявок</p>
+            </div>
+        }
+        else
+        {
+            <div class="orders-list">
+                @foreach (var order in dayOrders.OrderBy(o => o.DateStart))
+                {
+                    <div class="order-card" @ondblclick="() => OpenOrder(order.Id)">
+                        <div class="order-card-header">
+                            <div class="order-id">
+                                <span class="order-label">Заявка</span>
+                                <span class="order-number">#@order.Id</span>
+                            </div>
+                            <div class="order-status status-@order.Status.ToString().ToLower()">
+                                @GetStatusName(order.Status)
+                            </div>
+                        </div>
+
+                        <div class="order-card-body">
+                            <div class="order-info-row">
+                                <div class="order-info-item">
+                                    <span class="info-label">Клиент:</span>
+                                    <span class="info-value">@order.Client</span>
+                                </div>
+                                <div class="order-info-item">
+                                    <span class="info-label">Дата начала:</span>
+                                    <span class="info-value">@order.DateStart.ToString("dd.MM.yyyy HH:mm")</span>
+                                </div>
+                                <div class="order-info-item">
+                                    <span class="info-label">Дата окончания:</span>
+                                    <span class="info-value">@(order.DateEnd?.ToString("dd.MM.yyyy HH:mm") ?? "Не указана")</span>
+                                </div>
+                            </div>
+
+                            <div class="order-info-row">
+                                <div class="order-info-item">
+                                    <span class="info-label">Адрес:</span>
+                                    <span class="info-value">@(order.Address ?? "Не указан")</span>
+                                </div>
+                            </div>
+
+                            @if (order.CarIds != null && order.CarIds.Any())
+                            {
+                                <div class="order-services">
+                                    <span class="info-label">Машины:</span>
+                                    <div class="services-tags">
+                                        @foreach (var carId in order.CarIds)
+                                        {
+                                            var car = AllCars?.FirstOrDefault(c => c.Id == carId);
+                                            <span class="service-tag">
+                                                @(car?.Name ?? $"Машина #{carId}")
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="order-card-footer">
+                            <div class="footer-actions">
+                                <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                    Открыть
+                                </button>
+                            </div>
+                            <span class="order-hint">Двойной клик для открытия</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (viewMode == ViewMode.List)
+    {
+        @if (dayOrders.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>Заявки не найдены</h3>
+                <p>На выбранную дату нет заявок</p>
+            </div>
+        }
+        else
+        {
+            <div class="earnings-table-container">
+                <table class="earnings-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Адрес</th>
+                            <th>Дата начала</th>
+                            <th>Дата окончания</th>
+                            <th>Статус</th>
+                            <th>Машины</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in dayOrders.OrderBy(o => o.DateStart))
+                        {
+                            <tr class="earning-row" @ondblclick="() => OpenOrder(order.Id)">
+                                <td class="order-id-cell">
+                                    <strong>#@order.Id</strong>
+                                </td>
+                                <td class="client-cell">@order.Client</td>
+                                <td class="address-cell">@(order.Address ?? "Не указан")</td>
+                                <td class="date-cell">@order.DateStart.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td class="date-cell">@(order.DateEnd?.ToString("dd.MM.yyyy HH:mm") ?? "Не указана")</td>
+                                <td class="status-cell">
+                                    <span class="order-status status-@order.Status.ToString().ToLower()">
+                                        @GetStatusName(order.Status)
+                                    </span>
+                                </td>
+                                <td class="services-cell">
+                                    @if (order.CarIds != null && order.CarIds.Any())
+                                    {
+                                        <div class="services-tags-compact">
+                                            @foreach (var carId in order.CarIds.Take(2))
+                                            {
+                                                var car = AllCars?.FirstOrDefault(c => c.Id == carId);
+                                                <span class="service-tag-small">@(car?.Name ?? $"Машина #{carId}")</span>
+                                            }
+                                            @if (order.CarIds.Count > 2)
+                                            {
+                                                <span class="service-tag-small more">+@(order.CarIds.Count - 2)</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="empty-description">—</span>
+                                    }
+                                </td>
+                                <td class="action-cell">
+                                    <div class="action-buttons">
+                                        <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
+                                            Открыть
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
 </div>
 
 @code {
@@ -93,6 +275,15 @@
     private ElementReference timelineContainer;
     private ElementReference hoursHeader;
     private bool shouldScrollToHour8 = true;
+    private List<Order> dayOrders = new();
+    private ViewMode viewMode = ViewMode.Calendar;
+
+    private enum ViewMode
+    {
+        Calendar,
+        Cards,
+        List
+    }
 
     protected override void OnParametersSet()
     {
@@ -127,7 +318,7 @@
         carGroups.Clear();
 
         // Get orders for the current date
-        var dayOrders = Orders.Where(o => o.DateStart.Date == CurrentDate.Date).ToList();
+        dayOrders = Orders.Where(o => o.DateStart.Date == CurrentDate.Date).ToList();
 
         // Group orders by car ID
         var ordersByCarId = new Dictionary<int, List<Order>>();
@@ -367,6 +558,12 @@
             OrderStatus.Closed => "Закрыта",
             _ => "Неизвестно"
         };
+    }
+
+    private void SetViewMode(ViewMode mode)
+    {
+        viewMode = mode;
+        StateHasChanged();
     }
 
     private class CarOrderGroup

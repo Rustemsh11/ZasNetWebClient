@@ -392,6 +392,14 @@ public class ApiService
                 }
             }
 
+            if (request.ExecutedEmployeeIds != null && request.ExecutedEmployeeIds.Any())
+            {
+                foreach (var employeeId in request.ExecutedEmployeeIds)
+                {
+                    queryParams.Add($"ExecutedEmployeeIds={employeeId}");
+                }
+            }
+
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/v1/order/GetOrdersByFilter{queryString}";
 
