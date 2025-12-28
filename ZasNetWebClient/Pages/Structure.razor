@@ -606,10 +606,6 @@
                 NotificationService.ShowInfo(isEditMode ? "Запись обновлена успешно" : "Запись создана успешно");
                 CloseDialog();
             }
-            else
-            {
-                NotificationService.ShowError("Ошибка при сохранении записи");
-            }
         }
         catch (Exception ex)
         {

@@ -910,16 +910,7 @@
             }
             else
             {
-                var res = await ApiService.SaveOrder(orderModel);
-                var error = await res.Content.ReadAsStringAsync();
-                if (string.IsNullOrEmpty(error))
-                {
-                    success = true;
-                }
-                else
-                {
-                    NotificationService.ShowError($"При сохранении произошла ошибка. {error}");
-                }
+                success = await ApiService.SaveOrder(orderModel);
             }
 
             if (success)
@@ -1107,8 +1098,7 @@
         {
             if (isLocked)
             {
-                await ApiService.UnlockOrder(OrderId ?? 0);
-                isLocked = false;
+                isLocked = await ApiService.ResetLockedOrder(OrderId ?? 0);
             }
         }
         catch

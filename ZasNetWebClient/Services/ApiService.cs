@@ -19,6 +19,56 @@ public class ApiService
         _localStorageService = localStorageService;
         _notificationService = notificationService;
     }
+
+    /// <summary>
+    /// Обрабатывает HTTP ответ и извлекает сообщение об ошибке, если ответ содержит ошибку
+    /// </summary>
+    private async Task<string?> HandleErrorResponseAsync(HttpResponseMessage? response)
+    {
+        if (response == null || response.IsSuccessStatusCode)
+            return null;
+
+        try
+        {
+            var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            if (errorResponse != null)
+            {
+                // Если есть детали (например, ошибки валидации), показываем их
+                if (!string.IsNullOrWhiteSpace(errorResponse.Details))
+                {
+                    return $"{errorResponse.Message}. {errorResponse.Details}";
+                }
+                return errorResponse.Message;
+            }
+        }
+        catch
+        {
+            // Если не удалось десериализовать ErrorResponse, возвращаем стандартное сообщение
+        }
+
+        return $"Ошибка {response.StatusCode}: {response.ReasonPhrase}";
+    }
+
+    /// <summary>
+    /// Проверяет HTTP ответ и показывает ошибку, если ответ содержит ошибку
+    /// </summary>
+    private async Task<bool> CheckAndHandleErrorAsync(HttpResponseMessage? response, string defaultErrorMessage)
+    {
+        if (response == null)
+        {
+            _notificationService.ShowError(defaultErrorMessage);
+            return false;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await HandleErrorResponseAsync(response);
+            _notificationService.ShowError(errorMessage ?? defaultErrorMessage);
+            return false;
+        }
+
+        return true;
+    }
     
     public async Task<List<Order>> GetAllOrders()
     {
@@ -164,7 +214,7 @@ public class ApiService
             
             var response = await _httpClient.PostAsJsonAsync("api/v1/order/CreateOrder", createOrderDto);
             
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании заявки");
         }
         catch(Exception ex)
         {
@@ -173,7 +223,7 @@ public class ApiService
         }
     }
     
-    public async Task<HttpResponseMessage> SaveOrder(OrderDto orderDto)
+    public async Task<bool> SaveOrder(OrderDto orderDto)
     {
         try
         {
@@ -184,12 +234,14 @@ public class ApiService
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            return await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
+            var response = await _httpClient.PostAsJsonAsync($"api/v1/order/SaveOrder", saveOrderDto);
+
+            return await CheckAndHandleErrorAsync(response, "Ошибка при cохранении заявки");
         }
         catch(Exception ex)
         {
             _notificationService.ShowError($"Ошибка при сохранении заявки: {ex.Message}");
-            return new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError);
+            return false;
         }
     }
 
@@ -206,7 +258,7 @@ public class ApiService
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/order/ChangeStatusToWaitingInvoice", changeStatusToWaitingInvoiceDto);
 
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при изменении статуса заявки");
         }
         catch(Exception ex)
         {
@@ -228,7 +280,7 @@ public class ApiService
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/order/ChangeOrderStatus", changeOrderStatusCommand);
 
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при изменении статуса заявки");
         }
         catch(Exception ex)
         {
@@ -248,32 +300,13 @@ public class ApiService
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _httpClient.PostAsync($"api/v1/order/lock?orderId={orderId}", new StringContent(string.Empty));
-            return response.IsSuccessStatusCode;
+            var response = await _httpClient.PostAsync($"api/v1/order/LockOrder?orderId={orderId}", new StringContent(string.Empty));
+            return await CheckAndHandleErrorAsync(response, "Ошибка при блокировке заявки");
         }
         catch(Exception ex)
         {
             _notificationService.ShowError($"Ошибка при блокировке заявки: {ex.Message}");
             return false;
-        }
-    }
-
-    public async Task UnlockOrder(int orderId)
-    {
-        try
-        {
-            var token = await _localStorageService.GetItemAsync<string>("token");
-
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-
-            await _httpClient.PostAsync($"api/v1/order/Unlock?orderId={orderId}", new StringContent(string.Empty));
-        }
-        catch
-        {
-            // ignore unlock errors
         }
     }
 
@@ -413,7 +446,7 @@ public class ApiService
 
             var response = await _httpClient.PostAsync("api/v1/document/adddocument", content);
 
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при загрузке документа");
         }
         catch (Exception ex)
         {
@@ -550,8 +583,7 @@ public class ApiService
             }
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/UpdateEmployeeEarning", request);
-
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении заработка сотрудника");
         }
         catch(Exception ex)
         {
@@ -573,7 +605,7 @@ public class ApiService
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/UpdateDispetcherEarning", request);
 
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении заработка диспетчера");
         }
         catch(Exception ex)
         {
@@ -623,7 +655,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/CreateCar", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании автомобиля");
         }
         catch(Exception ex)
         {
@@ -652,7 +684,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/UpdateCar", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении автомобиля");
         }
         catch(Exception ex)
         {
@@ -679,7 +711,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении автомобиля");
         }
         catch(Exception ex)
         {
@@ -723,7 +755,7 @@ public class ApiService
 
             var request = new CreateCarModelRequest { Name = carModelDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/carmodel/CreateCarModel", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании модели автомобиля");
         }
         catch(Exception ex)
         {
@@ -745,7 +777,7 @@ public class ApiService
 
             var command = new UpdateCarModelCommand { Id = carModelDto.Id, Name = carModelDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/carmodel/UpdateCarModel", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении модели автомобиля");
         }
         catch(Exception ex)
         {
@@ -772,7 +804,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении модели автомобиля");
         }
         catch(Exception ex)
         {
@@ -825,7 +857,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/employee/CreateEmployee", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании сотрудника");
         }
         catch(Exception ex)
         {
@@ -857,7 +889,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/employee/UpdateEmployee", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении сотрудника");
         }
         catch(Exception ex)
         {
@@ -884,7 +916,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении сотрудника");
         }
         catch(Exception ex)
         {
@@ -918,7 +950,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/service/CreateService", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании услуги");
         }
         catch(Exception ex)
         {
@@ -952,7 +984,7 @@ public class ApiService
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/service/UpdateService", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении услуги");
         }
         catch(Exception ex)
         {
@@ -979,7 +1011,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении услуги");
         }
         catch(Exception ex)
         {
@@ -1023,7 +1055,7 @@ public class ApiService
 
             var request = new CreateRoleRequest { Name = roleDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/role/CreateRole", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании роли");
         }
         catch(Exception ex)
         {
@@ -1045,7 +1077,7 @@ public class ApiService
 
             var command = new UpdateRoleCommand { Id = roleDto.Id, Name = roleDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/role/UpdateRole", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении роли");
         }
         catch(Exception ex)
         {
@@ -1072,7 +1104,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении роли");
         }
         catch(Exception ex)
         {
@@ -1116,7 +1148,7 @@ public class ApiService
 
             var request = new CreateMeasureRequest { Name = measureDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/measure/CreateMeasure", request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании единицы измерения");
         }
         catch(Exception ex)
         {
@@ -1138,7 +1170,7 @@ public class ApiService
 
             var command = new UpdateMeasureCommand { Id = measureDto.Id, Name = measureDto.Name };
             var response = await _httpClient.PostAsJsonAsync("api/v1/measure/UpdateMeasure", command);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении единицы измерения");
         }
         catch(Exception ex)
         {
@@ -1165,7 +1197,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении единицы измерения");
         }
         catch(Exception ex)
         {
@@ -1192,7 +1224,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении заявки");
         }
         catch(Exception ex)
         {
@@ -1219,7 +1251,7 @@ public class ApiService
             };
             
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при удалении документа");
         }
         catch(Exception ex)
         {
@@ -1242,12 +1274,13 @@ public class ApiService
             var request = new DownloadEmployeeEarningReportRequest { Data = data };
             var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/DownloadReport", request);
 
-            if (response.IsSuccessStatusCode)
+            var res = await CheckAndHandleErrorAsync(response, "Ошибка при скачивании отчета");
+            
+            if (res)
             {
                 return await response.Content.ReadAsByteArrayAsync();
             }
 
-            _notificationService.ShowError("Ошибка при скачивании отчета");
             return null;
         }
         catch (Exception ex)
@@ -1271,13 +1304,14 @@ public class ApiService
             var command = new SendEmployeeEarningReportToTelegramCommand { Data = data };
             var response = await _httpClient.PostAsJsonAsync("api/v1/EmployeeEarning/SendReportToTelegram", command);
 
-            if (response.IsSuccessStatusCode)
+            var res = await CheckAndHandleErrorAsync(response, "Ошибка при отправке отчета");
+
+            if (res)
             {
                 _notificationService.ShowInfo("Отчет успешно отправлен в Telegram");
                 return true;
             }
 
-            _notificationService.ShowError("Ошибка при отправке отчета в Telegram");
             return false;
         }
         catch (Exception ex)
@@ -1301,12 +1335,13 @@ public class ApiService
             var request = new DownloadDispetcherEarningReportRequest { Data = data };
             var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/DownloadReport", request);
 
-            if (response.IsSuccessStatusCode)
+            var res = await CheckAndHandleErrorAsync(response, "Ошибка при скачивании отчета");
+
+            if (res)
             {
                 return await response.Content.ReadAsByteArrayAsync();
             }
 
-            _notificationService.ShowError("Ошибка при скачивании отчета");
             return null;
         }
         catch (Exception ex)
@@ -1330,13 +1365,13 @@ public class ApiService
             var command = new SendDispetcherEarningReportToTelegramCommand { Data = data };
             var response = await _httpClient.PostAsJsonAsync("api/v1/DispetcherEarning/SendReportToTelegram", command);
 
-            if (response.IsSuccessStatusCode)
+            var res = await CheckAndHandleErrorAsync(response, "Ошибка при отправке отчета в Telegram");
+            if (res)
             {
                 _notificationService.ShowInfo("Отчет успешно отправлен в Telegram");
                 return true;
             }
 
-            _notificationService.ShowError("Ошибка при отправке отчета в Telegram");
             return false;
         }
         catch (Exception ex)
@@ -1718,8 +1753,7 @@ public class ApiService
 
             var command = new ResetLocksCommand { OrderId = orderId };
             var response = await _httpClient.PostAsJsonAsync("api/v1/order/ResetLockedOrder", command);
-
-            return response.IsSuccessStatusCode;
+            return await CheckAndHandleErrorAsync(response, "Ошибка при сбросе блокировки заявки");
         }
         catch(Exception ex)
         {
