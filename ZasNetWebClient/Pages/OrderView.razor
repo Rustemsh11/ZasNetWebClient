@@ -504,6 +504,8 @@
             {
                 orderModel.CreatedUser = currentUser;
             }
+            // Устанавливаем город по умолчанию
+            orderModel.AddressCity = "Казань";
         }
 
         await LoadReferenceData();

@@ -169,7 +169,7 @@
 
 @if (showDialog)
 {
-    <div class="modal-overlay" @onclick="CloseDialog">
+    <div class="modal-overlay">
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3>@(isEditMode ? "Редактировать" : "Добавить") @GetEntityTitle()</h3>
