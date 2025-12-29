@@ -2,6 +2,8 @@
 @using ZasNetWebClient.Services
 @using ZasNetWebClient.Models
 @using ZasNetWebClient.Components
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorageService
 @inject AuthService AuthService
 @inject ApiService ApiService
 @inject NavigationManager Navigation
@@ -13,9 +15,12 @@
         <div>
             <h1>Активные заявки по дням</h1>
         </div>
-        <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
-            <span>+</span> Создать заявку
-        </button>
+        @if (!isAccountantRole)
+        {
+            <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
+                <span>+</span> Создать заявку
+            </button>
+        }
     </div>
 </div>
 
@@ -35,10 +40,26 @@ else
     private List<Order> orders = new();
     private List<CarDto> allCars = new();
     private bool isLoading = false;
+    private bool isAccountantRole = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadUserRole();
         await LoadData();
+    }
+
+    private async Task LoadUserRole()
+    {
+        try
+        {
+            var currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+            isAccountantRole = currentUser.Role != null && currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user role: {ex.Message}");
+            isAccountantRole = false;
+        }
     }
 
     private async Task LoadData()

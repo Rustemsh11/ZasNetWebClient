@@ -169,7 +169,7 @@
             </div>
 
             <!-- Driver filter (visible only for admin) -->
-            @if (IsAdmin())
+            @if (IsFilterEnabled())
             {
                 <div class="filter-group filter-group-services">
                     <label for="driver-dropdown">Водители</label>
@@ -244,7 +244,7 @@
             }
 
             <!-- Dispetcher filter (visible only for admin) -->
-            @if (IsAdmin())
+            @if (IsFilterEnabled())
             {
                 <div class="filter-group filter-group-services">
                     <label for="dispetcher-dropdown">Диспетчеры</label>
@@ -527,12 +527,15 @@
                             <button class="btn-primary btn-compact" @onclick="() => OpenOrder(order.Id)">
                                 Открыть
                             </button>
-                            <button class="btn-danger btn-compact btn-icon" 
-                                    @onclick="() => ShowDeleteConfirmation(order.Id)"
-                                    @onclick:stopPropagation="true"
-                                    title="Удалить заявку">
-                                🗑️
-                            </button>
+                                @if (IsDeleteEnable())
+                                {
+                                    <button class="btn-danger btn-compact btn-icon"
+                                        @onclick="() => ShowDeleteConfirmation(order.Id)"
+                                        @onclick:stopPropagation="true"
+                                        title="Удалить заявку">
+                                    🗑️
+                                </button>
+                                }
                         </div>
                         <span class="order-hint">Двойной клик для открытия</span>
                     </div>
@@ -648,7 +651,7 @@
     private List<int> selectedServiceIds = new();
     private List<int> selectedDriverIds = new();
     private List<int> selectedDispetcherIds = new();
-    
+
     // Dropdown state
     private bool isServicesDropdownOpen = false;
     private bool isDriversDropdownOpen = false;
@@ -656,7 +659,7 @@
     private string serviceSearchTerm = string.Empty;
     private string driverSearchTerm = string.Empty;
     private string dispetcherSearchTerm = string.Empty;
-    
+
     // Delete confirmation
     private bool showDeleteConfirmDialog = false;
     private int orderIdToDelete = 0;
@@ -679,7 +682,7 @@
             availableServices = parameters?.ServiceDtos ?? new List<ServiceDto>();
 
             // Load drivers and dispetchers if user is admin
-            if (IsAdmin())
+            if (IsFilterEnabled())
             {
                 availableDrivers = await ApiService.GetDrivers();
                 availableDispetchers = await ApiService.GetDispetchers();
@@ -705,6 +708,11 @@
     private bool IsAdmin()
     {
         return currentUser?.Role?.Name?.ToLower() == "admin";
+    }
+
+    private bool IsFilterEnabled()
+    {
+        return IsAdmin() || currentUser?.Role?.Name?.ToLower() == "бухгалтер";
     }
 
     private string GetUserRole()
@@ -733,7 +741,21 @@
                 selectedDispetcherIds = new List<int> { currentUser.Id };
                 selectedDriverIds = new List<int>();
             }
+            else if(roleName == "бухгалтер")
+            {
+                selectedDriverIds = availableDrivers.Select(c=>c.Id).ToList();
+                selectedDispetcherIds = availableDispetchers.Select(c => c.Id).ToList();
+            }
         }
+    }
+
+    private bool IsDeleteEnable()
+    {
+        if (currentUser == null) return false;
+
+        var roleName = GetUserRole();
+
+        return IsAdmin() || roleName == "диспетчер";
     }
 
     private async Task ApplyFilters()
@@ -871,7 +893,7 @@
                selectedServiceIds.Any();
         
         // Для админов также проверяем фильтры по сотрудникам
-        if (IsAdmin())
+        if (IsFilterEnabled())
         {
             return hasBasicFilters || selectedDriverIds.Any() || selectedDispetcherIds.Any();
         }

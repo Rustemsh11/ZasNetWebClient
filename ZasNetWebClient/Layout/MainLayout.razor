@@ -1,59 +1,109 @@
-﻿@using ZasNetWebClient.Services
+﻿@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorageService
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider _authenticationStateProvider
 @inherits LayoutComponentBase
 
 <AuthorizeView>
-    <div class="app-container">
-        <nav class="navbar">
-            <div class="navbar-brand">
-                <h2>ZasNet</h2>
-            </div>
+    <Authorized Context="authContext">
+        <div class="app-container">
+            <nav class="navbar">
+                <div class="navbar-brand">
+                    <h2>ZasNet</h2>
+                </div>
 
-            <button class="navbar-toggle" @onclick="ToggleMobileMenu" aria-label="Открыть меню">
-                <span class="hamburger-icon"></span>
-                <span class="hamburger-icon"></span>
-                <span class="hamburger-icon"></span>
-            </button>
+                <button class="navbar-toggle" @onclick="ToggleMobileMenu" aria-label="Открыть меню">
+                    <span class="hamburger-icon"></span>
+                    <span class="hamburger-icon"></span>
+                    <span class="hamburger-icon"></span>
+                </button>
 
-            <div class="navbar-menu @(isMobileMenuOpen ? "active" : "")">
-                <a href="/" class="nav-link @GetActiveClass("/")" @onclick="CloseMobileMenu">Все заявки</a>
-                <a href="/my-orders" class="nav-link @GetActiveClass("/my-orders")" @onclick="CloseMobileMenu">Мои заявки</a>
-                <a href="/employeeEarnings" class="nav-link @GetActiveClass("/employeeEarnings")" @onclick="CloseMobileMenu">Заработки сотрудников</a>
-                <a href="/dispetcherEarnings" class="nav-link @GetActiveClass("/dispetcherEarnings")" @onclick="CloseMobileMenu">Заработки диспетчеров</a>
-                <a href="/structure" class="nav-link @GetActiveClass("/structure")" @onclick="CloseMobileMenu">Структура</a>
-                <a href="/earningAnalisys" class="nav-link @GetActiveClass("/earningAnalisys")" @onclick="CloseMobileMenu">Аналитика</a>
-                <a href="/lockedOrders" class="nav-link @GetActiveClass("/lockedOrders")" @onclick="CloseMobileMenu">Заблокированны заявки</a>
-            </div>
+                <div class="navbar-menu @(isMobileMenuOpen ? "active" : "")">
+                    <a href="/" class="nav-link @GetActiveClass("/")" @onclick="CloseMobileMenu">Все заявки</a>
+                    
+                    @* Мои заявки - доступно admin, Диспетчер, Водитель *@
+                    @if (IsPageAccessibleForRole("/my-orders"))
+                    {
+                        @if (IsAccountant())
+                        {
+                            <a href="/my-orders" class="nav-link @GetActiveClass("/my-orders")" @onclick="CloseMobileMenu">Заявки c фильтром</a>
+                        }
+                        else
+                        {
+                            <a href="/my-orders" class="nav-link @GetActiveClass("/my-orders")" @onclick="CloseMobileMenu">Мои заявки</a>
+                        }
+                    }
+                    
+                    @* Заработки сотрудников - доступно admin, Водитель *@
+                    @if (IsPageAccessibleForRole("/employeeEarnings"))
+                    {
+                        <a href="/employeeEarnings" class="nav-link @GetActiveClass("/employeeEarnings")" @onclick="CloseMobileMenu">Заработки сотрудников</a>
+                    }
+                    
+                    @* Заработки диспетчеров - доступно admin, Диспетчер *@
+                    @if (IsPageAccessibleForRole("/dispetcherEarnings"))
+                    {
+                        <a href="/dispetcherEarnings" class="nav-link @GetActiveClass("/dispetcherEarnings")" @onclick="CloseMobileMenu">Заработки диспетчеров</a>
+                    }
+                    
+                    @* Структура - доступно admin, Диспетчер *@
+                    @if (IsPageAccessibleForRole("/structure"))
+                    {
+                        <a href="/structure" class="nav-link @GetActiveClass("/structure")" @onclick="CloseMobileMenu">Структура</a>
+                    }
+                    
+                    @* Аналитика - доступно только admin *@
+                    @if (IsPageAccessibleForRole("/earningAnalisys"))
+                    {
+                        <a href="/earningAnalisys" class="nav-link @GetActiveClass("/earningAnalisys")" @onclick="CloseMobileMenu">Аналитика</a>
+                    }
+                    
+                    @* Заблокированные заявки - доступно admin, Диспетчер *@
+                    @if (IsPageAccessibleForRole("/lockedOrders"))
+                    {
+                        <a href="/lockedOrders" class="nav-link @GetActiveClass("/lockedOrders")" @onclick="CloseMobileMenu">Заблокированны заявки</a>
+                    }
+                </div>
 
-            <div class="navbar-user">
-                <span class="user-info">@CurrentUser</span>
-                <button class="btn-logout" @onclick="Logout">Выйти</button>
-            </div>
-        </nav>
+                <div class="navbar-user">
+                    <span class="user-info">@CurrentUser?.Name</span>
+                    <button class="btn-logout" @onclick="Logout">Выйти</button>
+                </div>
+            </nav>
 
-        @if (isMobileMenuOpen)
-        {
-            <div class="mobile-menu-overlay" @onclick="CloseMobileMenu"></div>
-        }
+            @if (isMobileMenuOpen)
+            {
+                <div class="mobile-menu-overlay" @onclick="CloseMobileMenu"></div>
+            }
 
-        <main class="main-content">
-            @Body
-        </main>
-    </div>
+            <main class="main-content">
+                @Body
+            </main>
+        </div>
+    </Authorized>
 </AuthorizeView>
 
 @code {
     [CascadingParameter]
     public Task<AuthenticationState>? AuthenticationState { get; set; }
-    public string CurrentUser{ get; set; }
+    public EmployeeDto? CurrentUser;
     private bool isMobileMenuOpen = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        CurrentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+    }
 
     protected override async Task OnParametersSetAsync()
     {
+        if (AuthenticationState == null)
+            return;
+
         var state = await AuthenticationState;
-        if (state != null)
+        if (state?.User?.Identity != null)
         {
             if (!state.User.Identity.IsAuthenticated)
             {
@@ -61,7 +111,7 @@
             }
             else
             {
-                CurrentUser = state.User.Identity.Name;
+                CurrentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
             }
         }
     }
@@ -84,5 +134,57 @@
     private void CloseMobileMenu()
     {
         isMobileMenuOpen = false;
+    }
+
+    private bool IsAccountant() => CurrentUser.Role.Name.Equals("Бухгалтер");
+
+    private bool IsPageAccessibleForRole(string path)
+    {
+        if (CurrentUser == null)
+            return false;
+
+        var role = CurrentUser.Role.Name;
+
+        // Если роль не определена, возвращаем false
+        if (string.IsNullOrEmpty(role))
+            return false;
+
+        // admin имеет доступ ко всем страницам
+        if (role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Для других ролей проверяем доступ к конкретным страницам
+        switch (path)
+        {
+            case "/my-orders":
+                // Доступно: admin, Диспетчер, Водитель
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) ||
+                       role.Equals("Водитель", StringComparison.OrdinalIgnoreCase) ||
+                       role.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+            
+            case "/employeeEarnings":
+                // Доступно: admin, Водитель
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) ||
+                        role.Equals("Водитель", StringComparison.OrdinalIgnoreCase);
+            
+            case "/dispetcherEarnings":
+                // Доступно: admin, Диспетчер
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+            
+            case "/structure":
+                // Доступно: admin, Диспетчер
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+            
+            case "/earningAnalisys":
+                // Доступно: только admin (уже обработано выше)
+                return false;
+            
+            case "/lockedOrders":
+                // Доступно: admin, Диспетчер
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+            
+            default:
+                return false;
+        }
     }
 }

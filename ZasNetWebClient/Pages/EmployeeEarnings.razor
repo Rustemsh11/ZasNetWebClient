@@ -94,6 +94,8 @@
             </div>
 
             <!-- Employee filter -->
+            @if (ShowEmployeeFilter)
+            {
             <div class="filter-group filter-group-employees">
                 <label for="employee-dropdown">Сотрудники</label>
                 <div class="custom-dropdown">
@@ -164,6 +166,7 @@
                     }
                 </div>
             </div>
+            }
 
             <!-- Service filter -->
             <div class="filter-group filter-group-services">
@@ -645,10 +648,42 @@
     private bool isServicesDropdownOpen = false;
     private string employeeSearchTerm = string.Empty;
     private string serviceSearchTerm = string.Empty;
+    
+    // Role-based access
+    private bool ShowEmployeeFilter = true;
+    private EmployeeDto? currentUser = null;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadUserAndRole();
         await LoadData();
+    }
+
+    private async Task LoadUserAndRole()
+    {
+        try
+        {
+            // Получаем текущего пользователя из localStorage
+            currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+            
+            var role = currentUser.Role.Name;
+            
+            // Для роли "Водитель" скрываем фильтр и устанавливаем текущего пользователя по умолчанию
+            if (role != null && role.Equals("Водитель", StringComparison.OrdinalIgnoreCase) && currentUser != null)
+            {
+                ShowEmployeeFilter = false;
+                selectedEmployeeIds.Add(currentUser.Id);
+            }
+            else
+            {
+                ShowEmployeeFilter = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при загрузке пользователя: {ex.Message}");
+            ShowEmployeeFilter = true;
+        }
     }
 
     private async Task LoadData()
