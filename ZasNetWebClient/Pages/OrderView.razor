@@ -25,22 +25,22 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="client">Название клиента</label>
-                        <InputText id="client" @bind-Value="orderModel.Client" class="form-control" placeholder="введите клиента" />
+                        <InputText id="client" @bind-Value="orderModel.Client" class="form-control" placeholder="введите клиента" disabled="@isDriverOrAccountantRole" />
                         <ValidationMessage For="@(() => orderModel.Client)" />
                     </div>
                     <div class="form-group">
                         <label for="date">Дата начало</label>
-                        <input type="datetime-local" id="date" @bind="orderModel.DateStart" class="form-control" />
+                        <input type="datetime-local" id="date" @bind="orderModel.DateStart" class="form-control" disabled="@isDriverOrAccountantRole" />
                         <ValidationMessage For="@(() => orderModel.DateStart)" />
                     </div>
                     <div class="form-group">
                         <label for="date">Дата окончания</label>
-                        <input type="datetime-local" id="date" @bind="orderModel.DateEnd" class="form-control" />
+                        <input type="datetime-local" id="date" @bind="orderModel.DateEnd" class="form-control" disabled="@isDriverOrAccountantRole" />
                     <ValidationMessage For="@(() => orderModel.DateEnd)" />
                     </div>
                     <div class="form-group">
                         <label for="payment">Вид оплаты</label>
-                        <InputSelect id="payment" @bind-Value="orderModel.PaymentType" class="form-control">
+                        <InputSelect id="payment" @bind-Value="orderModel.PaymentType" class="form-control" disabled="@isDriverOrAccountantRole">
                         <option value="@PaymentType.None"></option>
                         <option value="@PaymentType.Cash">Наличные</option>
                         <option value="@PaymentType.Electronic">СБП</option>
@@ -54,30 +54,30 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="city">Город</label>
-                        <InputText id="city" @bind-Value="orderModel.AddressCity" class="form-control" placeholder="введите город"/>
+                        <InputText id="city" @bind-Value="orderModel.AddressCity" class="form-control" placeholder="введите город" disabled="@isDriverOrAccountantRole"/>
                         <ValidationMessage For="@(() => orderModel.AddressCity)" />
                     </div>
                     <div class="form-group">
                         <label for="street">Улица</label>
-                        <InputText id="street" @bind-Value="orderModel.AddressStreet" class="form-control" placeholder="введите улицу" />
+                        <InputText id="street" @bind-Value="orderModel.AddressStreet" class="form-control" placeholder="введите улицу" disabled="@isDriverOrAccountantRole" />
                         <ValidationMessage For="@(() => orderModel.AddressStreet)" />
                     </div>
                     <div class="form-group">
                         <label for="number">Номер дома</label>
-                        <InputText id="number" @bind-Value="orderModel.AddressNumber" class="form-control" placeholder="введите номер дома" />
+                        <InputText id="number" @bind-Value="orderModel.AddressNumber" class="form-control" placeholder="введите номер дома" disabled="@isDriverOrAccountantRole" />
                         <ValidationMessage For="@(() => orderModel.AddressNumber)" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="description">Доп. информация</label>
-                    <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" placeholder="введите доп. информацию" rows="1" />
+                    <InputTextArea id="description" @bind-Value="orderModel.Description" class="form-control" placeholder="введите доп. информацию" rows="1" disabled="@isDriverOrAccountantRole" />
                 </div>
                 <div class="form-row" style="margin-top: 15px;">
                     @if (orderModel.PaymentType == PaymentType.Cash)
                     {
                         <div class="form-group">
                             <div class="checkbox-wrapper">
-                                <InputCheckbox id="isCashWasTransferred" @bind-Value="orderModel.IsCashWasTransferred" class="form-check-input" />
+                                <InputCheckbox id="isCashWasTransferred" @bind-Value="orderModel.IsCashWasTransferred" class="form-check-input" disabled="@isDriverOrAccountantRole" />
                                 <label class="form-check-label" for="isCashWasTransferred">Наличные переведены</label>
                             </div>
                         </div>
@@ -103,65 +103,68 @@
                     </div>
                 </div>
                 @* <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;"> *@
-                <div style="display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                        <InputCheckbox id="urgentInvoice"
-                                       class="form-check-input"
-                                       @bind-Value="isNeedInvoiceArgently"
-                                       disabled="@(!IsOrderFinished)" />
-                        <label class="form-check-label" for="urgentInvoice" style="margin: 0; white-space: nowrap;">Срочный счет</label>
-                    </div>
-                    <button type="button"
-                        class="btn-primary btn-compact"
-                            style="flex-shrink: 0; white-space: nowrap;"
-                            @onclick="SendToAccountant"
-                            disabled="@(!IsOrderFinished)">
-                            <text>Отправить бухгалтеру</text>
-                    </button>
-                    <button type="button"
-                        class="btn-primary btn-compact"
-                            style="flex-shrink: 0; white-space: nowrap;"
-                        @onclick="SendedToClient"
-                            disabled="@(orderModel.Status != OrderStatus.SendingPayment)">
-                            <text>Сч. отправлен клиенту</text>
-                    </button>
-                    <button type="button"
-                        class="btn-primary btn-compact"
-                            style="flex-shrink: 0; white-space: nowrap;"
-                            @onclick="CloseOrder"
-                            disabled="@(!CanCloseOrder)">
-                            <text>Закрыть заявку</text>
-                    </button>
-                    <button type="button"
-                        class="btn-danger btn-compact"
-                            style="flex-shrink: 0; white-space: nowrap;"
-                            @onclick="ShowDeleteConfirmation"
-                            disabled="@(!IsEditMode)">
-                            <text>🗑️ Удалить</text>
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
-                        <label for="statusSelect" style="margin: 0; white-space: nowrap; flex-shrink: 0;">Изменить статус:</label>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
-                            <InputSelect id="statusSelect" @bind-Value="selectedStatus" class="form-control" style="min-width: 150px; max-width: 220px; flex: 1 1 auto; padding: 4px 8px; font-size: 13px; height: auto;">
-                                <option value="@OrderStatus.Created">Создан</option>
-                                <option value="@OrderStatus.ApprovedWithEmployers">Подтвержден сотрудниками</option>
-                                <option value="@OrderStatus.Processing">В работе</option>
-                                <option value="@OrderStatus.Finished">Завершен</option>
-                                <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
-                                <option value="@OrderStatus.SendingPayment">Ожидание отправки счета</option>
-                                <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
-                                <option value="@OrderStatus.Closed">Закрыт</option>
-                            </InputSelect>
-                            <button type="button"
-                                    class="btn-primary btn-compact"
-                                    style="flex-shrink: 0; white-space: nowrap; padding: 4px 10px; font-size: 13px;"
-                                    @onclick="ChangeStatus"
-                                    disabled="@(!IsEditMode)">
-                                <text>Изменить статус</text>
-                            </button>
+                @if (!isDriverOrAccountantRole)
+                {
+                    <div style="display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <InputCheckbox id="urgentInvoice"
+                                           class="form-check-input"
+                                           @bind-Value="isNeedInvoiceArgently"
+                                           disabled="@(!IsOrderFinished)" />
+                            <label class="form-check-label" for="urgentInvoice" style="margin: 0; white-space: nowrap;">Срочный счет</label>
+                        </div>
+                        <button type="button"
+                            class="btn-primary btn-compact"
+                                style="flex-shrink: 0; white-space: nowrap;"
+                                @onclick="SendToAccountant"
+                                disabled="@(!IsOrderFinished)">
+                                <text>Отправить бухгалтеру</text>
+                        </button>
+                        <button type="button"
+                            class="btn-primary btn-compact"
+                                style="flex-shrink: 0; white-space: nowrap;"
+                            @onclick="SendedToClient"
+                                disabled="@(orderModel.Status != OrderStatus.SendingPayment)">
+                                <text>Сч. отправлен клиенту</text>
+                        </button>
+                        <button type="button"
+                            class="btn-primary btn-compact"
+                                style="flex-shrink: 0; white-space: nowrap;"
+                                @onclick="CloseOrder"
+                                disabled="@(!CanCloseOrder)">
+                                <text>Закрыть заявку</text>
+                        </button>
+                        <button type="button"
+                            class="btn-danger btn-compact"
+                                style="flex-shrink: 0; white-space: nowrap;"
+                                @onclick="ShowDeleteConfirmation"
+                                disabled="@(!IsEditMode)">
+                                <text>🗑️ Удалить</text>
+                        </button>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                            <label for="statusSelect" style="margin: 0; white-space: nowrap; flex-shrink: 0;">Изменить статус:</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                                <InputSelect id="statusSelect" @bind-Value="selectedStatus" class="form-control" style="min-width: 150px; max-width: 220px; flex: 1 1 auto; padding: 4px 8px; font-size: 13px; height: auto;">
+                                    <option value="@OrderStatus.Created">Создан</option>
+                                    <option value="@OrderStatus.ApprovedWithEmployers">Подтвержден сотрудниками</option>
+                                    <option value="@OrderStatus.Processing">В работе</option>
+                                    <option value="@OrderStatus.Finished">Завершен</option>
+                                    <option value="@OrderStatus.CreatingInvoice">Ожидание счета</option>
+                                    <option value="@OrderStatus.SendingPayment">Ожидание отправки счета</option>
+                                    <option value="@OrderStatus.AwaitingPayment">Ожидание оплаты</option>
+                                    <option value="@OrderStatus.Closed">Закрыт</option>
+                                </InputSelect>
+                                <button type="button"
+                                        class="btn-primary btn-compact"
+                                        style="flex-shrink: 0; white-space: nowrap; padding: 4px 10px; font-size: 13px;"
+                                        @onclick="ChangeStatus"
+                                        disabled="@(!IsEditMode)">
+                                    <text>Изменить статус</text>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
 
             <div class="form-section">
@@ -276,7 +279,7 @@
                                             </button>
                                         </td>
                                         <td style="text-align: center;">
-                                            <InputCheckbox id="isAlmazOrder" @bind-Value="service.IsAlmazService" class="form-check-input" />
+                                            <InputCheckbox id="isAlmazOrder" @bind-Value="service.IsAlmazService" class="form-check-input" disabled="@isDriverOrAccountantRole" />
                                         </td>
                                         <td>
                                             <button type="button" class="btn-remove-compact" @onclick="() => RemoveService(service)">
@@ -302,12 +305,21 @@
             <div class="form-row" style="margin-bottom: 10px;">
                 <div class="form-group" style="flex: 0 0 auto; margin-right: 10px;">
                     <label for="documentType">Тип документа</label>
-                    <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control">
-                        <option value="@DocumentType.None">Выберите тип</option>
-                        <option value="@DocumentType.Invoice">Счет</option>
-                        <option value="@DocumentType.ActOfCompletedWorks">Акт выполненных работ</option>
-                        <option value="@DocumentType.WorkReport">Отчет о работе</option>
-                    </InputSelect>
+                    @if (isDriverOrAccountantRole)
+                    {
+                        <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control" disabled>
+                            <option value="@DocumentType.WorkReport">Отчет о работе</option>
+                        </InputSelect>
+                    }
+                    else
+                    {
+                        <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control">
+                            <option value="@DocumentType.None">Выберите тип</option>
+                            <option value="@DocumentType.Invoice">Счет</option>
+                            <option value="@DocumentType.ActOfCompletedWorks">Акт выполненных работ</option>
+                            <option value="@DocumentType.WorkReport">Отчет о работе</option>
+                        </InputSelect>
+                    }
                 </div>
                 <div class="form-group" style="flex: 0 0 auto; align-self: flex-end;">
                     <label for="file-input" class="btn-primary" style="cursor: pointer; display: inline-block; margin: 0;">
@@ -365,9 +377,12 @@
                                     }
                                 </td>
                                 <td>
-                                    <button type="button" class="btn-remove-compact" @onclick="() => RemoveDocument(doc)">
-                                        &times;
-                                    </button>
+                                    @if (!isDriverOrAccountantRole || doc.DocumentType == DocumentType.WorkReport)
+                                    {
+                                        <button type="button" class="btn-remove-compact" @onclick="() => RemoveDocument(doc)">
+                                            &times;
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -464,9 +479,18 @@
     private int totalFilesCount = 0;
     private bool isNeedInvoiceArgently = false;
     private OrderStatus selectedStatus = OrderStatus.Created;
+    private EmployeeDto? currentUser;
+    private bool isDriverOrAccountantRole = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Загружаем текущего пользователя
+        currentUser = await localStorageService.GetItemAsync<EmployeeDto>("user");
+        if (currentUser != null && currentUser.Role != null)
+        {
+            isDriverOrAccountantRole = currentUser.Role.Name.Equals("Водитель", StringComparison.OrdinalIgnoreCase) || currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+        }
+
         if (IsEditMode)
         {
             await TryLockAsync();
@@ -476,14 +500,19 @@
         }
         else
         {
-            var user = await localStorageService.GetItemAsync<EmployeeDto>("user");
-            if (user != null)
+            if (currentUser != null)
             {
-                orderModel.CreatedUser = user;
+                orderModel.CreatedUser = currentUser;
             }
         }
 
         await LoadReferenceData();
+        
+        // Для роли Водитель устанавливаем тип документа по умолчанию
+        if (isDriverOrAccountantRole)
+        {
+            selectedDocumentType = DocumentType.WorkReport;
+        }
     }
 
     private async Task TryLockAsync()
@@ -551,6 +580,14 @@
             if (selectedDocumentType == DocumentType.None)
             {
                 errorMessage = "Пожалуйста, выберите тип документа перед загрузкой.";
+                NotificationService.ShowError(errorMessage);
+                return;
+            }
+
+            // Для роли Водитель разрешен только тип "Отчет о работе"
+            if (isDriverOrAccountantRole && selectedDocumentType != DocumentType.WorkReport)
+            {
+                errorMessage = "Для вашей роли доступна загрузка только документов типа 'Отчет о работе'.";
                 NotificationService.ShowError(errorMessage);
                 return;
             }
@@ -677,9 +714,8 @@
         RecalculateOrderTotal();
     }
 
-    private async Task RemoveDocument(DocumentDto documentDto)
+    private void RemoveDocument(DocumentDto documentDto)
     {
-        await ApiService.DeleteDocument(documentDto.Id);
         orderModel.Documents.Remove(documentDto);
     }
 

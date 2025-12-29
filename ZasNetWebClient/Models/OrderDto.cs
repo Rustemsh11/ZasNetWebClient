@@ -109,7 +109,6 @@ public class CreateOrderCommand
 public class SaveOrderCommand
 {
     public OrderDto OrderDto { get; set; } = new();
-    public int UserId;
 }
 
 public class ServiceDto

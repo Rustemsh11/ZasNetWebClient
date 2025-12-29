@@ -449,9 +449,13 @@
                     </div>
 
                     <div class="earning-card-footer">
-                        <button class="btn-edit-card" @onclick="() => OpenEditModal(earning)" @onclick:stopPropagation="true" title="Редактировать">
+                        @if (IsEditableEarningRole)
+                        {
+                                
+                            <button class="btn-edit-card" @onclick="() => OpenEditModal(earning)" @onclick:stopPropagation="true" title="Редактировать">
                             ✏️
-                        </button>
+                            </button>
+                        }
                         <button class="btn-open-order" @onclick="() => OpenOrder(earning.OrderId)">
                             Открыть заявку
                         </button>
@@ -508,12 +512,15 @@
                                 </td>
                                 <td class="action-cell">
                                     <div class="action-buttons">
-                                        <button class="btn-icon btn-edit" 
-                                                @onclick="() => OpenEditModal(earning)" 
-                                                @onclick:stopPropagation="true"
-                                                title="Редактировать">
-                                            ✏️
-                                        </button>
+                                        @if (IsEditableEarningRole)
+                                        {
+                                            <button class="btn-icon btn-edit" 
+                                                    @onclick="() => OpenEditModal(earning)" 
+                                                    @onclick:stopPropagation="true"
+                                                    title="Редактировать">
+                                                ✏️
+                                            </button>
+                                        }
                                         <button class="btn-primary btn-compact" @onclick="() => OpenOrder(earning.OrderId)">
                                             Открыть
                                         </button>
@@ -648,9 +655,10 @@
     private bool isServicesDropdownOpen = false;
     private string employeeSearchTerm = string.Empty;
     private string serviceSearchTerm = string.Empty;
-    
+
     // Role-based access
     private bool ShowEmployeeFilter = true;
+    private bool IsEditableEarningRole = false;
     private EmployeeDto? currentUser = null;
 
     protected override async Task OnInitializedAsync()
@@ -665,17 +673,19 @@
         {
             // Получаем текущего пользователя из localStorage
             currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
-            
+
             var role = currentUser.Role.Name;
-            
+
             // Для роли "Водитель" скрываем фильтр и устанавливаем текущего пользователя по умолчанию
             if (role != null && role.Equals("Водитель", StringComparison.OrdinalIgnoreCase) && currentUser != null)
             {
                 ShowEmployeeFilter = false;
+                IsEditableEarningRole = false;
                 selectedEmployeeIds.Add(currentUser.Id);
             }
             else
             {
+                IsEditableEarningRole = true;
                 ShowEmployeeFilter = true;
             }
         }
