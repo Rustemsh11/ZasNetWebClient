@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: zasnet-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ZasNet}
+      POSTGRES_USER: ${POSTGRES_USER:-zasnet_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - zasnet-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zasnet_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./ZasNet
+      dockerfile: ZasNet.WebApi/Dockerfile
+    container_name: zasnet-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${API_ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__sqlConnection=host=postgres;Port=5432;Database=${POSTGRES_DB:-ZasNet};Username=${POSTGRES_USER:-zasnet_user};Password=${POSTGRES_PASSWORD:-change_me}
+      - AuthSettings__secretKey=${JWT_SECRET_KEY:-change_me_to_secure_key_min_32_chars}
+      - TelegramSettings__BotToken=${TELEGRAM_BOT_TOKEN:-}
+      - TelegramSettings__ChannelId=${TELEGRAM_CHANNEL_ID:-}
+      - TelegramSettings__WebhookSecret=${TELEGRAM_WEBHOOK_SECRET:-}
+      - TelegramSettings__IsEnabled=${TELEGRAM_IS_ENABLED:-false}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zasnet-network
+    restart: unless-stopped
+    volumes:
+      - ./ZasNet/ZasNet.WebApi/internal_logs:/app/internal_logs
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  zasnet-network:
+    driver: bridge
+
