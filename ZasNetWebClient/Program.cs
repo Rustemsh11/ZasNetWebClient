@@ -15,7 +15,8 @@ builder.Services.AddLocalization();
 
 // HttpClient is Singleton to allow injection into Singleton services
 // In Blazor WebAssembly, this is safe as each user has their own isolated app instance
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7203") });
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7203";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<IdentityAuthenticationStateProvider>();
