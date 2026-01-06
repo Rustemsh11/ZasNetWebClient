@@ -1769,4 +1769,92 @@ public class ApiService
             return false;
         }
     }
+
+    // EarningWithoutProcent operations
+    public async Task<List<EarningWithoutProcentDto>> GetEarningsWithoutProcent(GetEarningWithoutProcentByFilterRequest request)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Построение URL с query параметрами
+            var queryParams = new List<string>();
+
+            if (request.DateFrom.HasValue)
+            {
+                queryParams.Add($"DateFrom={request.DateFrom.Value:O}");
+            }
+
+            if (request.DateTo.HasValue)
+            {
+                queryParams.Add($"DateTo={request.DateTo.Value:O}");
+            }
+
+            if (request.EmployeeIds != null && request.EmployeeIds.Any())
+            {
+                foreach (var employeeId in request.EmployeeIds)
+                {
+                    queryParams.Add($"EmployeeIds={employeeId}");
+                }
+            }
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"api/v1/EarningWithoutProcent/GetEarnings{queryString}";
+
+            var earnings = await _httpClient.GetFromJsonAsync<List<EarningWithoutProcentDto>>(url);
+            return earnings ?? new List<EarningWithoutProcentDto>();
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при загрузке зарплат без заявки: {ex.Message}");
+            return new List<EarningWithoutProcentDto>();
+        }
+    }
+
+    public async Task<bool> CreateEarningWithoutProcent(CreateEarningWithoutProcentCommand command)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/EarningWithoutProcent/CreateEarning", command);
+            return await CheckAndHandleErrorAsync(response, "Ошибка при создании зарплаты без заявки");
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при создании зарплаты без заявки: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateEarningWithoutProcent(UpdateEarningWithoutProcentCommand command)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/EarningWithoutProcent/UpdateEarning", command);
+            return await CheckAndHandleErrorAsync(response, "Ошибка при обновлении зарплаты без заявки");
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при обновлении зарплаты без заявки: {ex.Message}");
+            return false;
+        }
+    }
 }

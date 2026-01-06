@@ -55,6 +55,12 @@
                         <a href="/structure" class="nav-link @GetActiveClass("/structure")" @onclick="CloseMobileMenu">Структура</a>
                     }
                     
+                    @* Зарплата без заявки - доступно admin, Диспетчер *@
+                    @if (IsPageAccessibleForRole("/earning-without-procent"))
+                    {
+                        <a href="/earning-without-procent" class="nav-link @GetActiveClass("/earning-without-procent")" @onclick="CloseMobileMenu">Зарплата без заявки</a>
+                    }
+                    
                     @* Аналитика - доступно только admin *@
                     @if (IsPageAccessibleForRole("/earningAnalisys"))
                     {
@@ -172,6 +178,10 @@
                 return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
             
             case "/structure":
+                // Доступно: admin, Диспетчер
+                return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+            
+            case "/earning-without-procent":
                 // Доступно: admin, Диспетчер
                 return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
             
