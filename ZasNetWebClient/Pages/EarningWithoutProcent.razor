@@ -1,4 +1,3 @@
-@page "/earning-without-procent"
 @using ZasNetWebClient.Models
 @using ZasNetWebClient.Services
 @using Microsoft.JSInterop
@@ -6,170 +5,322 @@
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
 
-<div class="earning-container">
+<div class="employee-earnings-container" @onclick="CloseAllDropdowns">
     <div class="page-header">
-        <h2 class="page-title">Зарплата без заявки</h2>
-        <button class="btn btn-primary" @onclick="OpenCreateDialog">
-            <span class="btn-icon">+</span>
-            Добавить
-        </button>
+        <div class="header-content">
+            <div>
+                <h1>Зарплата без заявки</h1>
+                <p>Управление зарплатами без привязки к заявкам</p>
+            </div>
+            <button class="btn-primary" @onclick="OpenCreateDialog">
+                Добавить
+            </button>
+        </div>
     </div>
 
-    <div class="filters-container">
-        <div class="filters-row">
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filters-header">
+            <h3>Фильтры</h3>
+            <button class="btn-secondary btn-compact" @onclick="async () => await ClearFilters()">
+                Сбросить все
+            </button>
+        </div>
+        
+        <div class="filters-grid">
+            <!-- Date range filter -->
             <div class="filter-group">
-                <label>Дата от:</label>
-                <input type="date" class="form-control" 
+                <label for="date-from">Дата от</label>
+                <input type="date" 
+                       id="date-from"
+                       class="form-control" 
                        value="@(filterDateFrom?.ToString("yyyy-MM-dd"))"
-                       @onchange="(e) => filterDateFrom = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!)" />
+                       @onchange="async (e) => { filterDateFrom = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!); await ApplyFilters(); }" />
             </div>
+
             <div class="filter-group">
-                <label>Дата до:</label>
-                <input type="date" class="form-control" 
+                <label for="date-to">Дата до</label>
+                <input type="date" 
+                       id="date-to"
+                       class="form-control" 
                        value="@(filterDateTo?.ToString("yyyy-MM-dd"))"
-                       @onchange="(e) => filterDateTo = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!)" />
+                       @onchange="async (e) => { filterDateTo = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!); await ApplyFilters(); }" />
             </div>
-            <div class="filter-group filter-employees">
-                <label>Сотрудники:</label>
-                <div class="multi-select-container">
-                    <button class="multi-select-button" @onclick="ToggleEmployeeDropdown">
-                        @if (selectedEmployeeIds.Any())
-                        {
-                            <span>Выбрано: @selectedEmployeeIds.Count</span>
-                        }
-                        else
-                        {
-                            <span>Все сотрудники</span>
-                        }
+
+            <!-- Employee filter -->
+            <div class="filter-group filter-group-employees">
+                <label for="employee-dropdown">Сотрудники</label>
+                <div class="custom-dropdown">
+                    <button type="button" 
+                            class="dropdown-toggle form-control" 
+                            @onclick="ToggleEmployeeDropdown"
+                            @onclick:stopPropagation="true">
+                        <span class="dropdown-text">
+                            @if (selectedEmployeeIds.Any())
+                            {
+                                <text>Выбрано: @selectedEmployeeIds.Count</text>
+                            }
+                            else
+                            {
+                                <text>Все сотрудники</text>
+                            }
+                        </span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
+                    
                     @if (showEmployeeDropdown)
                     {
-                        <div class="multi-select-dropdown">
-                            <div class="dropdown-item" @onclick="() => ClearEmployeeFilter()">
-                                <input type="checkbox" checked="@(!selectedEmployeeIds.Any())" />
-                                <span>Все сотрудники</span>
-                            </div>
-                            @foreach (var employee in allEmployees)
+                        <div class="dropdown-menu" @onclick:stopPropagation="true">
+                            @if (allEmployees.Any())
                             {
-                                <div class="dropdown-item" @onclick="() => ToggleEmployeeSelection(employee.Id)">
-                                    <input type="checkbox" checked="@selectedEmployeeIds.Contains(employee.Id)" />
-                                    <span>@employee.Name</span>
+                                <div class="dropdown-search">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           placeholder="Поиск сотрудника..."
+                                           value="@employeeSearchTerm"
+                                           @oninput="(e) => employeeSearchTerm = e.Value?.ToString() ?? string.Empty"
+                                           @onclick:stopPropagation="true" />
+                                </div>
+                                <div class="dropdown-items">
+                                    @foreach (var employee in GetFilteredEmployees())
+                                    {
+                                        <label class="dropdown-item-checkbox" @onclick:stopPropagation="true">
+                                            <input type="checkbox" 
+                                                   checked="@selectedEmployeeIds.Contains(employee.Id)"
+                                                   @onchange="(e) => ToggleEmployeeSelection(employee.Id, ((ChangeEventArgs)e).Value)"
+                                                   @onclick:stopPropagation="true" />
+                                            <span>@employee.Name</span>
+                                        </label>
+                                    }
+                                </div>
+                                <div class="dropdown-footer">
+                                    <button type="button" 
+                                            class="btn-secondary btn-compact" 
+                                            @onclick="ClearEmployeeFilter"
+                                            @onclick:stopPropagation="true">
+                                        Очистить всё
+                                    </button>
+                                    <button type="button" 
+                                            class="btn-primary btn-compact" 
+                                            @onclick="ApplyEmployeesFilter"
+                                            @onclick:stopPropagation="true">
+                                        Применить
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="dropdown-empty">
+                                    <span>Нет доступных сотрудников</span>
                                 </div>
                             }
                         </div>
                     }
                 </div>
             </div>
-            <div class="filter-actions">
-                <button class="btn btn-primary" @onclick="ApplyFilters">Применить</button>
-                <button class="btn btn-secondary" @onclick="ClearFilters">Сбросить</button>
-            </div>
         </div>
+
+        <!-- Active filters display -->
+        @if (HasActiveFilters())
+        {
+            <div class="active-filters">
+                <span class="active-filters-label">Активные фильтры:</span>
+                <div class="active-filters-list">
+                    @if (filterDateFrom.HasValue)
+                    {
+                        <span class="filter-tag">
+                            Дата от: @filterDateFrom.Value.ToString("dd.MM.yyyy")
+                            <button @onclick="async () => { filterDateFrom = null; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (filterDateTo.HasValue)
+                    {
+                        <span class="filter-tag">
+                            Дата до: @filterDateTo.Value.ToString("dd.MM.yyyy")
+                            <button @onclick="async () => { filterDateTo = null; await ApplyFilters(); }">&times;</button>
+                        </span>
+                    }
+                    @if (selectedEmployeeIds.Any())
+                    {
+                        @foreach (var employeeId in selectedEmployeeIds)
+                        {
+                            var employeeName = allEmployees.FirstOrDefault(e => e.Id == employeeId)?.Name ?? "";
+                            <span class="filter-tag">
+                                Сотрудник: @employeeName
+                                <button @onclick="async () => await RemoveEmployee(employeeId)">&times;</button>
+                            </span>
+                        }
+                    }
+                </div>
+            </div>
+        }
     </div>
 
     @if (isLoading)
     {
-        <div class="loading-container">
+        <div class="loading">
             <div class="spinner"></div>
-            <p>Загрузка...</p>
+            <p>Загрузка данных...</p>
+        </div>
+    }
+    else if (earnings.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">💰</div>
+            <h3>Данные не найдены</h3>
+            <p>
+                @if (HasActiveFilters())
+                {
+                    <text>Попробуйте изменить параметры фильтрации</text>
+                }
+                else
+                {
+                    <text>Нет записей о зарплате без заявок</text>
+                }
+            </p>
+            <button class="btn-primary" @onclick="OpenCreateDialog">Добавить запись</button>
         </div>
     }
     else
     {
-        <div class="earnings-list">
-            @if (earnings.Any())
-            {
-                <div class="earnings-table-container">
-                    <table class="earnings-table">
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th>Сотрудник</th>
-                                <th>Сумма</th>
-                                <th>Описание</th>
-                                <th class="actions-column">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var earning in earnings)
-                            {
-                                <tr>
-                                    <td>@earning.DateTime.ToString("dd.MM.yyyy")</td>
-                                    <td>@earning.EmployeeName</td>
-                                    <td class="price-cell">@earning.Price.ToString("N2") ₽</td>
-                                    <td>@(earning.Description ?? "-")</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(earning)" title="Редактировать">✏️</button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Results summary -->
+        <div class="results-summary">
+            <div class="results-info">
+                <span>Найдено записей: <strong>@earnings.Count</strong></span>
+                <span class="total-earnings">Общая сумма: <strong>@totalEarnings.ToString("C")</strong></span>
+            </div>
+        </div>
 
-                <div class="earnings-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Всего записей:</span>
-                        <span class="summary-value">@earnings.Count</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Общая сумма:</span>
-                        <span class="summary-value">@earnings.Sum(e => e.Price).ToString("N2") ₽</span>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <p>Нет данных для отображения</p>
-                    <button class="btn btn-primary" @onclick="OpenCreateDialog">Добавить первую запись</button>
-                </div>
-            }
+        <!-- Earnings Table -->
+        <div class="earnings-table-container">
+            <table class="earnings-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Сотрудник</th>
+                        <th>Сумма</th>
+                        <th>Описание</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var earning in earnings)
+                    {
+                        <tr class="earning-row">
+                            <td class="date-cell">@earning.DateTime.ToString("dd.MM.yyyy")</td>
+                            <td class="employee-cell">
+                                <span class="employee-icon">👤</span>
+                                <span>@earning.EmployeeName</span>
+                            </td>
+                            <td class="earning-cell">@earning.Price.ToString("C")</td>
+                            <td class="description-cell">
+                                @if (!string.IsNullOrEmpty(earning.Description))
+                                {
+                                    <span title="@earning.Description">@earning.Description</span>
+                                }
+                                else
+                                {
+                                    <span class="empty-description">—</span>
+                                }
+                            </td>
+                            <td class="action-cell">
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-edit" 
+                                            @onclick="() => OpenEditDialog(earning)" 
+                                            @onclick:stopPropagation="true"
+                                            title="Редактировать">
+                                        ✏️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     }
 </div>
 
+<!-- Edit Modal -->
 @if (showDialog)
 {
     <div class="modal-overlay">
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>@(isEditMode ? "Редактировать" : "Добавить") зарплату</h3>
-                <button class="btn-close" @onclick="CloseDialog">×</button>
+                <h2>@(isEditMode ? "Редактировать" : "Добавить") зарплату</h2>
+                <button class="modal-close" @onclick="CloseDialog">&times;</button>
             </div>
+
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Сотрудник *</label>
-                    <select class="form-control" @bind="editingEarning.EmployeeId">
-                        <option value="0">Выберите сотрудника</option>
-                        @foreach (var employee in allEmployees)
-                        {
-                            <option value="@employee.Id">@employee.Name</option>
-                        }
-                    </select>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="edit-employee">Сотрудник *</label>
+                        <select id="edit-employee" 
+                                class="form-control" 
+                                @bind="editingEarning.EmployeeId"
+                                disabled="@isEditMode">
+                            <option value="0">Выберите сотрудника</option>
+                            @foreach (var employee in allEmployees)
+                            {
+                                <option value="@employee.Id">@employee.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-date">Дата *</label>
+                        <input type="date" 
+                               id="edit-date"
+                               class="form-control" 
+                               value="@editingEarning.DateTime.ToString("yyyy-MM-dd")"
+                               @onchange="@OnDateChanged" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-price">Сумма (₽) *</label>
+                        <input type="number" 
+                               id="edit-price"
+                               step="0.01" 
+                               min="0"
+                               class="form-control" 
+                               value="@editingEarning.Price" 
+                               @onchange="@OnPriceChanged" 
+                               placeholder="0.00" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-description">Описание</label>
+                        <textarea id="edit-description" 
+                                  class="form-control" 
+                                  rows="3"
+                                  placeholder="Введите описание (необязательно)..."
+                                  @bind="editingEarning.Description"></textarea>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Дата *</label>
-                    <input type="date" class="form-control" 
-                           value="@editingEarning.DateTime.ToString("yyyy-MM-dd")"
-                           @onchange="@OnDateChanged" />
-                </div>
-                <div class="form-group">
-                    <label>Сумма *</label>
-                    <input type="number" step="0.01" class="form-control" 
-                           value="@editingEarning.Price" 
-                           @onchange="@OnPriceChanged" 
-                           placeholder="0.00" />
-                </div>
-                <div class="form-group">
-                    <label>Описание</label>
-                    <textarea class="form-control" rows="3" @bind="editingEarning.Description" placeholder="Введите описание (необязательно)"></textarea>
-                </div>
+
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="error-message">
+                        ⚠️ @errorMessage
+                    </div>
+                }
             </div>
+
             <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="CloseDialog">Отмена</button>
-                <button class="btn btn-primary" @onclick="SaveEarning">Сохранить</button>
+                <button class="btn-secondary" @onclick="CloseDialog" disabled="@isSaving">
+                    Отмена
+                </button>
+                <button class="btn-primary" @onclick="SaveEarning" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-small"></span>
+                        <text>Сохранение...</text>
+                    }
+                    else
+                    {
+                        <text>💾 Сохранить</text>
+                    }
+                </button>
             </div>
         </div>
     </div>
@@ -183,14 +334,18 @@
     private bool showDialog = false;
     private bool isEditMode = false;
     private bool showEmployeeDropdown = false;
+    private bool isSaving = false;
+    private decimal totalEarnings = 0;
 
     // Filters
     private DateTime? filterDateFrom = null;
     private DateTime? filterDateTo = null;
     private List<int> selectedEmployeeIds = new();
+    private string employeeSearchTerm = string.Empty;
 
     // Editing
     private EarningWithoutProcentDto editingEarning = new();
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -232,12 +387,21 @@
         };
 
         earnings = await ApiService.GetEarningsWithoutProcent(request);
+        totalEarnings = earnings.Sum(e => e.Price);
     }
 
     private async Task ApplyFilters()
     {
-        await LoadEarnings();
-        showEmployeeDropdown = false;
+        isLoading = true;
+        try
+        {
+            await LoadEarnings();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task ClearFilters()
@@ -245,40 +409,94 @@
         filterDateFrom = null;
         filterDateTo = null;
         selectedEmployeeIds.Clear();
+        employeeSearchTerm = string.Empty;
         showEmployeeDropdown = false;
-        await LoadEarnings();
+        await ApplyFilters();
+    }
+
+    private bool HasActiveFilters()
+    {
+        return filterDateFrom.HasValue ||
+               filterDateTo.HasValue ||
+               selectedEmployeeIds.Any();
     }
 
     private void ToggleEmployeeDropdown()
     {
         showEmployeeDropdown = !showEmployeeDropdown;
+        if (!showEmployeeDropdown)
+        {
+            employeeSearchTerm = string.Empty;
+        }
     }
 
-    private void ToggleEmployeeSelection(int employeeId)
+    private void ToggleEmployeeSelection(int employeeId, object? checkedValue)
     {
-        if (selectedEmployeeIds.Contains(employeeId))
+        var isChecked = checkedValue is bool b && b;
+        
+        if (isChecked)
         {
-            selectedEmployeeIds.Remove(employeeId);
+            if (!selectedEmployeeIds.Contains(employeeId))
+            {
+                selectedEmployeeIds.Add(employeeId);
+            }
         }
         else
         {
-            selectedEmployeeIds.Add(employeeId);
+            selectedEmployeeIds.Remove(employeeId);
         }
+    }
+
+    private async Task RemoveEmployee(int employeeId)
+    {
+        selectedEmployeeIds.Remove(employeeId);
+        await ApplyFilters();
+    }
+
+    private async Task ApplyEmployeesFilter()
+    {
+        showEmployeeDropdown = false;
+        employeeSearchTerm = string.Empty;
+        await ApplyFilters();
     }
 
     private void ClearEmployeeFilter()
     {
         selectedEmployeeIds.Clear();
         showEmployeeDropdown = false;
+        employeeSearchTerm = string.Empty;
+    }
+
+    private List<EmployeeDto> GetFilteredEmployees()
+    {
+        if (string.IsNullOrWhiteSpace(employeeSearchTerm))
+        {
+            return allEmployees;
+        }
+
+        return allEmployees
+            .Where(e => e.Name.Contains(employeeSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void CloseAllDropdowns()
+    {
+        if (showEmployeeDropdown)
+        {
+            showEmployeeDropdown = false;
+            employeeSearchTerm = string.Empty;
+        }
     }
 
     private void OpenCreateDialog()
     {
         isEditMode = false;
         showDialog = true;
+        errorMessage = string.Empty;
         editingEarning = new EarningWithoutProcentDto
         {
-            DateTime = DateTime.Now
+            DateTime = DateTime.Now,
+            Price = 0
         };
     }
 
@@ -286,10 +504,12 @@
     {
         isEditMode = true;
         showDialog = true;
+        errorMessage = string.Empty;
         editingEarning = new EarningWithoutProcentDto
         {
             Id = earning.Id,
             EmployeeId = earning.EmployeeId,
+            EmployeeName = earning.EmployeeName,
             DateTime = earning.DateTime,
             Price = earning.Price,
             Description = earning.Description
@@ -299,24 +519,31 @@
     private void CloseDialog()
     {
         showDialog = false;
+        errorMessage = string.Empty;
+        isSaving = false;
     }
 
     private async Task SaveEarning()
     {
+        // Validation
+        if (editingEarning.EmployeeId == 0)
+        {
+            errorMessage = "Выберите сотрудника";
+            return;
+        }
+
+        if (editingEarning.Price <= 0)
+        {
+            errorMessage = "Введите корректную сумму";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
         try
         {
-            if (editingEarning.EmployeeId == 0)
-            {
-                NotificationService.ShowError("Выберите сотрудника");
-                return;
-            }
-
-            if (editingEarning.Price <= 0)
-            {
-                NotificationService.ShowError("Введите корректную сумму");
-                return;
-            }
-
             bool success = false;
 
             if (isEditMode)
@@ -349,10 +576,20 @@
                 CloseDialog();
                 await LoadEarnings();
             }
+            else
+            {
+                errorMessage = "Ошибка при сохранении. Попробуйте снова.";
+            }
         }
         catch (Exception ex)
         {
-            NotificationService.ShowError($"Ошибка: {ex.Message}");
+            Console.WriteLine($"Error saving earning: {ex.Message}");
+            errorMessage = "Произошла ошибка при сохранении.";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
         }
     }
 

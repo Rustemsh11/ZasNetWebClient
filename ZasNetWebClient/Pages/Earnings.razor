@@ -1,0 +1,110 @@
+@page "/earnings"
+@using ZasNetWebClient.Models
+@using ZasNetWebClient.Services
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager Navigation
+
+<PageTitle>Заработки - ZasNet</PageTitle>
+
+<div class="earnings-tabs-container">
+    <div class="page-header">
+        <h1>Заработки</h1>
+        <p>Управление заработками сотрудников и диспетчеров</p>
+    </div>
+
+    <div class="tabs-navigation">
+        @if (CanAccessEmployeeEarnings())
+        {
+            <button class="tab-button @(activeTab == "employees" ? "active" : "")" 
+                    @onclick='() => SetActiveTab("employees")'>
+                Заработки сотрудников
+            </button>
+        }
+        @if (CanAccessDispetcherEarnings())
+        {
+            <button class="tab-button @(activeTab == "dispetchers" ? "active" : "")" 
+                    @onclick='() => SetActiveTab("dispetchers")'>
+                Заработки диспетчеров
+            </button>
+        }
+        @if (CanAccessEarningWithoutProcent())
+        {
+            <button class="tab-button @(activeTab == "without-procent" ? "active" : "")" 
+                    @onclick='() => SetActiveTab("without-procent")'>
+                Зарплата без заявки
+            </button>
+        }
+    </div>
+
+    <div class="tabs-content">
+        @if (activeTab == "employees" && CanAccessEmployeeEarnings())
+        {
+            <EmployeeEarnings />
+        }
+        else if (activeTab == "dispetchers" && CanAccessDispetcherEarnings())
+        {
+            <DispetcherEarnings />
+        }
+        else if (activeTab == "without-procent" && CanAccessEarningWithoutProcent())
+        {
+            <EarningWithoutProcent />
+        }
+    </div>
+</div>
+
+@code {
+    private string activeTab = "";
+    private EmployeeDto? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+        
+        // Set default tab based on user role
+        if (CanAccessEmployeeEarnings())
+        {
+            activeTab = "employees";
+        }
+        else if (CanAccessDispetcherEarnings())
+        {
+            activeTab = "dispetchers";
+        }
+        else if (CanAccessEarningWithoutProcent())
+        {
+            activeTab = "without-procent";
+        }
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        StateHasChanged();
+    }
+
+    private bool CanAccessEmployeeEarnings()
+    {
+        if (currentUser == null) return false;
+        var role = currentUser.Role.Name;
+        return role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+               role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) ||
+               role.Equals("Водитель", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool CanAccessDispetcherEarnings()
+    {
+        if (currentUser == null) return false;
+        var role = currentUser.Role.Name;
+        return role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+               role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool CanAccessEarningWithoutProcent()
+    {
+        if (currentUser == null) return false;
+        var role = currentUser.Role.Name;
+        return role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+               role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
