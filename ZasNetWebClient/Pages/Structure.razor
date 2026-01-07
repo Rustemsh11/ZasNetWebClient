@@ -565,7 +565,7 @@
                     // Если в режиме редактирования и пароль не был изменён, используем исходный хеш
                     if (isEditMode && string.IsNullOrWhiteSpace(editingEmployee.Password))
                     {
-                        editingEmployee.Password = originalEmployeePasswordHash;
+                        editingEmployee.Password = null;
                     }
                     
                     success = isEditMode

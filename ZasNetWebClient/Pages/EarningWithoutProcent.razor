@@ -1,9 +1,11 @@
 @using ZasNetWebClient.Models
 @using ZasNetWebClient.Services
 @using Microsoft.JSInterop
+@using Blazored.LocalStorage
 @inject ApiService ApiService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject ILocalStorageService LocalStorageService
 
 <div class="employee-earnings-container" @onclick="CloseAllDropdowns">
     <div class="page-header">
@@ -48,6 +50,8 @@
             </div>
 
             <!-- Employee filter -->
+            @if (ShowEmployeeFilter)
+            {
             <div class="filter-group filter-group-employees">
                 <label for="employee-dropdown">Сотрудники</label>
                 <div class="custom-dropdown">
@@ -118,6 +122,7 @@
                     }
                 </div>
             </div>
+            }
         </div>
 
         <!-- Active filters display -->
@@ -347,9 +352,46 @@
     private EarningWithoutProcentDto editingEarning = new();
     private string errorMessage = string.Empty;
 
+    // Role-based access
+    private bool ShowEmployeeFilter = true;
+    private EmployeeDto? currentUser = null;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadUserAndRole();
         await LoadData();
+    }
+
+    private async Task LoadUserAndRole()
+    {
+        try
+        {
+            // Получаем текущего пользователя из localStorage
+            currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
+
+            if (currentUser?.Role?.Name != null)
+            {
+                var role = currentUser.Role.Name;
+
+                // Для ролей "admin" и "Диспетчер" показываем фильтр
+                if (role.Equals("admin", StringComparison.OrdinalIgnoreCase) || 
+                    role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase))
+                {
+                    ShowEmployeeFilter = true;
+                }
+                else
+                {
+                    // Для остальных ролей скрываем фильтр и устанавливаем текущего пользователя
+                    ShowEmployeeFilter = false;
+                    selectedEmployeeIds.Add(currentUser.Id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при загрузке пользователя: {ex.Message}");
+            ShowEmployeeFilter = true;
+        }
     }
 
     private async Task LoadData()
@@ -408,7 +450,12 @@
     {
         filterDateFrom = null;
         filterDateTo = null;
-        selectedEmployeeIds.Clear();
+        
+        if (ShowEmployeeFilter)
+        {
+            selectedEmployeeIds.Clear();
+        }
+        
         employeeSearchTerm = string.Empty;
         showEmployeeDropdown = false;
         await ApplyFilters();
@@ -449,6 +496,11 @@
 
     private async Task RemoveEmployee(int employeeId)
     {
+        if (!ShowEmployeeFilter)
+        {
+            return;
+        }
+
         selectedEmployeeIds.Remove(employeeId);
         await ApplyFilters();
     }

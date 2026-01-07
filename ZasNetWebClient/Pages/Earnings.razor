@@ -28,13 +28,11 @@
                 Заработки диспетчеров
             </button>
         }
-        @if (CanAccessEarningWithoutProcent())
-        {
-            <button class="tab-button @(activeTab == "without-procent" ? "active" : "")" 
-                    @onclick='() => SetActiveTab("without-procent")'>
-                Зарплата без заявки
-            </button>
-        }
+
+        <button class="tab-button @(activeTab == "without-procent" ? "active" : "")" 
+                @onclick='() => SetActiveTab("without-procent")'>
+            Зарплата без заявки
+        </button>
     </div>
 
     <div class="tabs-content">
@@ -46,7 +44,7 @@
         {
             <DispetcherEarnings />
         }
-        else if (activeTab == "without-procent" && CanAccessEarningWithoutProcent())
+        else if (activeTab == "without-procent")
         {
             <EarningWithoutProcent />
         }
@@ -70,7 +68,7 @@
         {
             activeTab = "dispetchers";
         }
-        else if (CanAccessEarningWithoutProcent())
+        else
         {
             activeTab = "without-procent";
         }
@@ -92,14 +90,6 @@
     }
 
     private bool CanAccessDispetcherEarnings()
-    {
-        if (currentUser == null) return false;
-        var role = currentUser.Role.Name;
-        return role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
-               role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private bool CanAccessEarningWithoutProcent()
     {
         if (currentUser == null) return false;
         var role = currentUser.Role.Name;

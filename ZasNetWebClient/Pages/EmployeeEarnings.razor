@@ -802,6 +802,11 @@
 
     private async Task RemoveEmployee(int employeeId)
     {
+        if (!ShowEmployeeFilter)
+        {
+            return;
+        }
+
         selectedEmployeeIds.Remove(employeeId);
         await ApplyFilters();
     }
