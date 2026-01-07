@@ -15,7 +15,7 @@
         <div>
             <h1>Активные заявки по дням</h1>
         </div>
-        @if (!isAccountantRole)
+        @if (isEnableCreateOrder)
         {
             <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
                 <span>+</span> Создать заявку
@@ -40,7 +40,7 @@ else
     private List<Order> orders = new();
     private List<CarDto> allCars = new();
     private bool isLoading = false;
-    private bool isAccountantRole = false;
+    private bool isEnableCreateOrder = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,12 +53,12 @@ else
         try
         {
             var currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
-            isAccountantRole = currentUser.Role != null && currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+            isEnableCreateOrder = currentUser.Role != null && (currentUser.Role.Name.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) || currentUser.Role.Name.Equals("admin", StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading user role: {ex.Message}");
-            isAccountantRole = false;
+            isEnableCreateOrder = false;
         }
     }
 

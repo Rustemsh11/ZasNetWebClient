@@ -13,11 +13,13 @@
         <div class="header-content">
             <div>
                 <h1>Мои заявки</h1>
-                <p>Заявки, где вы являетесь диспетчером</p>
             </div>
-            <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
-                <span>+</span> Создать заявку
-            </button>
+            @if (isEnableCreateOrder)
+            {
+                <button class="btn-primary" @onclick="@(() => Navigation.NavigateTo("/order", false))">
+                    <span>+</span> Создать заявку
+                </button>
+            }
         </div>
     </div>
 
@@ -659,7 +661,7 @@
     private string serviceSearchTerm = string.Empty;
     private string driverSearchTerm = string.Empty;
     private string dispetcherSearchTerm = string.Empty;
-
+    private bool isEnableCreateOrder = false;
     // Delete confirmation
     private bool showDeleteConfirmDialog = false;
     private int orderIdToDelete = 0;
@@ -677,6 +679,7 @@
             // Get current user
             currentUser = await LocalStorageService.GetItemAsync<EmployeeDto>("user");
 
+            isEnableCreateOrder = currentUser.Role != null && (currentUser.Role.Name.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) || currentUser.Role.Name.Equals("admin", StringComparison.OrdinalIgnoreCase));
             // Load available services for filter
             var parameters = await ApiService.GetCreateOrderParameters();
             availableServices = parameters?.ServiceDtos ?? new List<ServiceDto>();
@@ -697,6 +700,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading orders: {ex.Message}");
+            isEnableCreateOrder = false;
             filteredOrders = new List<GetOrdersByFilterResponse>();
         }
         finally

@@ -155,12 +155,14 @@
                 return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) ||
                        role.Equals("Водитель", StringComparison.OrdinalIgnoreCase) ||
                        role.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
-            
+
             case "/earnings":
                 // Доступно: admin, Диспетчер, Водитель (объединенная страница заработков)
                 return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase) ||
-                       role.Equals("Водитель", StringComparison.OrdinalIgnoreCase);
-            
+                       role.Equals("Водитель", StringComparison.OrdinalIgnoreCase) ||
+                       role.Equals("Снабженец", StringComparison.OrdinalIgnoreCase) ||
+                       role.Equals("Механик", StringComparison.OrdinalIgnoreCase);
+
             case "/structure":
                 // Доступно: admin, Диспетчер
                 return role.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
