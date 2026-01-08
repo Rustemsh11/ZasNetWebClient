@@ -659,7 +659,8 @@ public class ApiService
             {
                 Number = carDto.Number,
                 Status = carDto.Status,
-                CarModelId = carDto.CarModel?.Id ?? 0
+                CarModelId = carDto.CarModel?.Id ?? 0,
+                UsingOrder = carDto.UsingOrder,
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/CreateCar", request);
@@ -688,7 +689,8 @@ public class ApiService
                 Id = carDto.Id,
                 Number = carDto.Number,
                 Status = carDto.Status,
-                CarModelId = carDto.CarModel?.Id ?? 0
+                CarModelId = carDto.CarModel?.Id ?? 0,
+                UsingOrder = carDto.UsingOrder
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/car/UpdateCar", command);
@@ -724,6 +726,28 @@ public class ApiService
         catch(Exception ex)
         {
             _notificationService.ShowError($"Ошибка при удалении автомобиля: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> ReorderCars(Dictionary<int, int> reorderedCars)
+    {
+        try
+        {
+            var token = await _localStorageService.GetItemAsync<string>("token");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var command = new ReorderCarsCommand { CarIdWithOrderNumber = reorderedCars };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/car/ReorderCars", command);
+            return await CheckAndHandleErrorAsync(response, "Ошибка при изменении приоритета машин");
+        }
+        catch(Exception ex)
+        {
+            _notificationService.ShowError($"Ошибка при изменении приоритета машин: {ex.Message}");
             return false;
         }
     }

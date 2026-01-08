@@ -311,6 +311,12 @@
                             <option value="@DocumentType.WorkReport">Отчет о работе</option>
                         </InputSelect>
                     }
+                    else if (isAccountantRole)
+                    {
+                        <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control" disabled>
+                            <option value="@DocumentType.Invoice">Счет</option>
+                        </InputSelect>
+                    }
                     else
                     {
                         <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control">
@@ -481,6 +487,7 @@
     private OrderStatus selectedStatus = OrderStatus.Created;
     private EmployeeDto? currentUser;
     private bool isDriverOrAccountantRole = false;
+    private bool isAccountantRole = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -488,7 +495,8 @@
         currentUser = await localStorageService.GetItemAsync<EmployeeDto>("user");
         if (currentUser != null && currentUser.Role != null)
         {
-            isDriverOrAccountantRole = currentUser.Role.Name.Equals("Водитель", StringComparison.OrdinalIgnoreCase) || currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+            isAccountantRole = currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
+            isDriverOrAccountantRole = currentUser.Role.Name.Equals("Водитель", StringComparison.OrdinalIgnoreCase) || isAccountantRole;
         }
 
         if (IsEditMode)

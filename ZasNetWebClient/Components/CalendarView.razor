@@ -355,7 +355,7 @@
         // Create groups for all cars from AllCars
         if (AllCars != null && AllCars.Count > 0)
         {
-            foreach (var car in AllCars.OrderBy(c => c.Name))
+            foreach (var car in AllCars)
             {
                 var carOrders = ordersByCarId.ContainsKey(car.Id) 
                     ? ordersByCarId[car.Id] 

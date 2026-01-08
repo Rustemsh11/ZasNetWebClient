@@ -145,6 +145,7 @@ public class CarDto
     public string Name => $"{this.Number} ({this.CarModel?.Name})";
     public string Number { get; set; } = string.Empty;
     public int Status { get; set; }
+    public int UsingOrder { get; set; }
     public CarModelDto? CarModel { get; set; } = new();
 }
 
@@ -172,6 +173,7 @@ public class CreateCarRequest
     public string Number { get; set; } = string.Empty;
     public int Status { get; set; }
     public int? CarModelId { get; set; }
+    public int UsingOrder { get; set; }
 }
 
 public class UpdateCarCommand
@@ -180,6 +182,7 @@ public class UpdateCarCommand
     public string Number { get; set; } = string.Empty;
     public int Status { get; set; }
     public int? CarModelId { get; set; }
+    public int UsingOrder { get; set; }
 }
 
 public class DeleteCarCommand
@@ -187,6 +190,10 @@ public class DeleteCarCommand
     public int Id { get; set; }
 }
 
+public class ReorderCarsCommand
+{
+    public Dictionary<int, int> CarIdWithOrderNumber { get; set; } = new();
+}
 public class CreateCarModelRequest
 {
     public string Name { get; set; } = string.Empty;

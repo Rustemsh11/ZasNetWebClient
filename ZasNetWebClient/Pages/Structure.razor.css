@@ -542,3 +542,141 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
+/* Header Buttons */
+.header-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Priority Dialog */
+.priority-modal {
+    max-width: 700px;
+}
+
+.priority-hint {
+    margin: 0 0 20px 0;
+    padding: 12px 16px;
+    background: rgba(102, 126, 234, 0.08);
+    border-left: 4px solid #667eea;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.priority-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.priority-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: white;
+    border: 2px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.priority-item:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.priority-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.priority-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.priority-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.priority-details strong {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.priority-model {
+    font-size: 14px;
+    color: #718096;
+}
+
+.priority-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-priority {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    background: white;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-priority:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    transform: scale(1.05);
+}
+
+.btn-priority:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .header-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .priority-item {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .priority-actions {
+        justify-content: center;
+    }
+}
+

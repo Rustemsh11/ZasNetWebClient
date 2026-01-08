@@ -40,10 +40,19 @@
     <main class="structure-content">
         <div class="content-header">
             <h2 class="content-title">@GetEntityTitle()</h2>
-            <button class="btn btn-primary" @onclick="OpenCreateDialog">
-                <span class="btn-icon">+</span>
-                Добавить
-            </button>
+            <div class="header-buttons">
+                @if (selectedEntity == "Car")
+                {
+                    <button class="btn btn-secondary" @onclick="OpenPriorityDialog">
+                        <span class="btn-icon">⬆⬇</span>
+                        Управление приоритетом
+                    </button>
+                }
+                <button class="btn btn-primary" @onclick="OpenCreateDialog">
+                    <span class="btn-icon">+</span>
+                    Добавить
+                </button>
+            </div>
         </div>
 
         @if (isLoading)
@@ -66,6 +75,7 @@
                                     <h4>@item.Number</h4>
                                     <p class="card-details">Модель: @(item.CarModel?.Name ?? "Не указана")</p>
                                     <p class="card-details">Статус: @GetCarStatus(item.Status)</p>
+                                    <p class="card-details">Приоритет: @item.UsingOrder)</p>
                                 </div>
                                 <div class="card-actions">
                                     <button class="btn-icon-action edit" @onclick="() => OpenEditDialog(item)" title="Редактировать">✏️</button>
@@ -167,6 +177,48 @@
     </main>
 </div>
 
+@if (showPriorityDialog)
+{
+    <div class="modal-overlay">
+        <div class="modal-content priority-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Управление приоритетом машин</h3>
+                <button class="btn-close" @onclick="ClosePriorityDialog">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="priority-hint">Используйте стрелки для изменения приоритета машин. Первая машина в списке имеет наивысший приоритет.</p>
+                <div class="priority-list">
+                    @foreach (var car in sortedCars)
+                    {
+                        var index = sortedCars.IndexOf(car);
+                        <div class="priority-item">
+                            <div class="priority-info">
+                                <span class="priority-number">@(index + 1)</span>
+                                <div class="priority-details">
+                                    <strong>@car.Number</strong>
+                                    <span class="priority-model">@(car.CarModel?.Name ?? "Не указана")</span>
+                                </div>
+                            </div>
+                            <div class="priority-actions">
+                                <button class="btn-priority" @onclick="() => MoveCarUp(car)" disabled="@(index == 0)" title="Переместить вверх">
+                                    ▲
+                                </button>
+                                <button class="btn-priority" @onclick="() => MoveCarDown(car)" disabled="@(index == sortedCars.Count - 1)" title="Переместить вниз">
+                                    ▼
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="ClosePriorityDialog">Отмена</button>
+                <button class="btn btn-primary" @onclick="SaveCarPriority">Сохранить</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (showDialog)
 {
     <div class="modal-overlay">
@@ -199,6 +251,10 @@
                                 <option value="0">Активна</option>
                                 <option value="1">Неактивна</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Приоритет</label>
+                            <input type="number" step="1" class="form-control" @bind="editingCar.UsingOrder" placeholder="0" />
                         </div>
                         break;
 
@@ -310,6 +366,7 @@
     private bool isLoading = false;
     private bool showDialog = false;
     private bool isEditMode = false;
+    private bool showPriorityDialog = false;
 
     // Data lists
     private List<CarDto> cars = new();
@@ -318,6 +375,9 @@
     private List<ServiceDto> services = new();
     private List<RoleDto> roles = new();
     private List<MeasureDto> measures = new();
+
+    // Priority management
+    private List<CarDto> sortedCars = new();
 
     // Editing entities
     private CarDto editingCar = new();
@@ -465,7 +525,8 @@
                     Id = car.Id,
                     Number = car.Number,
                     Status = car.Status,
-                    CarModel = car.CarModel
+                    CarModel = car.CarModel,
+                    UsingOrder = car.UsingOrder
                 };
                 break;
             case "CarModel":
@@ -726,6 +787,62 @@
 
         var selectedRole = roles.FirstOrDefault(r => r.Id == editingEmployee.Role.Id);
         return selectedRole != null && selectedRole.Name.Equals("Диспетчер", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void OpenPriorityDialog()
+    {
+        sortedCars = cars.OrderBy(c => c.UsingOrder).ToList();
+        showPriorityDialog = true;
+    }
+
+    private void ClosePriorityDialog()
+    {
+        showPriorityDialog = false;
+        sortedCars = new List<CarDto>();
+    }
+
+    private void MoveCarUp(CarDto car)
+    {
+        var index = sortedCars.IndexOf(car);
+        if (index > 0)
+        {
+            sortedCars.RemoveAt(index);
+            sortedCars.Insert(index - 1, car);
+        }
+    }
+
+    private void MoveCarDown(CarDto car)
+    {
+        var index = sortedCars.IndexOf(car);
+        if (index < sortedCars.Count - 1)
+        {
+            sortedCars.RemoveAt(index);
+            sortedCars.Insert(index + 1, car);
+        }
+    }
+
+    private async Task SaveCarPriority()
+    {
+        try
+        {
+            var reorderedCars = new Dictionary<int, int>();
+            for (int i = 0; i < sortedCars.Count; i++)
+            {
+                    reorderedCars.Add(sortedCars[i].Id,  i + 1);
+            }
+
+            var success = await ApiService.ReorderCars(reorderedCars);
+            if (success)
+            {
+                NotificationService.ShowInfo("Приоритет машин успешно обновлен");
+                await LoadCars();
+                ClosePriorityDialog();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Ошибка при сохранении приоритета: {ex.Message}");
+        }
     }
 }
 
