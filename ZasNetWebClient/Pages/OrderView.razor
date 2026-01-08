@@ -305,7 +305,7 @@
             <div class="form-row" style="margin-bottom: 10px;">
                 <div class="form-group" style="flex: 0 0 auto; margin-right: 10px;">
                     <label for="documentType">Тип документа</label>
-                    @if (isDriverOrAccountantRole)
+                    @if (isDriverRole)
                     {
                         <InputSelect id="documentType" @bind-Value="selectedDocumentType" class="form-control" disabled>
                             <option value="@DocumentType.WorkReport">Отчет о работе</option>
@@ -488,6 +488,7 @@
     private EmployeeDto? currentUser;
     private bool isDriverOrAccountantRole = false;
     private bool isAccountantRole = false;
+    private bool isDriverRole = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -496,7 +497,8 @@
         if (currentUser != null && currentUser.Role != null)
         {
             isAccountantRole = currentUser.Role.Name.Equals("Бухгалтер", StringComparison.OrdinalIgnoreCase);
-            isDriverOrAccountantRole = currentUser.Role.Name.Equals("Водитель", StringComparison.OrdinalIgnoreCase) || isAccountantRole;
+            isDriverRole = currentUser.Role.Name.Equals("Водитель", StringComparison.OrdinalIgnoreCase);
+            isDriverOrAccountantRole = isDriverRole || isAccountantRole;
         }
 
         if (IsEditMode)
