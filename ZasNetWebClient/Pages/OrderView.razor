@@ -383,7 +383,16 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (!isDriverOrAccountantRole || doc.DocumentType == DocumentType.WorkReport)
+                                    @if (isDriverOrAccountantRole)
+                                    {
+                                        if ((isDriverRole && doc.DocumentType == DocumentType.WorkReport) || (isAccountantRole && doc.DocumentType == DocumentType.Invoice))
+                                        {
+                                            <button type="button" class="btn-remove-compact" @onclick="() => RemoveDocument(doc)">
+                                            &times;
+                                            </button>
+                                        }
+                                    }
+                                    else
                                     {
                                         <button type="button" class="btn-remove-compact" @onclick="() => RemoveDocument(doc)">
                                             &times;
@@ -519,9 +528,12 @@
         }
 
         await LoadReferenceData();
-        
-        // Для роли Водитель устанавливаем тип документа по умолчанию
-        if (isDriverOrAccountantRole)
+
+        if (isAccountantRole)
+        {
+            selectedDocumentType = DocumentType.Invoice;
+        }
+        else if (isDriverRole)
         {
             selectedDocumentType = DocumentType.WorkReport;
         }
@@ -597,9 +609,16 @@
             }
 
             // Для роли Водитель разрешен только тип "Отчет о работе"
-            if (isDriverOrAccountantRole && selectedDocumentType != DocumentType.WorkReport)
+            if (isDriverRole && selectedDocumentType != DocumentType.WorkReport)
             {
                 errorMessage = "Для вашей роли доступна загрузка только документов типа 'Отчет о работе'.";
+                NotificationService.ShowError(errorMessage);
+                return;
+            }
+            
+            if (isAccountantRole && selectedDocumentType != DocumentType.Invoice)
+            {
+                errorMessage = "Для вашей роли доступна загрузка только документов типа 'Счет'.";
                 NotificationService.ShowError(errorMessage);
                 return;
             }
@@ -726,9 +745,10 @@
         RecalculateOrderTotal();
     }
 
-    private void RemoveDocument(DocumentDto documentDto)
+    private async Task RemoveDocument(DocumentDto documentDto)
     {
         orderModel.Documents.Remove(documentDto);
+        await ApiService.DeleteDocument(documentDto.Id);
     }
 
     private void HandleEmployeeSelectionChanged(List<int> employeeIds)
