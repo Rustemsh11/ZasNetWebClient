@@ -34,6 +34,11 @@ public class OrderServiceDto
     public decimal PrecentForMultipleEmployeers { get; set; }
     public decimal PrecentLaterOrderForEmployee { get; set; }
     public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+    public bool IsFixedEmployeeEarning { get; set; }
+    public decimal StandartPriceForEmployee { get; set; }
+    public decimal PriceForMultipleEmployeers { get; set; }
+    public decimal PriceLaterOrderForEmployee { get; set; }
+    public decimal PriceLaterOrderForMultipleEmployeers { get; set; }
     public bool IsAlmazService { get; set; }
     public List<OrderServiceEmployeeDto> OrderServiceEmployeeDtos { get; set; } = new();
     public List<OrderServiceCarDto> OrderServiceCarDtos { get; set; } = new();
@@ -119,14 +124,15 @@ public class ServiceDto
     public double MinVolume { get; set; }
     public string Measure { get; set; } = string.Empty;
     public int MeasureId { get; set; }
-
     public decimal StandartPrecentForEmployee { get; set; }
-
     public decimal PrecentForMultipleEmployeers { get; set; }
-
     public decimal PrecentLaterOrderForEmployee { get; set; }
-
     public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+    public bool IsFixedEmployeeEarning { get; set; }
+    public decimal StandartPriceForEmployee { get; set; }
+    public decimal PriceForMultipleEmployeers { get; set; }
+    public decimal PriceLaterOrderForEmployee { get; set; }
+    public decimal PriceLaterOrderForMultipleEmployeers { get; set; }
 }
 
 public class EmployeeDto
@@ -246,6 +252,11 @@ public class CreateServiceRequest
     public decimal PrecentForMultipleEmployeers { get; set; }
     public decimal PrecentLaterOrderForEmployee { get; set; }
     public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+    public bool IsFixedEmployeeEarning {  get; set; }
+    public decimal StandartPriceForEmployee { get; set; }
+    public decimal PriceForMultipleEmployeers { get; set; }
+    public decimal PriceLaterOrderForEmployee { get; set; }
+    public decimal PriceLaterOrderForMultipleEmployeers { get; set; }
 }
 
 public class UpdateServiceCommand
@@ -259,6 +270,11 @@ public class UpdateServiceCommand
     public decimal PrecentForMultipleEmployeers { get; set; }
     public decimal PrecentLaterOrderForEmployee { get; set; }
     public decimal PrecentLaterOrderForMultipleEmployeers { get; set; }
+    public bool IsFixedEmployeeEarning { get; set; }
+    public decimal StandartPriceForEmployee { get; set; }
+    public decimal PriceForMultipleEmployeers { get; set; }
+    public decimal PriceLaterOrderForEmployee { get; set; }
+    public decimal PriceLaterOrderForMultipleEmployeers { get; set; }
 }
 
 public class DeleteServiceCommand

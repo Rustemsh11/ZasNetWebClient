@@ -73,6 +73,14 @@
     public decimal PrecentForMultipleEmployeers;
     public decimal PrecentLaterOrderForEmployee;
     public decimal PrecentLaterOrderForMultipleEmployeers;
+
+    public bool IsFixedEmployeeEarning;
+
+    public decimal StandartPriceForEmployee;
+    public decimal PriceForMultipleEmployeers;
+    public decimal PriceLaterOrderForEmployee;
+    public decimal PriceLaterOrderForMultipleEmployeers;
+
     public double Volume = 0;
     public string Measure = "";
     public bool IsAlmazService = false;
@@ -100,6 +108,13 @@
             PrecentForMultipleEmployeers = selectedService.PrecentForMultipleEmployeers;
             PrecentLaterOrderForEmployee = selectedService.PrecentLaterOrderForEmployee;
             PrecentLaterOrderForMultipleEmployeers = selectedService.PrecentLaterOrderForMultipleEmployeers;
+
+            IsFixedEmployeeEarning = selectedService.IsFixedEmployeeEarning;
+
+            StandartPriceForEmployee = selectedService.StandartPriceForEmployee;
+            PriceForMultipleEmployeers = selectedService.PriceForMultipleEmployeers;
+            PriceLaterOrderForEmployee = selectedService.PriceLaterOrderForEmployee;
+            PriceLaterOrderForMultipleEmployeers = selectedService.PriceLaterOrderForMultipleEmployeers;
         }
     }
 
@@ -124,6 +139,11 @@
                 PrecentForMultipleEmployeers = PrecentForMultipleEmployeers,
                 PrecentLaterOrderForEmployee = PrecentLaterOrderForEmployee,
                 PrecentLaterOrderForMultipleEmployeers = PrecentLaterOrderForMultipleEmployeers,
+                IsFixedEmployeeEarning = IsFixedEmployeeEarning,
+                StandartPriceForEmployee = StandartPriceForEmployee,
+                PriceForMultipleEmployeers = PriceForMultipleEmployeers,
+                PriceLaterOrderForEmployee = PriceLaterOrderForEmployee,
+                PriceLaterOrderForMultipleEmployeers = PriceLaterOrderForMultipleEmployeers,
                 IsAlmazService = IsAlmazService,
             };
         if (serviceModel.ServiceId == 0)

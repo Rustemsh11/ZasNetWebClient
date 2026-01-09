@@ -978,7 +978,12 @@ public class ApiService
                 StandartPrecentForEmployee = serviceDto.StandartPrecentForEmployee,
                 PrecentForMultipleEmployeers = serviceDto.PrecentForMultipleEmployeers,
                 PrecentLaterOrderForEmployee = serviceDto.PrecentLaterOrderForEmployee,
-                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers
+                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers,
+                IsFixedEmployeeEarning = serviceDto.IsFixedEmployeeEarning,
+                StandartPriceForEmployee = serviceDto.StandartPriceForEmployee,
+                PriceForMultipleEmployeers = serviceDto.PriceForMultipleEmployeers,
+                PriceLaterOrderForEmployee = serviceDto.PriceLaterOrderForEmployee,
+                PriceLaterOrderForMultipleEmployeers = serviceDto.PriceLaterOrderForMultipleEmployeers
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/service/CreateService", request);
@@ -1012,7 +1017,12 @@ public class ApiService
                 StandartPrecentForEmployee = serviceDto.StandartPrecentForEmployee,
                 PrecentForMultipleEmployeers = serviceDto.PrecentForMultipleEmployeers,
                 PrecentLaterOrderForEmployee = serviceDto.PrecentLaterOrderForEmployee,
-                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers
+                PrecentLaterOrderForMultipleEmployeers = serviceDto.PrecentLaterOrderForMultipleEmployeers,
+                IsFixedEmployeeEarning = serviceDto.IsFixedEmployeeEarning,
+                StandartPriceForEmployee = serviceDto.StandartPriceForEmployee,
+                PriceForMultipleEmployeers = serviceDto.PriceForMultipleEmployeers,
+                PriceLaterOrderForEmployee = serviceDto.PriceLaterOrderForEmployee,
+                PriceLaterOrderForMultipleEmployeers = serviceDto.PriceLaterOrderForMultipleEmployeers
             };
 
             var response = await _httpClient.PostAsJsonAsync("api/v1/service/UpdateService", command);

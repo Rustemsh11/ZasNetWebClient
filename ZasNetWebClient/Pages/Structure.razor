@@ -321,21 +321,46 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Процент для сотрудника (стандарт) *</label>
-                            <input type="number" step="0.01" class="form-control" @bind="editingService.StandartPrecentForEmployee" placeholder="0.00" />
+                            <label><input type="checkbox" class="form-check-input" @bind="editingService.IsFixedEmployeeEarning" />Фиксированная цена</label>
                         </div>
-                        <div class="form-group">
-                            <label>Процент для нескольких сотрудников *</label>
-                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentForMultipleEmployeers" placeholder="0.00" />
-                        </div>
-                        <div class="form-group">
-                            <label>Процент для позднего заказа (один сотрудник) *</label>
-                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForEmployee" placeholder="0.00" />
-                        </div>
-                        <div class="form-group">
-                            <label>Процент для позднего заказа (несколько сотрудников) *</label>
-                            <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForMultipleEmployeers" placeholder="0.00" />
-                        </div>
+                        @if (editingService.IsFixedEmployeeEarning)
+                        {
+                            <div class="form-group">
+                                <label>Цена для сотрудника (стандарт) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.StandartPriceForEmployee" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Цена для нескольких сотрудников *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PriceForMultipleEmployeers" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Цена для позднего заказа (один сотрудник) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PriceLaterOrderForEmployee" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Цена для позднего заказа (несколько сотрудников) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PriceLaterOrderForMultipleEmployeers" placeholder="0.00" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="form-group">
+                                <label>Процент для сотрудника (стандарт) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.StandartPrecentForEmployee" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Процент для нескольких сотрудников *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentForMultipleEmployeers" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Процент для позднего заказа (один сотрудник) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForEmployee" placeholder="0.00" />
+                            </div>
+                            <div class="form-group">
+                                <label>Процент для позднего заказа (несколько сотрудников) *</label>
+                                <input type="number" step="0.01" class="form-control" @bind="editingService.PrecentLaterOrderForMultipleEmployeers" placeholder="0.00" />
+                            </div>
+                        }
                         break;
 
                     case "Role":
@@ -556,10 +581,15 @@
                     MinPrice = service.MinPrice,
                     MinVolume = service.MinVolume,
                     Measure = service.Measure,
+                    IsFixedEmployeeEarning = service.IsFixedEmployeeEarning,
                     StandartPrecentForEmployee = service.StandartPrecentForEmployee,
                     PrecentForMultipleEmployeers = service.PrecentForMultipleEmployeers,
                     PrecentLaterOrderForEmployee = service.PrecentLaterOrderForEmployee,
-                    PrecentLaterOrderForMultipleEmployeers = service.PrecentLaterOrderForMultipleEmployeers
+                    PrecentLaterOrderForMultipleEmployeers = service.PrecentLaterOrderForMultipleEmployeers,
+                    StandartPriceForEmployee = service.StandartPriceForEmployee,
+                    PriceForMultipleEmployeers = service.PriceForMultipleEmployeers,
+                    PriceLaterOrderForEmployee = service.PriceLaterOrderForEmployee,
+                    PriceLaterOrderForMultipleEmployeers = service.PriceLaterOrderForMultipleEmployeers
                 };
                 // Find measure ID by name
                 var measureForService = measures.FirstOrDefault(m => m.Name == service.Measure);
